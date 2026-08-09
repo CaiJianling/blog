@@ -269,6 +269,7 @@
     "articles": {
         "title": "Articles",
         "list": "Article List",
+        "allArticles": "All Articles",
         "create": "Write Article",
         "categories": "Categories",
         "tags": "Tags",
@@ -326,6 +327,46 @@
         "noCategories": "No categories yet",
         "manageTags": "Manage article tags",
         "noTags": "No tags yet"
+    },
+    "pages": {
+        "title": "Pages",
+        "list": "Page List",
+        "allPages": "All Pages",
+        "create": "Create Page",
+        "editPage": "Edit Page",
+        "managePages": "Manage your pages",
+        "pagesCount": "{{count}} pages",
+        "noPages": "No pages yet",
+        "writeFirst": "Write your first page",
+        "edit": "Edit",
+        "saveDraft": "Save Draft",
+        "publish": "Publish Page",
+        "update": "Update Page",
+        "toggleSidebar": "Toggle sidebar",
+        "table": {
+            "title": "Title",
+            "author": "Author",
+            "slug": "Slug",
+            "date": "Date",
+            "views": "Views",
+            "actions": "Actions"
+        },
+        "status": {
+            "publish": "Published",
+            "draft": "Draft",
+            "trash": "Trash"
+        },
+        "form": {
+            "titlePlaceholder": "Enter title here",
+            "status": "Status",
+            "selectStatus": "Select status",
+            "comments": "Comments",
+            "allowComments": "Allow comments",
+            "open": "Open",
+            "close": "Close",
+            "slug": "Permalink",
+            "slugPlaceholder": "Enter slug"
+        }
     },
     "userManagement": {
         "title": "User Management",

@@ -269,6 +269,7 @@
     "articles": {
         "title": "文章",
         "list": "文章列表",
+        "allArticles": "所有文章",
         "create": "写文章",
         "categories": "分类目录",
         "tags": "标签",
@@ -326,6 +327,46 @@
         "noCategories": "暂无分类",
         "manageTags": "管理文章标签",
         "noTags": "暂无标签"
+    },
+    "pages": {
+        "title": "页面",
+        "list": "页面列表",
+        "allPages": "所有页面",
+        "create": "创建页面",
+        "editPage": "编辑页面",
+        "managePages": "管理您的页面",
+        "pagesCount": "共 {{count}} 个页面",
+        "noPages": "暂无页面",
+        "writeFirst": "写第一个页面",
+        "edit": "编辑",
+        "saveDraft": "保存草稿",
+        "publish": "发布页面",
+        "update": "更新页面",
+        "toggleSidebar": "展开/收起侧边栏",
+        "table": {
+            "title": "标题",
+            "author": "作者",
+            "slug": "别名",
+            "date": "日期",
+            "views": "浏览量",
+            "actions": "操作"
+        },
+        "status": {
+            "publish": "发布",
+            "draft": "草稿",
+            "trash": "回收站"
+        },
+        "form": {
+            "titlePlaceholder": "在此输入标题",
+            "status": "状态",
+            "selectStatus": "选择状态",
+            "comments": "评论",
+            "allowComments": "允许评论",
+            "open": "开启",
+            "close": "关闭",
+            "slug": "永久链接",
+            "slugPlaceholder": "输入别名"
+        }
     },
     "userManagement": {
         "title": "用户管理",

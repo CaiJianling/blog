@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Users, Home, FileText } from 'lucide-react';
+import { LayoutGrid, Users, Home, FileText, FileStack } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooterSettings } from '@/components/nav-footer-settings';
 import { NavMain } from '@/components/nav-main';
@@ -37,7 +37,7 @@ export function AppSidebar() {
             icon: FileText,
             children: [
                 {
-                    title: 'articles.list',
+                    title: 'articles.allArticles',
                     href: '/articles',
                 },
                 {
@@ -51,6 +51,21 @@ export function AppSidebar() {
                 {
                     title: 'articles.tags',
                     href: '/articles/tags',
+                },
+            ],
+        },
+        {
+            title: 'pages.title',
+            href: '/pages',
+            icon: FileStack,
+            children: [
+                {
+                    title: 'pages.allPages',
+                    href: '/pages',
+                },
+                {
+                    title: 'pages.create',
+                    href: '/pages/create',
                 },
             ],
         },
