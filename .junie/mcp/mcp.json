@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "/www/server/php/83/bin/php",
+            "args": [
+                "/home/caijianling/blog/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
