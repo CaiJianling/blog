@@ -117,7 +117,7 @@ composer run setup
 
 ```bash
 # 前端开发（热更新）
-npm run dev
+composer run dev
 
 # 前端构建
 npm run build
