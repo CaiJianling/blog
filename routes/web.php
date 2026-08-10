@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\AdminMiddleware;
@@ -33,6 +34,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{page}', [PageController::class, 'update'])->name('pages.update');
         Route::put('/{page}/trash', [PageController::class, 'trash'])->name('pages.trash');
         Route::put('/{page}/restore', [PageController::class, 'restore'])->name('pages.restore');
+    });
+
+    Route::prefix('attachments')->group(function () {
+        Route::get('/', [AttachmentController::class, 'index'])->name('attachments.index');
+        Route::get('/create', [AttachmentController::class, 'create'])->name('attachments.create');
+        Route::post('/', [AttachmentController::class, 'store'])->name('attachments.store');
+        Route::delete('/bulk', [AttachmentController::class, 'bulkDestroy'])->name('attachments.bulk-destroy');
+        Route::delete('/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
     });
 
     Route::middleware([AdminMiddleware::class])->group(function () {

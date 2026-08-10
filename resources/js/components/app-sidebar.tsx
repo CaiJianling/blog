@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Users, Home, FileText, FileStack } from 'lucide-react';
+import { LayoutGrid, Users, Home, FileText, FileStack, Image } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooterSettings } from '@/components/nav-footer-settings';
 import { NavMain } from '@/components/nav-main';
@@ -66,6 +66,21 @@ export function AppSidebar() {
                 {
                     title: 'pages.create',
                     href: '/pages/create',
+                },
+            ],
+        },
+        {
+            title: 'media.title',
+            href: '/attachments',
+            icon: Image,
+            children: [
+                {
+                    title: 'media.library',
+                    href: '/attachments',
+                },
+                {
+                    title: 'media.addNew',
+                    href: '/attachments/create',
                 },
             ],
         },
