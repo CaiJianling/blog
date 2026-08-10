@@ -3,6 +3,7 @@
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\TermTaxonomyController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{article}/restore', [ArticleController::class, 'restore'])->name('articles.restore');
         Route::get('/categories', [ArticleController::class, 'categories'])->name('articles.categories');
         Route::get('/tags', [ArticleController::class, 'tags'])->name('articles.tags');
+        Route::post('/taxonomies', [TermTaxonomyController::class, 'store'])->name('taxonomies.store');
+        Route::put('/taxonomies/{termTaxonomy}', [TermTaxonomyController::class, 'update'])->name('taxonomies.update');
+        Route::delete('/taxonomies/{termTaxonomy}', [TermTaxonomyController::class, 'destroy'])->name('taxonomies.destroy');
     });
 
     Route::prefix('pages')->group(function () {

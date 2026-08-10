@@ -1,7 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
 import {
-    FileText,
     Save,
     MessageSquare,
     PanelRightClose,
@@ -18,17 +17,19 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BlockNoteEditor  } from '@/components/blocknote-editor';
 import type {BlockNoteDocument} from '@/components/blocknote-editor';
+import type { CategoryItem } from '@/components/category-picker';
+import { CategoryPicker } from '@/components/category-picker';
+import type { TagItem } from '@/components/tag-picker';
+import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
+    CardDescription,
 } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { create as articlesCreate } from '@/routes/articles';
@@ -46,6 +47,58 @@ interface Tag {
 interface Props {
     categories: Category[];
     tags: Tag[];
+}
+
+function SidebarSection({
+    icon: Icon,
+    title,
+    description,
+    children,
+    defaultOpen = true,
+}: {
+    icon: React.ElementType;
+    title: string;
+    description?: string;
+    children: React.ReactNode;
+    defaultOpen?: boolean;
+}) {
+    const [open, setOpen] = useState(defaultOpen);
+
+    return (
+        <Card className="overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="apple-press flex w-full items-center gap-2.5 px-3 py-2 text-left"
+            >
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
+                    <Icon className="h-3 w-3" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-callout font-medium">{title}</span>
+                        {description && (
+                            <span className="truncate text-xs text-tertiary-label">
+                                {description}
+                            </span>
+                        )}
+                    </div>
+                </div>
+                <ChevronRight
+                    className={`h-3.5 w-3.5 shrink-0 text-tertiary-label transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+                />
+            </button>
+            <div
+                className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}
+            >
+                <div className="overflow-hidden">
+                    <div className="border-t border-border/40 px-3 py-2.5">
+                        {children}
+                    </div>
+                </div>
+            </div>
+        </Card>
+    );
 }
 
 export default function CreateArticle({ categories, tags }: Props) {
@@ -85,70 +138,6 @@ export default function CreateArticle({ categories, tags }: Props) {
         };
 
         router.post('/articles', data as unknown as Parameters<typeof router.post>[1]);
-    };
-
-    const handleCategoryChange = (categoryId: number) => {
-        const newCategories = formData.categories.includes(categoryId)
-            ? formData.categories.filter(id => id !== categoryId)
-            : [...formData.categories, categoryId];
-        setFormData({ ...formData, categories: newCategories });
-    };
-
-    const handleTagChange = (tagId: number) => {
-        const newTags = formData.selectedTags.includes(tagId)
-            ? formData.selectedTags.filter(id => id !== tagId)
-            : [...formData.selectedTags, tagId];
-        setFormData({ ...formData, selectedTags: newTags });
-    };
-
-    const SidebarSection = ({
-        icon: Icon,
-        title,
-        description,
-        children,
-        defaultOpen = true,
-    }: {
-        icon: React.ElementType;
-        title: string;
-        description?: string;
-        children: React.ReactNode;
-        defaultOpen?: boolean;
-    }) => {
-        const [open, setOpen] = useState(defaultOpen);
-
-        return (
-            <Card className="overflow-hidden">
-                <button
-                    type="button"
-                    onClick={() => setOpen(!open)}
-                    className="apple-press flex w-full items-center gap-3 p-4 text-left"
-                >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-                        <Icon className="h-4.5 w-4.5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <div className="text-callout font-medium">{title}</div>
-                        {description && (
-                            <div className="text-footnote text-tertiary-label">
-                                {description}
-                            </div>
-                        )}
-                    </div>
-                    <ChevronRight
-                        className={`h-5 w-5 text-tertiary-label transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
-                    />
-                </button>
-                <div
-                    className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
-                >
-                    <div className="overflow-hidden">
-                        <CardContent className="border-t border-border/40">
-                            {children}
-                        </CardContent>
-                    </div>
-                </div>
-            </Card>
-        );
     };
 
     return (
@@ -193,19 +182,19 @@ export default function CreateArticle({ categories, tags }: Props) {
                     {/* Editor area */}
                     <div className="flex min-w-0 flex-1 flex-col gap-4">
                         {/* Title card (floating paper) */}
-                        <Card className="overflow-hidden">
+                        <Card className="overflow-hidden py-0 gap-0">
                             <CardContent className="!p-0">
-                                <div className="border-b-0 px-6 pt-6 pb-2">
-                                    <Input
+                                <div className="border-b-0 px-8 pt-8 pb-3">
+                                    <input
                                         ref={titleRef}
                                         type="text"
                                         placeholder={t('articles.form.titlePlaceholder')}
                                         value={formData.title}
                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                        className="text-title-2 h-auto font-semibold border-none bg-transparent focus-visible:ring-0 px-0 py-2 tracking-tight placeholder:text-tertiary-label"
+                                        className="w-full border-none bg-transparent px-0 py-0 text-3xl font-semibold leading-[1.15] tracking-[-0.02em] outline-none placeholder:text-tertiary-label/50 selection:bg-primary/20"
                                     />
                                 </div>
-                                <div className="px-6 pb-6 pt-2">
+                                <div className="px-8 pb-8 pt-3">
                                     <BlockNoteEditor
                                         initialContent={formData.content}
                                         onChange={(document) => setFormData({ ...formData, content: document })}
@@ -240,7 +229,7 @@ export default function CreateArticle({ categories, tags }: Props) {
                     <div
                         className={
                             sidebarOpen
-                                ? 'flex w-full shrink-0 flex-col gap-3 transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] lg:w-80'
+                                ? 'flex w-full shrink-0 flex-col gap-3 transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] lg:w-72'
                                 : 'hidden w-0 shrink-0'
                         }
                     >
@@ -303,26 +292,11 @@ export default function CreateArticle({ categories, tags }: Props) {
                             title={t('articles.form.categories')}
                             description={`已选 ${formData.categories.length} 个`}
                         >
-                            <div className="flex flex-col gap-1.5 max-h-60 overflow-y-auto pr-1">
-                                {categories.length === 0 ? (
-                                    <p className="text-callout text-tertiary-label">
-                                        {t('articles.form.noCategories')}
-                                    </p>
-                                ) : (
-                                    categories.map((category) => (
-                                        <label
-                                            key={category.id}
-                                            className="apple-press flex items-center gap-2.5 cursor-pointer rounded-xl px-2 py-2 hover:bg-accent/60"
-                                        >
-                                            <Checkbox
-                                                checked={formData.categories.includes(category.id)}
-                                                onCheckedChange={() => handleCategoryChange(category.id)}
-                                            />
-                                            <span className="text-callout">{category.name}</span>
-                                        </label>
-                                    ))
-                                )}
-                            </div>
+                            <CategoryPicker
+                                items={categories as CategoryItem[]}
+                                selected={formData.categories}
+                                onChange={(next) => setFormData({ ...formData, categories: next })}
+                            />
                         </SidebarSection>
 
                         <SidebarSection
@@ -330,26 +304,11 @@ export default function CreateArticle({ categories, tags }: Props) {
                             title={t('articles.form.tags')}
                             description={`已选 ${formData.selectedTags.length} 个`}
                         >
-                            <div className="flex flex-col gap-1.5 max-h-60 overflow-y-auto pr-1">
-                                {tags.length === 0 ? (
-                                    <p className="text-callout text-tertiary-label">
-                                        {t('articles.form.noTags')}
-                                    </p>
-                                ) : (
-                                    tags.map((tag) => (
-                                        <label
-                                            key={tag.id}
-                                            className="apple-press flex items-center gap-2.5 cursor-pointer rounded-xl px-2 py-2 hover:bg-accent/60"
-                                        >
-                                            <Checkbox
-                                                checked={formData.selectedTags.includes(tag.id)}
-                                                onCheckedChange={() => handleTagChange(tag.id)}
-                                            />
-                                            <span className="text-callout">#{tag.name}</span>
-                                        </label>
-                                    ))
-                                )}
-                            </div>
+                            <TagPicker
+                                items={tags as TagItem[]}
+                                selected={formData.selectedTags}
+                                onChange={(next) => setFormData({ ...formData, selectedTags: next })}
+                            />
                         </SidebarSection>
 
                         <SidebarSection
