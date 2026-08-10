@@ -152,18 +152,18 @@ export default function EditPage({ page }: Props) {
                     {/* Editor area */}
                     <div className="flex min-w-0 flex-1 flex-col gap-4">
                         {/* Title card (floating paper) */}
-                        <Card className="overflow-hidden">
+                        <Card className="overflow-hidden py-0 gap-0">
                             <CardContent className="!p-0">
-                                <div className="border-b-0 px-6 pt-6 pb-2">
-                                    <Input
+                                <div className="border-b-0 px-8 pt-8 pb-3">
+                                    <input
                                         type="text"
                                         placeholder={t('pages.form.titlePlaceholder')}
                                         value={formData.title}
                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                        className="text-title-2 h-auto font-semibold border-none bg-transparent focus-visible:ring-0 px-0 py-2 tracking-tight placeholder:text-muted-foreground/50"
+                                        className="w-full border-none bg-transparent px-0 py-0 text-3xl font-semibold leading-[1.15] tracking-[-0.02em] outline-none placeholder:text-tertiary-label/50 selection:bg-primary/20"
                                     />
                                 </div>
-                                <div className="px-6 pb-6 pt-2">
+                                <div className="px-8 pb-8 pt-3">
                                     <BlockNoteEditor
                                         initialContent={formData.content}
                                         onChange={(document) => setFormData({ ...formData, content: document })}
