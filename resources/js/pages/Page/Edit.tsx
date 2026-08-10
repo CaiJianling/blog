@@ -35,6 +35,58 @@ interface Props {
     page: PageData;
 }
 
+function SidebarSection({
+    icon: Icon,
+    title,
+    description,
+    children,
+    defaultOpen = true,
+}: {
+    icon: React.ElementType;
+    title: string;
+    description?: string;
+    children: React.ReactNode;
+    defaultOpen?: boolean;
+}) {
+    const [open, setOpen] = useState(defaultOpen);
+
+    return (
+        <Card className="overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="apple-press flex w-full items-center gap-2.5 px-3 py-2 text-left"
+            >
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
+                    <Icon className="h-3 w-3" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-callout font-medium">{title}</span>
+                        {description && (
+                            <span className="truncate text-xs text-tertiary-label">
+                                {description}
+                            </span>
+                        )}
+                    </div>
+                </div>
+                <ChevronRight
+                    className={`h-3.5 w-3.5 shrink-0 text-tertiary-label transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+                />
+            </button>
+            <div
+                className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}
+            >
+                <div className="overflow-hidden">
+                    <div className="border-t border-border/40 px-3 py-2.5">
+                        {children}
+                    </div>
+                </div>
+            </div>
+        </Card>
+    );
+}
+
 export default function EditPage({ page }: Props) {
     const { t } = useTranslation();
     const [formData, setFormData] = useState({
@@ -58,56 +110,6 @@ export default function EditPage({ page }: Props) {
         };
 
         router.put(`/pages/${page.id}`, data as unknown as Parameters<typeof router.put>[1]);
-    };
-
-    const SidebarSection = ({
-        icon: Icon,
-        title,
-        description,
-        children,
-        defaultOpen = true,
-    }: {
-        icon: React.ElementType;
-        title: string;
-        description?: string;
-        children: React.ReactNode;
-        defaultOpen?: boolean;
-    }) => {
-        const [open, setOpen] = useState(defaultOpen);
-
-        return (
-            <Card className="overflow-hidden">
-                <button
-                    type="button"
-                    onClick={() => setOpen(!open)}
-                    className="apple-press flex w-full items-center gap-3 p-4 text-left"
-                >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-                        <Icon className="h-[18px] w-[18px]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <div className="text-callout font-medium">{title}</div>
-                        {description && (
-                            <div className="text-footnote text-muted-foreground">
-                                {description}
-                            </div>
-                        )}
-                    </div>
-                    <ChevronRight
-                        className={`h-5 w-5 text-muted-foreground/50 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
-                    />
-                </button>
-                <div
-                    className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
-                >
-                    <div className="overflow-hidden">
-                        <CardContent className="border-t border-border/40">
-                            {children}
-                        </CardContent>
-                    </div>
-                </div>
-            </Card>
-        );
     };
 
     return (
@@ -177,7 +179,7 @@ export default function EditPage({ page }: Props) {
                     <div
                         className={
                             sidebarOpen
-                                ? 'flex w-full shrink-0 flex-col gap-3 transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] lg:w-80'
+                                ? 'flex w-full shrink-0 flex-col gap-3 transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] lg:w-72'
                                 : 'hidden w-0 shrink-0'
                         }
                     >
