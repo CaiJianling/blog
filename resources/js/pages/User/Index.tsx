@@ -6,10 +6,11 @@ import {
     Search,
     X,
     Users,
+    Loader2,
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { useEffects } from '@/hooks/use-effects';
 import { useTranslation } from 'react-i18next';
+import { LiquidSwitch } from '@/components/LiquidGlass/LiquidSwitch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,8 +31,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { LiquidSwitch } from '@/components/LiquidGlass/LiquidSwitch';
 import {
     Table,
     TableBody,
@@ -40,13 +47,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { useEffects } from '@/hooks/use-effects';
 
 type UserRole = 'subscriber' | 'contributor' | 'author' | 'editor' | 'administrator';
 
@@ -91,6 +92,7 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
         if (flash?.error) {
             console.error('Error:', flash.error);
         }
+
         if (flash?.success) {
             console.log('Success:', flash.success);
         }
@@ -108,6 +110,10 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
         role: 'subscriber' as UserRole,
         is_active: true,
     });
+    const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
+    const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+    const [isCreateSubmitting, setIsCreateSubmitting] = useState(false);
+    const [isEditSubmitting, setIsEditSubmitting] = useState(false);
     const [localUsers, setLocalUsers] = useState(serverUsers);
 
     useEffect(() => {
@@ -136,6 +142,7 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                 />
             );
         }
+
         return (
             <Switch
                 checked={checked}
@@ -188,6 +195,13 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
             role: 'subscriber',
             is_active: true,
         });
+        setEditErrors({});
+    };
+
+    const handleEditDialogOpenChange = (open: boolean) => {
+        if (!open && !isEditSubmitting) {
+            closeEditDialog();
+        }
     };
 
     const openCreateDialog = () => {
@@ -198,6 +212,7 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
             role: 'subscriber',
             is_active: true,
         });
+        setCreateErrors({});
         setIsCreateDialogOpen(true);
     };
 
@@ -210,21 +225,41 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
             role: 'subscriber',
             is_active: true,
         });
+        setCreateErrors({});
+    };
+
+    const handleCreateDialogOpenChange = (open: boolean) => {
+        if (!open && !isCreateSubmitting) {
+            closeCreateDialog();
+        }
     };
 
     const handleEditSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (editingUser) {
+            setEditErrors({});
             router.put(`/users/${editingUser.id}`, form, {
+                onStart: () => setIsEditSubmitting(true),
+                onFinish: () => setIsEditSubmitting(false),
                 onSuccess: () => closeEditDialog(),
+                onError: (errors) => {
+                    setEditErrors(errors as Record<string, string>);
+                },
             });
         }
     };
 
     const handleCreateSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setCreateErrors({});
         router.post('/users', form, {
+            onStart: () => setIsCreateSubmitting(true),
+            onFinish: () => setIsCreateSubmitting(false),
             onSuccess: () => closeCreateDialog(),
+            onError: (errors) => {
+                setCreateErrors(errors as Record<string, string>);
+            },
         });
     };
 
@@ -528,7 +563,7 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                 </Card>
             </div>
 
-            <Dialog open={isCreateDialogOpen} onOpenChange={closeCreateDialog}>
+            <Dialog open={isCreateDialogOpen} onOpenChange={handleCreateDialogOpenChange}>
                 <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>
@@ -553,6 +588,11 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                     }
                                     required
                                 />
+                                {createErrors.name && (
+                                    <p className="mt-1 text-sm text-destructive">
+                                        {createErrors.name}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <Label htmlFor="create-email">
@@ -567,6 +607,11 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                     }
                                     required
                                 />
+                                {createErrors.email && (
+                                    <p className="mt-1 text-sm text-destructive">
+                                        {createErrors.email}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <Label htmlFor="create-password">
@@ -584,6 +629,11 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                     }
                                     required
                                 />
+                                {createErrors.password && (
+                                    <p className="mt-1 text-sm text-destructive">
+                                        {createErrors.password}
+                                    </p>
+                                )}
                             </div>
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="create-role" className="text-right">
@@ -633,18 +683,26 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                 type="button"
                                 variant="outline"
                                 onClick={closeCreateDialog}
+                                disabled={isCreateSubmitting}
                             >
                                 {t('userManagement.cancel')}
                             </Button>
-                            <Button type="submit">
-                                {t('userManagement.createUser')}
+                            <Button type="submit" disabled={isCreateSubmitting}>
+                                {isCreateSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        {t('common.saving')}
+                                    </>
+                                ) : (
+                                    t('userManagement.createUser')
+                                )}
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={isEditDialogOpen} onOpenChange={closeEditDialog}>
+            <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogOpenChange}>
                 <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>
@@ -669,6 +727,11 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                     }
                                     required
                                 />
+                                {editErrors.name && (
+                                    <p className="mt-1 text-sm text-destructive">
+                                        {editErrors.name}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <Label htmlFor="edit-email">
@@ -683,6 +746,11 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                     }
                                     required
                                 />
+                                {editErrors.email && (
+                                    <p className="mt-1 text-sm text-destructive">
+                                        {editErrors.email}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <Label htmlFor="edit-password">
@@ -702,6 +770,11 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                         'userManagement.passwordPlaceholder',
                                     )}
                                 />
+                                {editErrors.password && (
+                                    <p className="mt-1 text-sm text-destructive">
+                                        {editErrors.password}
+                                    </p>
+                                )}
                             </div>
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="edit-role" className="text-right">
@@ -759,11 +832,19 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                 type="button"
                                 variant="outline"
                                 onClick={closeEditDialog}
+                                disabled={isEditSubmitting}
                             >
                                 {t('userManagement.cancel')}
                             </Button>
-                            <Button type="submit">
-                                {t('userManagement.updateUser')}
+                            <Button type="submit" disabled={isEditSubmitting}>
+                                {isEditSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        {t('common.saving')}
+                                    </>
+                                ) : (
+                                    t('userManagement.updateUser')
+                                )}
                             </Button>
                         </DialogFooter>
                     </form>
