@@ -1,14 +1,4 @@
-import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { useTranslation } from 'react-i18next';
-import {
-    Card,
-    CardContent,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BlockNoteEditor, type BlockNoteDocument } from '@/components/blocknote-editor';
 import {
     Save,
     MessageSquare,
@@ -19,6 +9,18 @@ import {
     ChevronRight,
     RefreshCw,
 } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { BlockNoteEditor  } from '@/components/blocknote-editor';
+import type {BlockNoteDocument} from '@/components/blocknote-editor';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { index as pagesIndex } from '@/routes/pages';
 
 interface PageData {
     id: number;
@@ -72,6 +74,7 @@ export default function EditPage({ page }: Props) {
         defaultOpen?: boolean;
     }) => {
         const [open, setOpen] = useState(defaultOpen);
+
         return (
             <Card className="overflow-hidden">
                 <button
@@ -247,3 +250,12 @@ export default function EditPage({ page }: Props) {
         </>
     );
 }
+
+EditPage.layout = {
+    breadcrumbs: [
+        {
+            title: 'pages.editPage',
+            href: pagesIndex().url,
+        },
+    ],
+};

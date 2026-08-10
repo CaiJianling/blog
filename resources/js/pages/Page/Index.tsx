@@ -1,11 +1,10 @@
 import { Head, router } from '@inertiajs/react';
 import { FileText, Eye, Heart, Calendar, Pencil, Plus, Search, Trash2, Send, CheckCircle, FileEdit, Inbox, RotateCcw } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import * as pageActions from '@/actions/App/Http/Controllers/PageController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Card,
     CardContent,
@@ -13,6 +12,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -21,7 +22,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import * as pageActions from '@/actions/App/Http/Controllers/PageController';
+import { index as pagesIndex } from '@/routes/pages';
 
 interface PageItem {
     id: number;
@@ -85,6 +86,7 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                 setShowToolbar(false);
                 setIsExiting(false);
             }, 300);
+
             return () => clearTimeout(timer);
         }
     }, [selectedIds]);
@@ -159,10 +161,11 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                 </div>
 
                 {/* Status Filter Tabs */}
-                <div className="inline-flex items-center gap-1 overflow-x-auto rounded-2xl bg-neutral-200/60 p-1 backdrop-blur-sm dark:bg-neutral-700/60">
+                <div className="inline-flex w-fit items-center gap-1 overflow-x-auto rounded-2xl bg-neutral-200/60 p-1 backdrop-blur-sm dark:bg-neutral-700/60">
                     {STATUS_TABS.map((tab) => {
                         const isActive = currentStatus === tab.key;
                         const count = statusCounts[tab.key as keyof StatusCounts] ?? 0;
+
                         return (
                             <button
                                 key={tab.key}
@@ -379,6 +382,7 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                                 ) : (
                                     pageList.map((page) => {
                                         const isSelected = selectedIds.includes(page.id);
+
                                         return (
                                             <TableRow
                                                 key={page.id}
@@ -481,7 +485,11 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                             disabled={pagePages.current_page === 1}
                             onClick={() => {
                                 const params = new URLSearchParams();
-                                if (currentStatus !== 'all') params.set('status', currentStatus);
+
+                                if (currentStatus !== 'all') {
+params.set('status', currentStatus);
+}
+
                                 params.set('page', String(pagePages.current_page - 1));
                                 router.visit(`/pages?${params.toString()}`, { preserveScroll: true });
                             }}
@@ -497,7 +505,11 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                             disabled={pagePages.current_page === pagePages.last_page}
                             onClick={() => {
                                 const params = new URLSearchParams();
-                                if (currentStatus !== 'all') params.set('status', currentStatus);
+
+                                if (currentStatus !== 'all') {
+params.set('status', currentStatus);
+}
+
                                 params.set('page', String(pagePages.current_page + 1));
                                 router.visit(`/pages?${params.toString()}`, { preserveScroll: true });
                             }}
@@ -510,3 +522,12 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
         </>
     );
 }
+
+PageIndex.layout = {
+    breadcrumbs: [
+        {
+            title: 'pages.allPages',
+            href: pagesIndex().url,
+        },
+    ],
+};

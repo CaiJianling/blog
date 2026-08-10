@@ -1,21 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
 import { Head } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
-import { useTranslation } from 'react-i18next';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { BlockNoteEditor, type BlockNoteDocument } from '@/components/blocknote-editor';
 import {
     FileText,
     Save,
@@ -30,6 +14,24 @@ import {
     Eye,
     ChevronRight,
 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { BlockNoteEditor  } from '@/components/blocknote-editor';
+import type {BlockNoteDocument} from '@/components/blocknote-editor';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { create as articlesCreate } from '@/routes/articles';
 
 interface Category {
     id: number;
@@ -113,6 +115,7 @@ export default function CreateArticle({ categories, tags }: Props) {
         defaultOpen?: boolean;
     }) => {
         const [open, setOpen] = useState(defaultOpen);
+
         return (
             <Card className="overflow-hidden">
                 <button
@@ -367,3 +370,12 @@ export default function CreateArticle({ categories, tags }: Props) {
         </>
     );
 }
+
+CreateArticle.layout = {
+    breadcrumbs: [
+        {
+            title: 'articles.create',
+            href: articlesCreate().url,
+        },
+    ],
+};

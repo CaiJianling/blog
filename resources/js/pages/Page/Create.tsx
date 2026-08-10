@@ -1,15 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
 import { Head } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
-import { useTranslation } from 'react-i18next';
-import {
-    Card,
-    CardContent,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BlockNoteEditor, type BlockNoteDocument } from '@/components/blocknote-editor';
 import {
     Save,
     MessageSquare,
@@ -20,6 +10,18 @@ import {
     Link2,
     ChevronRight,
 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { BlockNoteEditor  } from '@/components/blocknote-editor';
+import type {BlockNoteDocument} from '@/components/blocknote-editor';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { create as pagesCreate } from '@/routes/pages';
 
 export default function CreatePage() {
     const { t } = useTranslation();
@@ -67,6 +69,7 @@ export default function CreatePage() {
         defaultOpen?: boolean;
     }) => {
         const [open, setOpen] = useState(defaultOpen);
+
         return (
             <Card className="overflow-hidden">
                 <button
@@ -243,3 +246,12 @@ export default function CreatePage() {
         </>
     );
 }
+
+CreatePage.layout = {
+    breadcrumbs: [
+        {
+            title: 'pages.create',
+            href: pagesCreate().url,
+        },
+    ],
+};

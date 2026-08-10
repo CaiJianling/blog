@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
+import { tags as articlesTags } from '@/routes/articles';
 import {
     Card,
     CardContent,
@@ -117,3 +118,12 @@ export default function Tags({ tags }: Props) {
         </>
     );
 }
+
+Tags.layout = {
+    breadcrumbs: [
+        {
+            title: 'articles.tags',
+            href: articlesTags().url,
+        },
+    ],
+};

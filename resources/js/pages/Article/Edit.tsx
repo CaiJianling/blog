@@ -1,19 +1,4 @@
-import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { useTranslation } from 'react-i18next';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { BlockNoteEditor, type BlockNoteDocument } from '@/components/blocknote-editor';
 import {
     Save,
     MessageSquare,
@@ -28,6 +13,23 @@ import {
     ChevronRight,
     RefreshCw,
 } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { BlockNoteEditor  } from '@/components/blocknote-editor';
+import type {BlockNoteDocument} from '@/components/blocknote-editor';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { index as articlesIndex } from '@/routes/articles';
 
 interface Category {
     id: number;
@@ -116,6 +118,7 @@ export default function EditArticle({ article, categories, tags, selectedCategor
         defaultOpen?: boolean;
     }) => {
         const [open, setOpen] = useState(defaultOpen);
+
         return (
             <Card className="overflow-hidden">
                 <button
@@ -369,3 +372,12 @@ export default function EditArticle({ article, categories, tags, selectedCategor
         </>
     );
 }
+
+EditArticle.layout = {
+    breadcrumbs: [
+        {
+            title: 'articles.editArticle',
+            href: articlesIndex().url,
+        },
+    ],
+};

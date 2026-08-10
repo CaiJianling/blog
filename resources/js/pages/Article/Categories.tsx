@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
+import { categories as articlesCategories } from '@/routes/articles';
 import {
     Card,
     CardContent,
@@ -117,3 +118,12 @@ export default function Categories({ categories }: Props) {
         </>
     );
 }
+
+Categories.layout = {
+    breadcrumbs: [
+        {
+            title: 'articles.categories',
+            href: articlesCategories().url,
+        },
+    ],
+};
