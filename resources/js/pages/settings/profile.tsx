@@ -68,6 +68,24 @@ export default function Profile({
                             </div>
 
                             <div className="grid gap-2">
+                                <Label htmlFor="nickname">{t('settings.profile.nickname')}</Label>
+
+                                <Input
+                                    id="nickname"
+                                    className="mt-1 block w-full"
+                                    defaultValue={(auth.user.nickname as string) ?? ''}
+                                    name="nickname"
+                                    autoComplete="nickname"
+                                    placeholder={t('settings.profile.nicknamePlaceholder')}
+                                />
+
+                                <InputError
+                                    className="mt-2"
+                                    message={errors.nickname}
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
                                 <Label htmlFor="email">{t('settings.profile.email')}</Label>
 
                                 <Input

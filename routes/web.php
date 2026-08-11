@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\OptionController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\TermTaxonomyController;
 use App\Http\Controllers\UserController;
@@ -50,6 +52,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
     });
 
+    Route::prefix('comments')->group(function () {
+        Route::get('/', [CommentController::class, 'index'])->name('comments.index');
+        Route::post('/batch', [CommentController::class, 'batchUpdate'])->name('comments.batch');
+        Route::put('/{comment}/approve', [CommentController::class, 'approve'])->name('comments.approve');
+        Route::put('/{comment}/reject', [CommentController::class, 'reject'])->name('comments.reject');
+        Route::put('/{comment}/spam', [CommentController::class, 'spam'])->name('comments.spam');
+        Route::put('/{comment}/trash', [CommentController::class, 'trash'])->name('comments.trash');
+        Route::put('/{comment}/restore', [CommentController::class, 'restore'])->name('comments.restore');
+        Route::delete('/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    });
+
     Route::middleware([AdminMiddleware::class])->group(function () {
         Route::resource('users', UserController::class)->names([
             'index' => 'users.index',
@@ -60,6 +73,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'destroy' => 'users.destroy',
         ]);
         Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+
+        Route::get('settings/site', [OptionController::class, 'edit'])->name('site.edit');
+        Route::put('settings/site', [OptionController::class, 'update'])->name('site.update');
+        Route::post('settings/site/site-icon', [OptionController::class, 'uploadSiteIcon'])->name('site.site-icon.store');
+        Route::delete('settings/site/site-icon', [OptionController::class, 'removeSiteIcon'])->name('site.site-icon.destroy');
     });
 });
 

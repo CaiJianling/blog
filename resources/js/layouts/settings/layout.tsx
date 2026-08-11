@@ -19,7 +19,7 @@ import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
 
-const sidebarNavItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
     {
         title: 'settings.sidebar.profile',
         href: edit(),
@@ -54,7 +54,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                         className="flex flex-col space-y-1 space-x-0"
                         aria-label={t('settings.title')}
                     >
-                        {sidebarNavItems.map((item, index) => (
+                        {baseNavItems.map((item, index) => (
                             <Button
                                     key={`${toUrl(item.href)}-${index}`}
                                     size="sm"
