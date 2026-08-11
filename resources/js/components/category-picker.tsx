@@ -1,9 +1,9 @@
-import { router } from '@inertiajs/react';
-import { Search, Plus, X, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { router } from '@inertiajs/react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, Plus, X, Trash2 } from 'lucide-react';
 import { store, destroy } from '@/routes/taxonomies';
 
 export interface CategoryItem {
@@ -26,9 +26,7 @@ export function CategoryPicker({ items, selected, onChange, onChanged }: Props) 
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (adding) {
-inputRef.current?.focus();
-}
+        if (adding) inputRef.current?.focus();
     }, [adding]);
 
     const filtered = search.trim()
@@ -42,11 +40,7 @@ inputRef.current?.focus();
     const addNew = (e: React.FormEvent) => {
         e.preventDefault();
         const name = newName.trim();
-
-        if (!name || busy) {
-return;
-}
-
+        if (!name || busy) return;
         setBusy(true);
         router.post(
             store().url,
@@ -67,11 +61,7 @@ return;
     const remove = (item: CategoryItem, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-
-        if (!window.confirm(`确定要删除分类「${item.name}」吗？`)) {
-return;
-}
-
+        if (!window.confirm(`确定要删除分类「${item.name}」吗？`)) return;
         router.delete(destroy({ termTaxonomy: item.id }).url, {
             preserveScroll: true,
             onSuccess: () => onChanged?.(),
@@ -98,7 +88,6 @@ return;
                 ) : (
                     filtered.map((item) => {
                         const isChecked = selected.includes(item.id);
-
                         return (
                             <div
                                 key={item.id}

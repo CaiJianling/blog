@@ -1,10 +1,6 @@
 import { Head } from '@inertiajs/react';
-import { router } from '@inertiajs/react';
-import { FolderClosed, Pencil, Trash2, Search } from 'lucide-react';
 import { useState } from 'react';
-import type { TaxonomyItem } from '@/components/taxonomy-form';
-import { TaxonomyForm } from '@/components/taxonomy-form';
-import { Button } from '@/components/ui/button';
+import { categories as articlesCategories } from '@/routes/articles';
 import {
     Card,
     CardContent,
@@ -12,9 +8,12 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { categories as articlesCategories } from '@/routes/articles';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { FolderClosed, Pencil, Trash2, Search } from 'lucide-react';
+import { TaxonomyForm, TaxonomyItem } from '@/components/taxonomy-form';
+import { router } from '@inertiajs/react';
 import { destroy } from '@/routes/taxonomies';
 
 interface Props {
@@ -30,10 +29,7 @@ export default function Categories({ categories }: Props) {
     );
 
     const handleDelete = (item: TaxonomyItem) => {
-        if (!window.confirm(`确定要删除分类「${item.name}」吗？`)) {
-return;
-}
-
+        if (!window.confirm(`确定要删除分类「${item.name}」吗？`)) return;
         router.delete(destroy({ termTaxonomy: item.id }).url, {
             preserveScroll: true,
         });
