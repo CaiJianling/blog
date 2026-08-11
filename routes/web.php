@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{article}', [ArticleController::class, 'update'])->name('articles.update');
         Route::put('/{article}/trash', [ArticleController::class, 'trash'])->name('articles.trash');
         Route::put('/{article}/restore', [ArticleController::class, 'restore'])->name('articles.restore');
+        Route::delete('/{article}', [ArticleController::class, 'destroy'])->name('articles.destroy');
         Route::get('/categories', [ArticleController::class, 'categories'])->name('articles.categories');
         Route::get('/tags', [ArticleController::class, 'tags'])->name('articles.tags');
         Route::post('/taxonomies', [TermTaxonomyController::class, 'store'])->name('taxonomies.store');
@@ -38,6 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{page}', [PageController::class, 'update'])->name('pages.update');
         Route::put('/{page}/trash', [PageController::class, 'trash'])->name('pages.trash');
         Route::put('/{page}/restore', [PageController::class, 'restore'])->name('pages.restore');
+        Route::delete('/{page}', [PageController::class, 'destroy'])->name('pages.destroy');
     });
 
     Route::prefix('attachments')->group(function () {

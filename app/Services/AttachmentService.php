@@ -162,7 +162,7 @@ class AttachmentService
      *
      * @param  array{extension:string, mime_type:string, is_image:bool}  $meta
      */
-    public function persistFile(UploadedFile $file, array $meta): Attachment
+    public function persistFile(UploadedFile $file, array $meta, ?string $parentType = null, ?int $parentId = null): Attachment
     {
         $year = now()->format('Y');
         $month = now()->format('m');
@@ -196,6 +196,8 @@ class AttachmentService
             'file_size' => $file->getSize(),
             'width' => $width,
             'height' => $height,
+            'parent_type' => $parentType,
+            'parent_id' => $parentId,
         ]);
     }
 

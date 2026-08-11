@@ -1,6 +1,14 @@
 import { Head, router } from '@inertiajs/react';
 import { FileText, Eye, MessageSquare, Calendar, Pencil, Plus, Search, Trash2, Send, CheckCircle, FileEdit, Inbox, RotateCcw } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 import * as articleActions from '@/actions/App/Http/Controllers/ArticleController';
 import { Badge } from '@/components/ui/badge';
@@ -133,6 +141,20 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
 
     const handleRestore = (id: number) => {
         router.put(`/articles/${id}/restore`, {}, { preserveScroll: true });
+    };
+
+    const [forceDeleteTarget, setForceDeleteTarget] = useState<{ id: number; title: string } | null>(null);
+
+    const handleForceDelete = (id: number, title: string) => {
+        setForceDeleteTarget({ id, title });
+    };
+
+    const executeForceDelete = () => {
+        if (!forceDeleteTarget) return;
+        router.delete(`/articles/${forceDeleteTarget.id}`, {
+            preserveScroll: true,
+            onFinish: () => setForceDeleteTarget(null),
+        });
     };
 
     return (
@@ -497,15 +519,26 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
                                                             <span>{t('articles.edit')}</span>
                                                         </Button>
                                                         {article.status === 'trash' ? (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => handleRestore(article.id)}
-                                                                className="h-8 gap-1.5 pl-2 pr-3 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600 dark:text-emerald-400"
-                                                            >
-                                                                <RotateCcw className="h-4 w-4" />
-                                                                <span>取出回收站</span>
-                                                            </Button>
+                                                            <div className="flex items-center gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleRestore(article.id)}
+                                                                    className="h-8 gap-1.5 pl-2 pr-3 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600 dark:text-emerald-400"
+                                                                >
+                                                                    <RotateCcw className="h-4 w-4" />
+                                                                    <span>取出回收站</span>
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleForceDelete(article.id, article.title)}
+                                                                    className="h-8 gap-1.5 pl-2 pr-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                    <span>永久删除</span>
+                                                                </Button>
+                                                            </div>
                                                         ) : (
                                                             <Button
                                                                 variant="ghost"
@@ -571,6 +604,26 @@ params.set('status', currentStatus);
                     </div>
                 )}
             </div>
+
+            {/* Force delete confirmation dialog */}
+            <Dialog open={!!forceDeleteTarget} onOpenChange={(open) => !open && setForceDeleteTarget(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('articles.deleteConfirmTitle')}</DialogTitle>
+                        <DialogDescription>
+                            {t('articles.deleteConfirmDescription', { title: forceDeleteTarget?.title ?? '' })}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setForceDeleteTarget(null)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button variant="destructive" onClick={executeForceDelete}>
+                            {t('common.confirm')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

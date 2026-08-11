@@ -304,6 +304,9 @@
         "editArticle": "编辑文章",
         "update": "更新文章",
         "toggleSidebar": "展开/收起侧边栏",
+        "moveToTrash": "移至回收站",
+        "deleteConfirmTitle": "确认永久删除",
+        "deleteConfirmDescription": "确定要永久删除文章「{{title}}」吗？此操作无法撤销。",
         "form": {
             "titlePlaceholder": "在此输入标题",
             "contentPlaceholder": "开始写作...",
@@ -343,6 +346,10 @@
         "publish": "发布页面",
         "update": "更新页面",
         "toggleSidebar": "展开/收起侧边栏",
+        "moveToTrash": "移至回收站",
+        "deleteConfirmTitle": "确认永久删除",
+        "deleteConfirmDescription": "确定要永久删除页面「{{title}}」吗？此操作无法撤销。",
+        "moveToTrash": "移至回收站",
         "table": {
             "title": "标题",
             "author": "作者",
@@ -372,7 +379,7 @@
         "title": "媒体",
         "library": "媒体库",
         "addNew": "添加媒体文件",
-        "allMedia": "所有媒体项目",
+        "allMedia": "全部媒体",
         "allTypes": "全部类型",
         "searchPlaceholder": "搜索媒体...",
         "addMedia": "添加媒体文件",
@@ -427,7 +434,15 @@
             "kb": "{{size}} KB",
             "mb": "{{size}} MB",
             "gb": "{{size}} GB"
-        }
+        },
+        "currentArticle": "当前文章",
+        "dropToUpload": "释放即可上传",
+        "dragOrClickToUpload": "拖拽文件到此区域上传，或点击选择",
+        "copyLink": "复制链接",
+        "linkCopied": "链接已复制",
+        "copyFailed": "复制失败",
+        "fetchError": "获取媒体文件失败",
+        "loading": "加载中…"
     },
     "userManagement": {
         "title": "用户管理",

@@ -104,10 +104,14 @@ const TYPE_TABS = [
 ] as const;
 
 function formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) {
+return '0 B';
+}
+
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
+
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
@@ -153,14 +157,25 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
                 handleFilterChange(currentType, searchTerm);
             }
         }, 400);
+
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
     const handleFilterChange = (type: string, search: string = currentSearch, date: string = currentDate) => {
         const params = new URLSearchParams();
-        if (type !== 'all') params.set('type', type);
-        if (search) params.set('search', search);
-        if (date) params.set('date', date);
+
+        if (type !== 'all') {
+params.set('type', type);
+}
+
+        if (search) {
+params.set('search', search);
+}
+
+        if (date) {
+params.set('date', date);
+}
+
         const query = params.toString();
         router.visit(`/attachments${query ? `?${query}` : ''}`, { preserveScroll: true });
     };
@@ -174,7 +189,10 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
     };
 
     const handleDelete = () => {
-        if (!deleteAttachment) return;
+        if (!deleteAttachment) {
+return;
+}
+
         setIsDeleting(true);
         router.delete(`/attachments/${deleteAttachment.id}`, {
             preserveScroll: true,
@@ -205,11 +223,13 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
     const toggleSelection = useCallback((id: number) => {
         setSelectedIds((prev) => {
             const next = new Set(prev);
+
             if (next.has(id)) {
                 next.delete(id);
             } else {
                 next.add(id);
             }
+
             return next;
         });
     }, []);
@@ -341,6 +361,7 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
                                             {availableDates.map((d) => {
                                                 const [y, m] = d.split('-');
                                                 const label = `${y}-${m}`;
+
                                                 return (
                                                     <SelectItem key={d} value={d}>
                                                         {label}
@@ -465,6 +486,7 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
                         {attachmentList.map((attachment) => {
                             const Icon = getFileIcon(attachment.type);
                             const isSelected = selectedIds.has(attachment.id);
+
                             return (
                                 <Card
                                     key={attachment.id}
@@ -571,6 +593,7 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
                                                             attachmentList.every((a) =>
                                                                 selectedIds.has(a.id),
                                                             );
+
                                                         if (allSelected) {
                                                             clearSelection();
                                                         } else {
@@ -616,6 +639,7 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
                                     {attachmentList.map((attachment) => {
                                         const Icon = getFileIcon(attachment.type);
                                         const isSelected = selectedIds.has(attachment.id);
+
                                         return (
                                             <TableRow
                                                 key={attachment.id}
@@ -727,7 +751,7 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
                 open={!!previewAttachment}
                 onOpenChange={(open) => !open && setPreviewAttachment(null)}
             >
-                <DialogContent className="max-h-[90vh] overflow-hidden sm:max-w-2xl">
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle className="line-clamp-1">
                             {previewAttachment?.file_name}
@@ -736,8 +760,8 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
                     </DialogHeader>
                     {previewAttachment && (
                         <div className="flex flex-col gap-4">
-                            {/* Preview Area with delete button overlay */}
-                            <div className="relative flex max-h-[50vh] items-center justify-center overflow-hidden rounded-xl bg-muted">
+                            {/* Preview Area */}
+                            <div className="flex max-h-[50vh] items-center justify-center overflow-hidden rounded-xl bg-muted">
                                 {previewAttachment.thumbnail_url ? (
                                     <img
                                         src={previewAttachment.thumbnail_url}
@@ -748,6 +772,7 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
                                     <div className="flex h-48 w-full flex-col items-center justify-center gap-3 text-muted-foreground">
                                         {(() => {
                                             const Icon = getFileIcon(previewAttachment.type);
+
                                             return <Icon className="h-12 w-12" />;
                                         })()}
                                         <p className="text-footnote">
@@ -755,14 +780,6 @@ export default function MediaIndex({ attachments, typeCounts, currentType, curre
                                         </p>
                                     </div>
                                 )}
-                                {/* 图片上的删除按钮 — 大号显眼 */}
-                                <button
-                                    onClick={() => handleDeleteFromPreview(previewAttachment)}
-                                    className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/30 transition-all hover:bg-red-600 hover:scale-110"
-                                    aria-label={t('media.delete')}
-                                >
-                                    <Trash2 className="h-5 w-5" />
-                                </button>
                             </div>
 
                             {/* Details */}

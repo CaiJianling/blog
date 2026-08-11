@@ -21,6 +21,8 @@ class AttachmentController extends Controller
         $type = $request->query('type', 'all');
         $search = $request->query('search', '');
         $date = $request->query('date', '');
+        $parentType = $request->query('parent_type', '');
+        $parentId = $request->query('parent_id', '');
 
         $query = Attachment::with('author')->orderBy('created_at', 'desc');
 
@@ -40,6 +42,11 @@ class AttachmentController extends Controller
             [$year, $month] = explode('-', $date);
             $query->whereYear('created_at', $year)
                 ->whereMonth('created_at', $month);
+        }
+
+        if ($parentType !== '' && $parentId !== '') {
+            $query->where('parent_type', $parentType)
+                ->where('parent_id', (int) $parentId);
         }
 
         /** @var FilesystemAdapter $publicDisk */
@@ -73,6 +80,18 @@ class AttachmentController extends Controller
                     ->where('mime_type', 'not like', 'video/%');
             })->count(),
         ];
+
+        // 非 Inertia 的 AJAX 请求返回 JSON（供 media-quick-upload 等组件 fetch 使用）
+        // Inertia 页面导航也会带 X-Requested-With，必须排除 X-Inertia 头
+        if (! $request->header('X-Inertia') && ($request->expectsJson() || $request->ajax())) {
+            return response()->json([
+                'data' => $attachments->items(),
+                'current_page' => $attachments->currentPage(),
+                'last_page' => $attachments->lastPage(),
+                'per_page' => $attachments->perPage(),
+                'total' => $attachments->total(),
+            ]);
+        }
 
         // 可用的年月列表（从数据库中查询所有附件的年月去重，降序排列）
         $availableDates = Attachment::selectRaw('strftime("%Y-%m", created_at) as date')
@@ -122,12 +141,20 @@ class AttachmentController extends Controller
 
         $errors = [];
 
+        $parentType = $request->input('parent_type', '');
+        $parentId = $request->input('parent_id', '');
+
         foreach ($files as $index => $file) {
             try {
                 // 三重校验
                 $meta = $this->attachments->validateUploadedFile($file);
                 // 持久化（uploads/YYYY/MM/xxx.ext）
-                $this->attachments->persistFile($file, $meta);
+                $this->attachments->persistFile(
+                    $file,
+                    $meta,
+                    $parentType !== '' ? $parentType : null,
+                    $parentId !== '' ? (int) $parentId : null
+                );
             } catch (\RuntimeException $e) {
                 $displayName = $file->getClientOriginalName() ?: "文件索引 {$index}";
                 $errors[] = "{$displayName}：{$e->getMessage()}";

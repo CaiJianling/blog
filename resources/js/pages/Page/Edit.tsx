@@ -8,11 +8,13 @@ import {
     Link2,
     ChevronRight,
     RefreshCw,
+    Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BlockNoteEditor  } from '@/components/blocknote-editor';
 import type {BlockNoteDocument} from '@/components/blocknote-editor';
+import MediaQuickUpload from '@/components/media-quick-upload';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -112,6 +114,10 @@ export default function EditPage({ page }: Props) {
         router.put(`/pages/${page.id}`, data as unknown as Parameters<typeof router.put>[1]);
     };
 
+    const handleTrash = (id: number) => {
+        router.put(`/pages/${id}/trash`, {}, { preserveScroll: true });
+    };
+
     return (
         <>
             <Head title={t('pages.editPage')} />
@@ -146,6 +152,9 @@ export default function EditPage({ page }: Props) {
                             <RefreshCw className="h-4 w-4" />
                             {t('pages.update')}
                         </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleTrash(page.id)} title={t('pages.moveToTrash')} className="h-10 w-10 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                            <Trash2 className="h-[18px] w-[18px]" />
+                        </Button>
                     </div>
                 </div>
 
@@ -173,6 +182,9 @@ export default function EditPage({ page }: Props) {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Media library for this page */}
+                        <MediaQuickUpload parentType="page" parentId={page.id} />
                     </div>
 
                     {/* Settings sidebar */}

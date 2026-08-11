@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use App\Models\Term;
-use App\Models\TermTaxonomy;
 use App\Models\TermRelationship;
+use App\Models\TermTaxonomy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -121,7 +120,7 @@ class ArticleController extends Controller
             'comment_status' => $validated['comment_status'],
         ]);
 
-        if (!empty($validated['categories'])) {
+        if (! empty($validated['categories'])) {
             foreach ($validated['categories'] as $taxonomyId) {
                 TermRelationship::create([
                     'object_id' => $article->id,
@@ -131,7 +130,7 @@ class ArticleController extends Controller
             }
         }
 
-        if (!empty($validated['tags'])) {
+        if (! empty($validated['tags'])) {
             foreach ($validated['tags'] as $taxonomyId) {
                 TermRelationship::create([
                     'object_id' => $article->id,
@@ -318,6 +317,16 @@ class ArticleController extends Controller
     public function restore(Article $article)
     {
         $article->update(['status' => 'draft']);
+
+        return redirect()->back();
+    }
+
+    /**
+     * 永久删除文章（仅限回收站中的）。
+     */
+    public function destroy(Article $article)
+    {
+        $article->delete();
 
         return redirect()->back();
     }

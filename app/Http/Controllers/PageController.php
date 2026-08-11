@@ -144,4 +144,14 @@ class PageController extends Controller
 
         return redirect()->back();
     }
+
+    /**
+     * 永久删除页面（仅限回收站中的）。
+     */
+    public function destroy(Page $page)
+    {
+        $page->delete();
+
+        return redirect()->back();
+    }
 }

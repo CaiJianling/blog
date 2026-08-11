@@ -18,6 +18,7 @@ import { BlockNoteEditor  } from '@/components/blocknote-editor';
 import type {BlockNoteDocument} from '@/components/blocknote-editor';
 import type { CategoryItem } from '@/components/category-picker';
 import { CategoryPicker } from '@/components/category-picker';
+import MediaQuickUpload from '@/components/media-quick-upload';
 import type { TagItem } from '@/components/tag-picker';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
@@ -202,6 +203,9 @@ export default function EditArticle({ article, categories, tags, selectedCategor
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Quick media upload */}
+                        <MediaQuickUpload parentType="article" parentId={article.id} />
                     </div>
 
                     {/* Settings sidebar */}

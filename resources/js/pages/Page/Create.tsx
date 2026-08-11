@@ -14,6 +14,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BlockNoteEditor  } from '@/components/blocknote-editor';
 import type {BlockNoteDocument} from '@/components/blocknote-editor';
+import MediaQuickUpload from '@/components/media-quick-upload';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -22,6 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { create as pagesCreate } from '@/routes/pages';
+
 
 function SidebarSection({
     icon: Icon,
@@ -169,6 +171,9 @@ export default function CreatePage() {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Quick media upload — only "All Media" before draft is saved */}
+                        <MediaQuickUpload parentType="page" />
                     </div>
 
                     {/* Settings sidebar */}

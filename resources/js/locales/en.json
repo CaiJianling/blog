@@ -304,6 +304,9 @@
         "editArticle": "Edit Article",
         "update": "Update Article",
         "toggleSidebar": "Toggle sidebar",
+        "moveToTrash": "Move to Trash",
+        "deleteConfirmTitle": "Confirm Permanent Delete",
+        "deleteConfirmDescription": "Are you sure you want to permanently delete the article \"{{title}}\"? This action cannot be undone.",
         "form": {
             "titlePlaceholder": "Enter title here",
             "contentPlaceholder": "Start writing...",
@@ -343,6 +346,10 @@
         "publish": "Publish Page",
         "update": "Update Page",
         "toggleSidebar": "Toggle sidebar",
+        "moveToTrash": "Move to Trash",
+        "deleteConfirmTitle": "Confirm Permanent Delete",
+        "deleteConfirmDescription": "Are you sure you want to permanently delete the page \"{{title}}\"? This action cannot be undone.",
+        "moveToTrash": "Move to Trash",
         "table": {
             "title": "Title",
             "author": "Author",
@@ -372,7 +379,7 @@
         "title": "Media",
         "library": "Media Library",
         "addNew": "Add Media",
-        "allMedia": "All Media Items",
+        "allMedia": "All Media",
         "allTypes": "All Types",
         "searchPlaceholder": "Search media...",
         "addMedia": "Add Media",
@@ -427,7 +434,15 @@
             "kb": "{{size}} KB",
             "mb": "{{size}} MB",
             "gb": "{{size}} GB"
-        }
+        },
+        "currentArticle": "Current Article",
+        "dropToUpload": "Drop to upload",
+        "dragOrClickToUpload": "Drag files here or click to select",
+        "copyLink": "Copy Link",
+        "linkCopied": "Link copied",
+        "copyFailed": "Copy failed",
+        "fetchError": "Failed to fetch media files",
+        "loading": "Loading…"
     },
     "userManagement": {
         "title": "User Management",
