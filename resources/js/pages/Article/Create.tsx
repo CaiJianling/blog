@@ -10,7 +10,7 @@ import {
     Folder,
     Settings2,
     Link2,
-    Eye,
+    FileText,
     ChevronRight,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
@@ -25,9 +25,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -202,27 +199,6 @@ export default function CreateArticle({ categories, tags }: Props) {
                                 </div>
                             </CardContent>
                         </Card>
-
-                        {/* Excerpt */}
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="flex items-center gap-2">
-                                    <Eye className="h-5 w-5 text-primary" />
-                                    {t('articles.form.excerpt')}
-                                </CardTitle>
-                                <CardDescription>
-                                    {t('articles.form.excerptDescription')}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Textarea
-                                    placeholder={t('articles.form.excerptPlaceholder')}
-                                    value={formData.excerpt}
-                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, excerpt: e.target.value })}
-                                    className="min-h-[100px] resize-y"
-                                />
-                            </CardContent>
-                        </Card>
                     </div>
 
                     {/* Settings sidebar */}
@@ -257,6 +233,19 @@ export default function CreateArticle({ categories, tags }: Props) {
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
+                        </SidebarSection>
+
+                        <SidebarSection
+                            icon={FileText}
+                            title={t('articles.form.excerpt')}
+                            description={t('articles.form.excerptDescription')}
+                        >
+                            <Textarea
+                                placeholder={t('articles.form.excerptPlaceholder')}
+                                value={formData.excerpt}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, excerpt: e.target.value })}
+                                className="min-h-[80px] resize-y"
+                            />
                         </SidebarSection>
 
                         <SidebarSection
