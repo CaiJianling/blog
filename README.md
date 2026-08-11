@@ -25,7 +25,18 @@
 - 文章列表：状态快捷筛选（全部、已发布、待审核、草稿、回收站）
 - 批量操作：多选后批量发布、审核、移至草稿箱、移至回收站
 - 富文本编辑：BlockNote 编辑器，支持 i18n（中/英文切换）
-- 分类与标签管理
+- 创建/编辑页面：Apple 风格无框大标题输入，紧凑型侧边栏（发布、分类、标签、缩略图、摘要）
+- 分类与标签：独立管理页，支持创建/编辑/删除，内联表单交互
+
+### 页面管理
+- 独立页面（Page）：区别于文章的独立内容类型
+- 页面列表：与文章相同的工作流（发布、待审核、草稿、回收站）
+- 创建/编辑：共享文章编辑器组件，一致的 Apple 设计风格
+
+### 媒体库
+- 附件上传：支持拖拽/点击上传图片和文件
+- 媒体浏览：网格/列表视图切换，缩略图预览
+- 附件管理：复制链接、查看详情、删除操作
 
 ### 用户管理
 - 用户列表：搜索、状态/角色筛选
@@ -42,16 +53,25 @@
 - 液态玻璃开关（LiquidSwitch）：基于 SVG displacement map 实现的真实液态变形效果
 - 毛玻璃材质（material-thick / material-standard）：分层背景模糊
 - Apple 风格动画：弹窗中心缩放进出、按钮按压反馈、斑马纹表格
+- 侧边栏折叠面板：Apple 风格紧凑型手风琴（chevron 旋转、弹性展开动画）
 
 ## 项目结构
 
 ```
 blog/
 ├── app/
-│   └── Http/Controllers/
-│       ├── ArticleController.php      # 文章 CRUD + 批量操作
-│       ├── UserController.php         # 用户管理 + 状态切换
-│       └── Settings/                  # 个人资料 & 安全设置
+│   ├── Http/Controllers/
+│   │   ├── ArticleController.php      # 文章 CRUD + 批量操作
+│   │   ├── AttachmentController.php   # 附件上传/浏览/删除
+│   │   ├── PageController.php         # 独立页面 CRUD
+│   │   ├── TermTaxonomyController.php # 分类与标签 API
+│   │   ├── UserController.php         # 用户管理 + 状态切换
+│   │   └── Settings/                  # 个人资料 & 安全设置
+│   ├── Models/
+│   │   ├── Attachment.php             # 附件模型
+│   │   └── Page.php                   # 独立页面模型
+│   └── Services/
+│       └── AttachmentService.php      # 附件存储服务
 ├── resources/
 │   ├── css/
 │   │   └── app.css                   # Apple 设计令牌（CSS 变量）
@@ -61,7 +81,12 @@ blog/
 │       │   ├── ui/                    # 基础 UI 组件（dialog、button、table 等）
 │       │   ├── blocknote-editor.tsx   # BlockNote 富文本编辑器
 │       │   ├── appearance-tabs.tsx    # 主题切换分段控制器
-│       │   └── language-toggle.tsx    # 语言切换分段控制器
+│       │   ├── language-toggle.tsx    # 语言切换分段控制器
+│       │   ├── nav-main.tsx           # 侧边栏主导航
+│       │   ├── app-sidebar.tsx        # 侧边栏布局
+│       │   ├── category-picker.tsx    # 分类选择器
+│       │   ├── tag-picker.tsx         # 标签选择器（悬停删除）
+│       │   └── taxonomy-form.tsx      # 分类/标签内联创建表单
 │       ├── hooks/
 │       │   ├── use-appearance.tsx     # 主题模式管理
 │       │   ├── use-effects.tsx        # 特效开关管理
@@ -72,12 +97,18 @@ blog/
 │       │   └── auth/                  # 认证页布局
 │       └── pages/
 │           ├── Article/               # 文章列表/创建/编辑/分类/标签
+│           ├── Page/                  # 页面列表/创建/编辑
+│           ├── Media/                 # 媒体库上传/浏览
 │           ├── User/                  # 用户管理
 │           ├── settings/              # 资料/安全/外观
 │           ├── auth/                  # 登录/注册/2FA/忘记密码
 │           └── dashboard.tsx          # 仪表盘
 ├── routes/
 │   └── web.php
+├── tests/
+│   ├── Feature/
+│   │   ├── AttachmentControllerTest.php
+│   │   └── TermTaxonomyControllerTest.php
 ├── composer.json
 └── package.json
 ```
