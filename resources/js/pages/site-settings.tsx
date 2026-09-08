@@ -38,6 +38,35 @@ interface Props {
 const PRESET_DATE_FORMATS = ['Y年n月j日', 'Y-m-d', 'm/d/Y', 'd/m/Y', 'd.m.Y'];
 const PRESET_TIME_FORMATS = ['ag:i', 'H:i'];
 
+/**
+ * 按 PHP date() 格式串实时渲染预览。
+ * 支持常用字符：Y y m n d j H G h g i s a A
+ * a/A 在中文习惯显示为「上午/下午」，其余字符原样输出。
+ */
+function formatPhpDate(format: string, date: Date): string {
+    const hour = date.getHours();
+    const twelve = ((hour + 11) % 12) + 1;
+    const isAm = hour < 12;
+    const map: Record<string, string> = {
+        Y: String(date.getFullYear()),
+        y: String(date.getFullYear()).slice(-2),
+        m: String(date.getMonth() + 1).padStart(2, '0'),
+        n: String(date.getMonth() + 1),
+        d: String(date.getDate()).padStart(2, '0'),
+        j: String(date.getDate()),
+        H: String(hour).padStart(2, '0'),
+        G: String(hour),
+        h: String(twelve).padStart(2, '0'),
+        g: String(twelve),
+        i: String(date.getMinutes()).padStart(2, '0'),
+        s: String(date.getSeconds()).padStart(2, '0'),
+        a: isAm ? '上午' : '下午',
+        A: isAm ? 'AM' : 'PM',
+    };
+
+    return format.replace(/[YymndjHGhgisaA]/g, (ch) => map[ch] ?? ch);
+}
+
 export default function Site({
     options,
     site_icon,
@@ -50,6 +79,8 @@ export default function Site({
 }: Props) {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const customDateRef = useRef<HTMLInputElement>(null);
+    const customTimeRef = useRef<HTMLInputElement>(null);
     const [uploadingIcon, setUploadingIcon] = useState(false);
     const [currentIcon, setCurrentIcon] = useState<IconItem>(site_icon);
 
@@ -58,22 +89,24 @@ export default function Site({
     const isInitialDateCustom = !PRESET_DATE_FORMATS.includes(initialDateFormat);
     const isInitialTimeCustom = !PRESET_TIME_FORMATS.includes(initialTimeFormat);
 
-    const [dateFormat, setDateFormat] = useState(initialDateFormat);
-    const [customDateFormat, setCustomDateFormat] = useState(
-        isInitialDateCustom ? initialDateFormat : '',
+    // 「选中哪一项」与「自定义文本」分离，避免自定义值与预设冲突导致选项回弹
+    const [dateChoice, setDateChoice] = useState<string>(
+        isInitialDateCustom ? 'custom' : initialDateFormat,
     );
-    const [timeFormat, setTimeFormat] = useState(initialTimeFormat);
-    const [customTimeFormat, setCustomTimeFormat] = useState(
-        isInitialTimeCustom ? initialTimeFormat : '',
+    const [customDate, setCustomDate] = useState(isInitialDateCustom ? initialDateFormat : '');
+    const [timeChoice, setTimeChoice] = useState<string>(
+        isInitialTimeCustom ? 'custom' : initialTimeFormat,
     );
+    const [customTime, setCustomTime] = useState(isInitialTimeCustom ? initialTimeFormat : '');
     const [membership, setMembership] = useState(options.membership === '1');
     const [defaultRole, setDefaultRole] = useState(options.default_role ?? 'subscriber');
     const [siteLanguage, setSiteLanguage] = useState(options.site_language ?? 'zh');
     const [timezone, setTimezone] = useState(options.timezone ?? 'Asia/Shanghai');
     const [startOfWeek, setStartOfWeek] = useState(options.start_of_week ?? '1');
 
-    const isCustomDate = !PRESET_DATE_FORMATS.includes(dateFormat);
-    const isCustomTime = !PRESET_TIME_FORMATS.includes(timeFormat);
+    const effectiveDateFormat = dateChoice === 'custom' ? customDate : dateChoice;
+    const effectiveTimeFormat = timeChoice === 'custom' ? customTime : timeChoice;
+    const previewNow = new Date();
 
     const getCsrfToken = (): { headerName: string; value: string } | null => {
         const meta = document
@@ -194,8 +227,8 @@ export default function Site({
                             <input type="hidden" name="site_language" value={siteLanguage} />
                             <input type="hidden" name="timezone" value={timezone} />
                             <input type="hidden" name="start_of_week" value={startOfWeek} />
-                            <input type="hidden" name="date_format" value={dateFormat} />
-                            <input type="hidden" name="time_format" value={timeFormat} />
+                            <input type="hidden" name="date_format" value={effectiveDateFormat} />
+                            <input type="hidden" name="time_format" value={effectiveTimeFormat} />
 
                             {/* General section */}
                             <div className="space-y-6">
@@ -443,7 +476,7 @@ export default function Site({
                                                 key={fmt.value}
                                                 className={cn(
                                                     'flex cursor-pointer items-center justify-between rounded-lg border border-border/60 px-3 py-2 transition-all',
-                                                    dateFormat === fmt.value && !isCustomDate
+                                                    dateChoice === fmt.value
                                                         ? 'bg-accent ring-1 ring-primary'
                                                         : 'hover:bg-muted/50',
                                                 )}
@@ -453,13 +486,10 @@ export default function Site({
                                                         type="radio"
                                                         name="date_format_preset"
                                                         value={fmt.value}
-                                                        checked={dateFormat === fmt.value && !isCustomDate}
-                                                        onChange={() => {
-                                                            setDateFormat(fmt.value);
-                                                            setCustomDateFormat('');
-                                                        }}
+                                                        checked={dateChoice === fmt.value}
+                                                        onChange={() => setDateChoice(fmt.value)}
                                                     />
-                                                    <span className="text-sm">{fmt.example}</span>
+                                                    <span className="text-sm">{formatPhpDate(fmt.value, previewNow)}</span>
                                                 </div>
                                                 <code className="text-xs text-muted-foreground">{fmt.value}</code>
                                             </label>
@@ -467,7 +497,7 @@ export default function Site({
                                         <label
                                             className={cn(
                                                 'flex cursor-pointer items-center justify-between rounded-lg border border-border/60 px-3 py-2 transition-all',
-                                                isCustomDate
+                                                dateChoice === 'custom'
                                                     ? 'bg-accent ring-1 ring-primary'
                                                     : 'hover:bg-muted/50',
                                             )}
@@ -477,35 +507,36 @@ export default function Site({
                                                     type="radio"
                                                     name="date_format_preset"
                                                     value="custom"
-                                                    checked={isCustomDate}
+                                                    checked={dateChoice === 'custom'}
                                                     onChange={() => {
-                                                        const next = customDateFormat || 'Y年n月j日';
-                                                        setCustomDateFormat(next);
-                                                        setDateFormat(next);
+                                                        setDateChoice('custom');
+                                                        if (!customDate) {
+                                                            setCustomDate('Y年n月j日');
+                                                        }
+                                                        setTimeout(() => customDateRef.current?.focus(), 0);
                                                     }}
                                                 />
                                                 <span className="text-sm">{t('settings.site.custom')}</span>
                                             </div>
                                         </label>
-                                        {isCustomDate && (
+                                        {dateChoice === 'custom' && (
                                             <div className="ml-6 flex items-center gap-2">
-                                                <Label htmlFor="custom_date_format" className="text-sm text-muted-foreground">
+                                                <Label htmlFor="custom_date_format" className="shrink-0 text-sm text-muted-foreground">
                                                     {t('settings.site.customFormat')}:
                                                 </Label>
                                                 <Input
+                                                    ref={customDateRef}
                                                     id="custom_date_format"
                                                     className="max-w-xs"
-                                                    value={customDateFormat}
-                                                    onChange={(e) => {
-                                                        setCustomDateFormat(e.target.value);
-                                                        setDateFormat(e.target.value);
-                                                    }}
+                                                    value={customDate}
+                                                    placeholder="Y年n月j日"
+                                                    onChange={(e) => setCustomDate(e.target.value)}
                                                 />
                                             </div>
                                         )}
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        {t('settings.site.preview')}: <strong>{new Date().toLocaleDateString()}</strong>
+                                        {t('settings.site.preview')}: <strong>{formatPhpDate(effectiveDateFormat, previewNow)}</strong>
                                     </p>
                                     <InputError className="mt-2" message={errors.date_format} />
                                 </div>
@@ -519,7 +550,7 @@ export default function Site({
                                                 key={fmt.value}
                                                 className={cn(
                                                     'flex cursor-pointer items-center justify-between rounded-lg border border-border/60 px-3 py-2 transition-all',
-                                                    timeFormat === fmt.value && !isCustomTime
+                                                    timeChoice === fmt.value
                                                         ? 'bg-accent ring-1 ring-primary'
                                                         : 'hover:bg-muted/50',
                                                 )}
@@ -529,13 +560,10 @@ export default function Site({
                                                         type="radio"
                                                         name="time_format_preset"
                                                         value={fmt.value}
-                                                        checked={timeFormat === fmt.value && !isCustomTime}
-                                                        onChange={() => {
-                                                            setTimeFormat(fmt.value);
-                                                            setCustomTimeFormat('');
-                                                        }}
+                                                        checked={timeChoice === fmt.value}
+                                                        onChange={() => setTimeChoice(fmt.value)}
                                                     />
-                                                    <span className="text-sm">{fmt.example}</span>
+                                                    <span className="text-sm">{formatPhpDate(fmt.value, previewNow)}</span>
                                                 </div>
                                                 <code className="text-xs text-muted-foreground">{fmt.value}</code>
                                             </label>
@@ -543,7 +571,7 @@ export default function Site({
                                         <label
                                             className={cn(
                                                 'flex cursor-pointer items-center justify-between rounded-lg border border-border/60 px-3 py-2 transition-all',
-                                                isCustomTime
+                                                timeChoice === 'custom'
                                                     ? 'bg-accent ring-1 ring-primary'
                                                     : 'hover:bg-muted/50',
                                             )}
@@ -553,35 +581,36 @@ export default function Site({
                                                     type="radio"
                                                     name="time_format_preset"
                                                     value="custom"
-                                                    checked={isCustomTime}
+                                                    checked={timeChoice === 'custom'}
                                                     onChange={() => {
-                                                        const next = customTimeFormat || 'ag:i';
-                                                        setCustomTimeFormat(next);
-                                                        setTimeFormat(next);
+                                                        setTimeChoice('custom');
+                                                        if (!customTime) {
+                                                            setCustomTime('ag:i');
+                                                        }
+                                                        setTimeout(() => customTimeRef.current?.focus(), 0);
                                                     }}
                                                 />
                                                 <span className="text-sm">{t('settings.site.custom')}</span>
                                             </div>
                                         </label>
-                                        {isCustomTime && (
+                                        {timeChoice === 'custom' && (
                                             <div className="ml-6 flex items-center gap-2">
-                                                <Label htmlFor="custom_time_format" className="text-sm text-muted-foreground">
+                                                <Label htmlFor="custom_time_format" className="shrink-0 text-sm text-muted-foreground">
                                                     {t('settings.site.customFormat')}:
                                                 </Label>
                                                 <Input
+                                                    ref={customTimeRef}
                                                     id="custom_time_format"
                                                     className="max-w-xs"
-                                                    value={customTimeFormat}
-                                                    onChange={(e) => {
-                                                        setCustomTimeFormat(e.target.value);
-                                                        setTimeFormat(e.target.value);
-                                                    }}
+                                                    value={customTime}
+                                                    placeholder="ag:i"
+                                                    onChange={(e) => setCustomTime(e.target.value)}
                                                 />
                                             </div>
                                         )}
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        {t('settings.site.preview')}: <strong>{new Date().toLocaleTimeString()}</strong>
+                                        {t('settings.site.preview')}: <strong>{formatPhpDate(effectiveTimeFormat, previewNow)}</strong>
                                     </p>
                                     <InputError className="mt-2" message={errors.time_format} />
                                 </div>

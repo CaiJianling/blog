@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * @Author: CaiJianling caijianling@outlook.com
+ * @Date: 2026-08-06 18:51:21
+ * @LastEditors: CaiJianling caijianling@outlook.com
+ * @LastEditTime: 2026-09-08 20:38:53
+ * @FilePath: /blog/app/Http/Controllers/Settings/ProfileController.php
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
@@ -30,7 +39,14 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $data = $request->validated();
+
+        // 昵称为空时默认使用姓名
+        if (empty($data['nickname'])) {
+            $data['nickname'] = $data['name'];
+        }
+
+        $request->user()->fill($data);
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;

@@ -100,6 +100,12 @@ class OptionController extends Controller
      */
     public function update(Request $request)
     {
+        // 规范化空字符串字段：site_icon 为空时转为 null，membership 缺省为 '0'
+        $request->merge([
+            'site_icon' => $request->input('site_icon') ?: null,
+            'membership' => $request->input('membership', '0') === '1' ? '1' : '0',
+        ]);
+
         $validated = $request->validate([
             'site_title' => ['required', 'string', 'max:255'],
             'site_tagline' => ['nullable', 'string', 'max:500'],
