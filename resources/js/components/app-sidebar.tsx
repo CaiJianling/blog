@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Settings2, Users, Home, FileText, FileStack, Image, MessageSquare } from 'lucide-react';
+import { LayoutGrid, Settings2, Users, Home, FileText, FileStack, Image, MessageSquare, Menu as MenuIcon } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooterSettings } from '@/components/nav-footer-settings';
 import { NavMain } from '@/components/nav-main';
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard, home } from '@/routes';
 import { edit as editSite } from '@/routes/site';
+import { index as menusIndex } from '@/routes/menus';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -93,6 +94,11 @@ export function AppSidebar() {
     ];
 
     if (isAdmin) {
+        mainNavItems.push({
+            title: 'menus.title',
+            href: menusIndex(),
+            icon: MenuIcon,
+        });
         mainNavItems.push({
             title: 'userManagement.title',
             href: '/users',
