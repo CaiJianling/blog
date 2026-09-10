@@ -2,17 +2,31 @@
 
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\CommentPublicController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\NavController;
 use App\Http\Controllers\OptionController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PermalinkController;
+use App\Http\Controllers\SmileyController;
 use App\Http\Controllers\TermTaxonomyController;
+use App\Http\Controllers\ToolController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+// 公开页面
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{article:slug}', [BlogController::class, 'show'])->name('blog.show');
+Route::post('/comments', [CommentPublicController::class, 'store'])->name('comments.public.store');
+Route::get('/tools', [ToolController::class, 'index'])->name('tools.index');
+Route::get('/tools/{slug}', [ToolController::class, 'show'])->name('tools.show');
+Route::get('/nav', [NavController::class, 'index'])->name('nav.index');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -81,6 +95,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('settings/site/site-icon', [OptionController::class, 'uploadSiteIcon'])->name('site.site-icon.store');
         Route::delete('settings/site/site-icon', [OptionController::class, 'removeSiteIcon'])->name('site.site-icon.destroy');
 
+        Route::get('settings/permalink', [PermalinkController::class, 'edit'])->name('permalink.edit');
+        Route::put('settings/permalink', [PermalinkController::class, 'update'])->name('permalink.update');
+
+        Route::get('smilies', [SmileyController::class, 'index'])->name('smilies.index');
+        Route::post('smiley-groups', [SmileyController::class, 'storeGroup'])->name('smilies.groups.store');
+        Route::put('smiley-groups/{group}', [SmileyController::class, 'updateGroup'])->name('smilies.groups.update');
+        Route::delete('smiley-groups/{group}', [SmileyController::class, 'destroyGroup'])->name('smilies.groups.destroy');
+        Route::post('smileys', [SmileyController::class, 'storeSmiley'])->name('smileys.store');
+        Route::delete('smileys/{smiley}', [SmileyController::class, 'destroySmiley'])->name('smileys.destroy');
+
         Route::get('menus', [MenuController::class, 'index'])->name('menus.index');
         Route::post('menus', [MenuController::class, 'store'])->name('menus.store');
         Route::put('menus/{menu}', [MenuController::class, 'update'])->name('menus.update');
@@ -89,3 +113,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+// 按固定链接结构在站点根路径解析文章，必须注册在所有具体路由之后
+Route::get('/{permalink}', [BlogController::class, 'permalink'])
+    ->where('permalink', '(?!api/|build/|storage/|vendor/).*')
+    ->name('blog.permalink');

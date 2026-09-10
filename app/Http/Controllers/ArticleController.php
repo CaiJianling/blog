@@ -42,7 +42,7 @@ class ArticleController extends Controller
                 return [
                     'id' => $article->id,
                     'title' => $article->title,
-                    'author_name' => $article->author?->name ?? '',
+                    'author_name' => $article->author?->nickname ?: ($article->author?->name ?? ''),
                     'categories' => $categories->pluck('term.name')->toArray(),
                     'tags' => $tags->pluck('term.name')->toArray(),
                     'comment_count' => $article->comment_count,

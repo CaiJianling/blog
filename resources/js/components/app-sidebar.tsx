@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard, home } from '@/routes';
 import { edit as editSite } from '@/routes/site';
+import { edit as editPermalink } from '@/routes/permalink';
+import { index as smiliesIndex } from '@/routes/smilies';
 import { index as menusIndex } from '@/routes/menus';
 import type { NavItem } from '@/types';
 
@@ -105,9 +107,23 @@ export function AppSidebar() {
             icon: Users,
         });
         mainNavItems.push({
-            title: 'settings.site.title',
+            title: 'settings.title',
             href: editSite(),
             icon: Settings2,
+            children: [
+                {
+                    title: 'settings.site.title',
+                    href: editSite(),
+                },
+                {
+                    title: 'settings.permalink.title',
+                    href: editPermalink(),
+                },
+                {
+                    title: 'settings.smilies.title',
+                    href: smiliesIndex(),
+                },
+            ],
         });
     }
 

@@ -1,9 +1,19 @@
 <?php
 
+/*
+ * @Author: CaiJianling caijianling@outlook.com
+ * @Date: 2026-08-06 18:51:21
+ * @LastEditors: CaiJianling caijianling@outlook.com
+ * @LastEditTime: 2026-09-09 20:28:10
+ * @FilePath: /blog/app/Http/Middleware/HandleInertiaRequests.php
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Laravel\Fortify\Features;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -41,6 +51,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'canRegister' => Features::enabled(Features::registration()),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

@@ -64,7 +64,7 @@ class AttachmentController extends Controller
                     'height' => $attachment->height,
                     'parent_type' => $attachment->parent_type,
                     'parent_id' => $attachment->parent_id,
-                    'author_name' => $attachment->author?->name ?? '',
+                    'author_name' => $attachment->author?->nickname ?: ($attachment->author?->name ?? ''),
                     'created_at' => $attachment->created_at?->format('Y-m-d H:i:s'),
                     'type' => $attachment->getTypeLabel(),
                     'thumbnail_url' => $attachment->isImage() ? $publicDisk->url($attachment->file_path) : null,

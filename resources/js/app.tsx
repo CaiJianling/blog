@@ -14,6 +14,7 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import { initializeEffects } from '@/hooks/use-effects';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import PublicLayout from '@/layouts/public-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import i18n, { initPromise } from './i18n';
 
@@ -26,8 +27,13 @@ initPromise.then(() => {
             switch (true) {
                 case name === 'welcome':
                     return null;
+                case name === 'Home' || name.startsWith('Blog/') || name.startsWith('Tools/') || name.startsWith('Nav/'):
+                    return PublicLayout;
                 case name.startsWith('auth/'):
                     return AuthLayout;
+                case name === 'settings/permalink':
+                case name === 'settings/smilies':
+                    return AppLayout;
                 case name.startsWith('settings/'):
                     return [AppLayout, SettingsLayout];
                 default:

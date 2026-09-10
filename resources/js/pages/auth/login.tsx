@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import InputError from '@/components/input-error';
 import PasskeyVerify from '@/components/passkey-verify';
@@ -20,6 +20,7 @@ type Props = {
 
 export default function Login({ status, canResetPassword }: Props) {
     const { t } = useTranslation();
+    const { canRegister } = usePage().props as { canRegister?: boolean };
 
     return (
         <>
@@ -95,12 +96,14 @@ export default function Login({ status, canResetPassword }: Props) {
                             </Button>
                         </div>
 
-                        <div className="text-center text-sm text-muted-foreground">
-                            {t('auth.login.noAccount')}{' '}
-                            <TextLink href={register()} tabIndex={5}>
-                                {t('auth.login.signUp')}
-                            </TextLink>
-                        </div>
+                        {canRegister && (
+                            <div className="text-center text-sm text-muted-foreground">
+                                {t('auth.login.noAccount')}{' '}
+                                <TextLink href={register()} tabIndex={5}>
+                                    {t('auth.login.signUp')}
+                                </TextLink>
+                            </div>
+                        )}
                     </>
                 )}
             </Form>

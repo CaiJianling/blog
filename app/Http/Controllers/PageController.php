@@ -24,7 +24,7 @@ class PageController extends Controller
                 return [
                     'id' => $page->id,
                     'title' => $page->title,
-                    'author_name' => $page->author?->name ?? '',
+                    'author_name' => $page->author?->nickname ?: ($page->author?->name ?? ''),
                     'slug' => $page->slug,
                     'status' => $page->status,
                     'views' => $page->views,

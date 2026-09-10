@@ -1,11 +1,10 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import { dashboard, login } from '@/routes';
-import { register } from '@/routes';
+import { dashboard, login, register } from '@/routes';
 
 export default function Welcome() {
     const { t } = useTranslation();
-    const { auth } = usePage().props;
+    const { auth, canRegister } = usePage().props as { auth: { user?: unknown }; canRegister?: boolean };
 
     return (
         <>
@@ -28,12 +27,14 @@ export default function Welcome() {
                                 >
                                     {t('welcome.login')}
                                 </Link>
-                                <Link
-                                    href={register()}
-                                    className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                                >
-                                    {t('welcome.register')}
-                                </Link>
+                                {canRegister && (
+                                    <Link
+                                        href={register()}
+                                        className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
+                                    >
+                                        {t('welcome.register')}
+                                    </Link>
+                                )}
                             </>
                         )}
                     </nav>
