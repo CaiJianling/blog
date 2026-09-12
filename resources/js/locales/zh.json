@@ -427,6 +427,20 @@
             "uploadFailed": "头像上传失败。",
             "enabledBadge": "已启用",
             "disabledBadge": "未启用"
+        },
+        "footer": {
+            "title": "页脚设置",
+            "heading": "页脚设置",
+            "description": "配置博客底部「资源」与「联系」栏目的链接",
+            "resources": "资源",
+            "contacts": "联系",
+            "add": "添加",
+            "empty": "暂无条目，点击右上角添加",
+            "name": "名称",
+            "url": "链接",
+            "moveUp": "上移",
+            "moveDown": "下移",
+            "delete": "删除"
         }
     },
     "nav": {

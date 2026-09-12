@@ -11,6 +11,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\FooterSettingController;
 use App\Models\Attachment;
 use App\Models\Option;
 use Illuminate\Filesystem\FilesystemAdapter;
@@ -58,6 +59,10 @@ class HandleInertiaRequests extends Middleware
             'canRegister' => Features::enabled(Features::registration()),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'assistant' => $this->assistantProps(),
+            'footer' => [
+                'resources' => FooterSettingController::resources(),
+                'contacts' => FooterSettingController::contacts(),
+            ],
         ];
     }
 

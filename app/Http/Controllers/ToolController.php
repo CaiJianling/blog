@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Tool;
 use App\Models\ToolCategory;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,6 +37,24 @@ class ToolController extends Controller
 
         return Inertia::render('Tools/Index', [
             'toolCategories' => $toolCategories,
+        ]);
+    }
+
+    /**
+     * 服务端哈希计算：浏览器非安全上下文（HTTP）下 WebCrypto 不可用时的兜底。
+     */
+    public function hash(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'text' => ['required', 'string', 'max:10000'],
+            'algorithm' => ['required', 'in:md5,sha1,sha256,sha384,sha512'],
+        ], [
+            'text.required' => '请输入要哈希的文本。',
+            'algorithm.in' => '不支持的算法。',
+        ]);
+
+        return response()->json([
+            'hash' => hash($validated['algorithm'], $validated['text']),
         ]);
     }
 

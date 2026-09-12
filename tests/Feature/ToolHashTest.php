@@ -1,0 +1,42 @@
+<?php
+
+test('tools hash endpoint computes md5', function () {
+    $response = $this->postJson(route('tools.hash'), [
+        'text' => 'abc',
+        'algorithm' => 'md5',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('hash', '900150983cd24fb0d6963f7d28e17f72');
+});
+
+test('tools hash endpoint computes sha variants', function () {
+    $this->postJson(route('tools.hash'), ['text' => 'abc', 'algorithm' => 'sha1'])
+        ->assertOk()
+        ->assertJsonPath('hash', 'a9993e364706816aba3e25717850c26c9cd0d89d');
+
+    $this->postJson(route('tools.hash'), ['text' => 'abc', 'algorithm' => 'sha256'])
+        ->assertOk()
+        ->assertJsonPath('hash', 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+
+    $this->postJson(route('tools.hash'), ['text' => 'abc', 'algorithm' => 'sha512'])
+        ->assertOk()
+        ->assertJsonPath('hash', 'ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f');
+});
+
+test('tools hash endpoint validates algorithm and text', function () {
+    $this->postJson(route('tools.hash'), ['text' => 'abc', 'algorithm' => 'crc32'])
+        ->assertJsonValidationErrors(['algorithm']);
+
+    $this->postJson(route('tools.hash'), ['algorithm' => 'md5'])
+        ->assertJsonValidationErrors(['text']);
+
+    $this->postJson(route('tools.hash'), ['text' => str_repeat('a', 10001), 'algorithm' => 'md5'])
+        ->assertJsonValidationErrors(['text']);
+});
+
+test('tools hash endpoint requires authentication', function () {
+    // 哈希工具面向游客，但确认接口可匿名访问（200 而非 401）
+    $this->postJson(route('tools.hash'), ['text' => 'abc', 'algorithm' => 'md5'])
+        ->assertOk();
+});

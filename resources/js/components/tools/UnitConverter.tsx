@@ -1,4 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { copyToClipboard } from '@/lib/clipboard';
+import { Check, Copy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 type Category = 'length' | 'weight' | 'temperature' | 'storage';
@@ -33,10 +36,18 @@ const units: Record<Category, { name: string; toBase: (v: number) => number; fro
     ],
 };
 
+const categoryNames: Record<Category, string> = {
+    length: '长度',
+    weight: '重量',
+    temperature: '温度',
+    storage: '存储',
+};
+
 export default function UnitConverter() {
     const [category, setCategory] = useState<Category>('length');
     const [value, setValue] = useState('1');
     const [fromIdx, setFromIdx] = useState(2);
+    const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
     const list = units[category];
     const base = useMemo(() => {
@@ -44,6 +55,17 @@ export default function UnitConverter() {
         if (isNaN(v)) return null;
         return list[fromIdx].toBase(v);
     }, [value, fromIdx, list]);
+
+    const copyValue = async (i: number, text: string) => {
+        if (!(await copyToClipboard(text))) {
+            toast.error('复制失败，请手动选择文本复制');
+
+            return;
+        }
+
+        setCopiedIdx(i);
+        setTimeout(() => setCopiedIdx(null), 1500);
+    };
 
     return (
         <div className="space-y-5">
@@ -57,7 +79,7 @@ export default function UnitConverter() {
                             category === c ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-accent'
                         }`}
                     >
-                        {c === 'length' ? '长度' : c === 'weight' ? '重量' : c === 'temperature' ? '温度' : '存储'}
+                        {categoryNames[c]}
                     </button>
                 ))}
             </div>
@@ -76,15 +98,32 @@ export default function UnitConverter() {
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {list.map((u, i) => (
-                    <div key={i} className="apple-card p-4">
-                        <p className="text-footnote text-muted-foreground">{u.name}</p>
-                        <p className="mt-1 font-mono text-lg font-semibold">
-                            {base !== null ? (i === fromIdx ? parseFloat(value) : parseFloat(u.fromBase(base).toFixed(6))) : '—'}
-                        </p>
-                    </div>
-                ))}
+                {list.map((u, i) => {
+                    const display = base !== null ? (i === fromIdx ? parseFloat(value) : parseFloat(u.fromBase(base).toFixed(6))) : null;
+                    const copiedThis = copiedIdx === i;
+
+                    return (
+                        <button
+                            key={i}
+                            type="button"
+                            onClick={() => display !== null && void copyValue(i, String(display))}
+                            disabled={display === null}
+                            className={`apple-card apple-press relative p-4 text-left transition-colors ${
+                                display !== null ? 'hover:-translate-y-0.5 hover:shadow-md' : 'cursor-default'
+                            } ${copiedThis ? 'ring-2 ring-emerald-500/50' : ''}`}
+                            title={display !== null ? '点击复制' : undefined}
+                        >
+                            <p className="text-footnote text-muted-foreground">{u.name}</p>
+                            <p className="mt-1 flex items-center gap-1.5 font-mono text-lg font-semibold">
+                                {display !== null ? display : '—'}
+                                {copiedThis && <Check className="h-4 w-4 text-emerald-500" />}
+                            </p>
+                        </button>
+                    );
+                })}
             </div>
+
+            <p className="text-xs text-muted-foreground">点击结果卡片即可复制数值。</p>
         </div>
     );
 }

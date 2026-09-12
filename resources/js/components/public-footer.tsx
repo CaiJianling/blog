@@ -1,12 +1,33 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Github, Twitter, Mail } from 'lucide-react';
+import { Github, Link2, Mail, Twitter } from 'lucide-react';
 import { home } from '@/routes';
 import blog from '@/routes/blog';
 import tools from '@/routes/tools';
 import nav from '@/routes/nav';
 
+type FooterLink = {
+    name: string;
+    url: string;
+};
+
+function contactIcon(url: string) {
+    const lower = url.toLowerCase();
+
+    if (lower.includes('github')) return Github;
+    if (lower.includes('twitter') || lower.includes('x.com')) return Twitter;
+    if (lower.startsWith('mailto:')) return Mail;
+
+    return Link2;
+}
+
 export default function PublicFooter() {
-    const { name } = usePage().props;
+    const { name, footer } = usePage().props as unknown as {
+        name?: string;
+        footer?: { resources: FooterLink[]; contacts: FooterLink[] };
+    };
+
+    const resources = footer?.resources ?? [];
+    const contacts = footer?.contacts ?? [];
 
     return (
         <footer className="mt-20 border-t border-border/40">
@@ -48,36 +69,41 @@ export default function PublicFooter() {
                     <div>
                         <h4 className="text-footnote font-semibold text-foreground">资源</h4>
                         <ul className="mt-3 space-y-2 text-sm">
-                            <li>
-                                <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground">
-                                    GitHub
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://laravel.com/docs" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground">
-                                    Laravel 文档
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://react.dev" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground">
-                                    React 文档
-                                </a>
-                            </li>
+                            {resources.map((item, index) => (
+                                <li key={index}>
+                                    <a
+                                        href={item.url}
+                                        target={item.url.startsWith('http') ? '_blank' : undefined}
+                                        rel={item.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                                        className="text-muted-foreground transition-colors hover:text-foreground"
+                                    >
+                                        {item.name}
+                                    </a>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
                     <div>
                         <h4 className="text-footnote font-semibold text-foreground">联系</h4>
                         <div className="mt-3 flex gap-3">
-                            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground">
-                                <Github className="h-5 w-5" />
-                            </a>
-                            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground">
-                                <Twitter className="h-5 w-5" />
-                            </a>
-                            <a href="mailto:hello@example.com" className="text-muted-foreground transition-colors hover:text-foreground">
-                                <Mail className="h-5 w-5" />
-                            </a>
+                            {contacts.map((item, index) => {
+                                const Icon = contactIcon(item.url);
+
+                                return (
+                                    <a
+                                        key={index}
+                                        href={item.url}
+                                        target={item.url.startsWith('http') ? '_blank' : undefined}
+                                        rel={item.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                                        className="text-muted-foreground transition-colors hover:text-foreground"
+                                        aria-label={item.name}
+                                        title={item.name}
+                                    >
+                                        <Icon className="h-5 w-5" />
+                                    </a>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

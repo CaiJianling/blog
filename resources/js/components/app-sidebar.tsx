@@ -22,6 +22,7 @@ import { edit as editNavigation } from '@/routes/navigation';
 import { edit as editAi } from '@/routes/ai';
 import { edit as editAssistant } from '@/routes/assistant';
 import { edit as editSidebar } from '@/routes/sidebar';
+import { edit as editFooter } from '@/routes/footer';
 import { admin as toolsAdmin } from '@/routes/tools';
 import type { NavItem } from '@/types';
 
@@ -161,6 +162,10 @@ export function AppSidebar() {
                 {
                     title: 'settings.sidebar.title',
                     href: editSidebar(),
+                },
+                {
+                    title: 'settings.footer.title',
+                    href: editFooter(),
                 },
             ],
         });

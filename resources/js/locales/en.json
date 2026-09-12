@@ -427,6 +427,20 @@
             "uploadFailed": "Avatar upload failed.",
             "enabledBadge": "Enabled",
             "disabledBadge": "Disabled"
+        },
+        "footer": {
+            "title": "Footer Settings",
+            "heading": "Footer Settings",
+            "description": "Configure the links of the footer \"Resources\" and \"Contact\" columns",
+            "resources": "Resources",
+            "contacts": "Contact",
+            "add": "Add",
+            "empty": "No entries yet; click the button above to add one",
+            "name": "Name",
+            "url": "URL",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "delete": "Delete"
         }
     },
     "nav": {

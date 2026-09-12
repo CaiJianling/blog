@@ -10,6 +10,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommentPublicController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FooterSettingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NavController;
@@ -33,6 +34,7 @@ Route::get('/blog/{article:slug}', [BlogController::class, 'show'])->name('blog.
 Route::post('/comments', [CommentPublicController::class, 'store'])->name('comments.public.store');
 Route::get('/tools', [ToolController::class, 'index'])->name('tools.index');
 Route::get('/tools/{slug}', [ToolController::class, 'show'])->name('tools.show');
+Route::post('/tools/hash', [ToolController::class, 'hash'])->middleware('throttle:60,1')->name('tools.hash');
 Route::get('/nav', [NavController::class, 'index'])->name('nav.index');
 Route::get('/nav/links/{link}', [NavController::class, 'show'])->name('nav.show');
 
@@ -169,6 +171,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('settings/sidebar', [SidebarSettingController::class, 'update'])->name('sidebar.update');
         Route::post('settings/sidebar/avatar', [SidebarSettingController::class, 'uploadAvatar'])->name('sidebar.avatar.store');
         Route::delete('settings/sidebar/avatar', [SidebarSettingController::class, 'removeAvatar'])->name('sidebar.avatar.destroy');
+
+        // 页脚设置（资源、联系）
+        Route::get('settings/footer', [FooterSettingController::class, 'edit'])->name('footer.edit');
+        Route::put('settings/footer', [FooterSettingController::class, 'update'])->name('footer.update');
     });
 });
 

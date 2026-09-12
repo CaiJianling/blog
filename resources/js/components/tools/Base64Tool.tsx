@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { copyToClipboard } from '@/lib/clipboard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowRightLeft, Copy, Check } from 'lucide-react';
@@ -35,7 +37,11 @@ export default function Base64Tool() {
     };
 
     const copy = async () => {
-        await navigator.clipboard.writeText(output);
+        if (!(await copyToClipboard(output))) {
+            toast.error('复制失败，请手动选择文本复制');
+
+            return;
+        }
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
     };

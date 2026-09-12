@@ -1,8 +1,77 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { copyToClipboard } from '@/lib/clipboard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import HighlightedCode from '@/components/tools/highlighted-code';
-import { Wand2, Check, Copy } from 'lucide-react';
+import { Wand2, Minimize2, Check, Copy } from 'lucide-react';
+
+/** 压缩 SQL：去除注释与多余空白，字符串字面量保持原样。 */
+export function minifySql(sql: string): string {
+    let stripped = '';
+    let i = 0;
+    let inString = false;
+
+    // 先剥离注释（跳过字符串内的内容）
+    while (i < sql.length) {
+        const ch = sql[i];
+
+        if (inString) {
+            stripped += ch;
+
+            if (ch === "'" && sql[i + 1] === "'") {
+                stripped += "'";
+                i += 2;
+
+                continue;
+            }
+
+            if (ch === "'") {
+                inString = false;
+            }
+
+            i++;
+
+            continue;
+        }
+
+        if (ch === "'") {
+            inString = true;
+            stripped += ch;
+            i++;
+
+            continue;
+        }
+
+        if (ch === '-' && sql[i + 1] === '-') {
+            while (i < sql.length && sql[i] !== '\n') {
+                i++;
+            }
+
+            continue;
+        }
+
+        if (ch === '/' && sql[i + 1] === '*') {
+            i += 2;
+
+            while (i < sql.length && !(sql[i] === '*' && sql[i + 1] === '/')) {
+                i++;
+            }
+
+            i += 2;
+
+            continue;
+        }
+
+        stripped += ch;
+        i++;
+    }
+
+    return stripped
+        .replace(/\s+/g, ' ')
+        .replace(/\s*([(),;=<>!+\-*/])\s*/g, '$1')
+        .trim();
+}
 
 export default function SqlFormatter() {
     const [input, setInput] = useState('');
@@ -26,8 +95,17 @@ export default function SqlFormatter() {
         setOutput(result);
     };
 
+    const minify = () => {
+        if (!input.trim()) { setOutput(''); return; }
+        setOutput(minifySql(input));
+    };
+
     const copy = async () => {
-        await navigator.clipboard.writeText(output);
+        if (!(await copyToClipboard(output))) {
+            toast.error('复制失败，请手动选择文本复制');
+
+            return;
+        }
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
     };
@@ -38,6 +116,7 @@ export default function SqlFormatter() {
         <div className="space-y-5">
             <div className="flex flex-wrap gap-2">
                 <Button onClick={format}><Wand2 className="h-4 w-4" /> 格式化</Button>
+                <Button variant="outline" onClick={minify}><Minimize2 className="h-4 w-4" /> 压缩</Button>
                 <Button variant="outline" onClick={() => { setInput(sample); setOutput(''); }}>示例</Button>
                 {output && (
                     <Button variant="ghost" onClick={copy}>
