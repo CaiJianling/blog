@@ -67,6 +67,8 @@ interface Attachment {
     created_at: string;
     type: 'image' | 'video' | 'document';
     thumbnail_url: string | null;
+    is_protected?: boolean;
+    usage_label?: string | null;
 }
 
 interface PaginatedAttachments {
@@ -235,7 +237,7 @@ return;
     }, []);
 
     const selectAll = useCallback(() => {
-        setSelectedIds(new Set(attachmentList.map((a) => a.id)));
+        setSelectedIds(new Set(attachmentList.filter((a) => !a.is_protected).map((a) => a.id)));
     }, [attachmentList]);
 
     const clearSelection = useCallback(() => {
@@ -495,11 +497,17 @@ return;
                                         isSelected &&
                                             'ring-2 ring-primary ring-offset-2 ring-offset-background',
                                     )}
-                                    onClick={() =>
-                                        selectionMode
-                                            ? toggleSelection(attachment.id)
-                                            : setPreviewAttachment(attachment)
-                                    }
+                                    onClick={() => {
+                                        if (selectionMode) {
+                                            if (!attachment.is_protected) {
+                                                toggleSelection(attachment.id);
+                                            }
+
+                                            return;
+                                        }
+
+                                        setPreviewAttachment(attachment);
+                                    }}
                                 >
                                     <div className="relative aspect-square overflow-hidden bg-muted">
                                         {attachment.thumbnail_url ? (
@@ -532,8 +540,15 @@ return;
                                             </div>
                                         )}
 
-                                        {/* 非多选模式下：删除按钮（右上角，始终可见） */}
-                                        {!selectionMode && (
+                                        {/* 受保护系统图像：用途标签（左上角） */}
+                                        {attachment.is_protected && attachment.usage_label && (
+                                            <div className="absolute left-1.5 top-1.5 z-20 max-w-[90%] rounded-md bg-primary/90 px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
+                                                <span className="line-clamp-2">{attachment.usage_label}</span>
+                                            </div>
+                                        )}
+
+                                        {/* 非多选模式下：删除按钮（右上角，受保护项不显示） */}
+                                        {!selectionMode && !attachment.is_protected && (
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();

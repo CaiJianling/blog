@@ -74,7 +74,7 @@ class ProfileController extends Controller
      */
     public function removeAvatar(): RedirectResponse
     {
-        $this->attachments->deleteByParent('user_avatar', $request->user()->id ?? Auth::id());
+        $this->attachments->deleteByParent('user_avatar', (int) Auth::id());
 
         return to_route('profile.edit')->with('toast', ['type' => 'success', 'message' => '已恢复默认头像。']);
     }

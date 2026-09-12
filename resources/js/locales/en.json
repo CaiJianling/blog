@@ -152,7 +152,14 @@
             "save": "Save",
             "emailUnverified": "Your email address is unverified.",
             "resendVerification": "Click here to re-send the verification email.",
-            "verificationSent": "A new verification link has been sent to your email address."
+            "verificationSent": "A new verification link has been sent to your email address.",
+            "avatar": "Avatar",
+            "changeAvatar": "Upload avatar",
+            "restoreAvatar": "Restore default avatar",
+            "avatarHint": "When replacing or restoring, the previous avatar is removed from the library.",
+            "avatarUploadSuccess": "Avatar updated.",
+            "avatarUploadFailed": "Avatar upload failed.",
+            "avatarRestored": "Default avatar restored."
         },
         "site": {
             "title": "Site Settings",
@@ -315,7 +322,15 @@
             "introPlaceholder": "Start writing the intro for this site…",
             "clearIntro": "Clear intro",
             "clearIntroConfirm": "Clear the rich intro of \"{{name}}\"?",
-            "linkDialogDescription": "The link will appear under the selected category; write its rich intro later via \"Add intro\"."
+            "linkDialogDescription": "The link will appear under the selected category; write its rich intro later via \"Add intro\".",
+            "icon": "Icon",
+            "uploadIcon": "Upload icon",
+            "resetIcon": "Reset icon",
+            "iconHint": "When replacing or resetting, the previous icon is removed from the library.",
+            "iconUploadSuccess": "Icon updated.",
+            "iconUploadFailed": "Icon upload failed.",
+            "iconResetSuccess": "Default icon restored.",
+            "iconResetFailed": "Failed to reset icon."
         },
         "ai": {
             "title": "AI Settings",

@@ -152,7 +152,14 @@
             "save": "保存",
             "emailUnverified": "您的邮箱地址未验证。",
             "resendVerification": "点击此处重新发送验证邮件。",
-            "verificationSent": "一个新的验证链接已发送到您的邮箱地址。"
+            "verificationSent": "一个新的验证链接已发送到您的邮箱地址。",
+            "avatar": "头像",
+            "changeAvatar": "上传头像",
+            "restoreAvatar": "恢复默认头像",
+            "avatarHint": "更换或恢复默认时，原头像会从文件库中删除。",
+            "avatarUploadSuccess": "头像已更新。",
+            "avatarUploadFailed": "头像上传失败。",
+            "avatarRestored": "已恢复默认头像。"
         },
         "site": {
             "title": "站点设置",
@@ -315,7 +322,15 @@
             "introPlaceholder": "开始撰写该网站的图文介绍…",
             "clearIntro": "清空介绍",
             "clearIntroConfirm": "确定清空「{{name}}」的图文介绍吗？",
-            "linkDialogDescription": "链接将显示在所选分类下；保存后可通过「添加介绍」撰写图文介绍。"
+            "linkDialogDescription": "链接将显示在所选分类下；保存后可通过「添加介绍」撰写图文介绍。",
+            "icon": "图标",
+            "uploadIcon": "上传图标",
+            "resetIcon": "恢复默认图标",
+            "iconHint": "更换或恢复默认时，原图标会从文件库中删除。",
+            "iconUploadSuccess": "图标已更新。",
+            "iconUploadFailed": "图标上传失败。",
+            "iconResetSuccess": "已恢复默认图标。",
+            "iconResetFailed": "恢复默认图标失败。"
         },
         "ai": {
             "title": "AI 设置",

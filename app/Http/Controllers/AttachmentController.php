@@ -24,7 +24,16 @@ class AttachmentController extends Controller
         $parentType = $request->query('parent_type', '');
         $parentId = $request->query('parent_id', '');
 
+        $isAdmin = $request->user()?->role === 'administrator';
+
         $query = Attachment::with('author')->orderBy('created_at', 'desc');
+
+        // 系统用途图像（站点图标/各类头像与图标）仅管理员可见
+        if (! $isAdmin) {
+            $query->where(fn ($q) => $q
+                ->whereNull('parent_type')
+                ->orWhereNotIn('parent_type', AttachmentService::PROTECTED_PARENT_TYPES));
+        }
 
         if ($type !== 'all') {
             $query->where('mime_type', 'like', match ($type) {
@@ -53,7 +62,7 @@ class AttachmentController extends Controller
         $publicDisk = Storage::disk('public');
 
         $attachments = $query->paginate(24)
-            ->through(function ($attachment) use ($publicDisk) {
+            ->through(function ($attachment) use ($publicDisk, $isAdmin) {
                 return [
                     'id' => $attachment->id,
                     'file_name' => $attachment->file_name,
@@ -68,6 +77,8 @@ class AttachmentController extends Controller
                     'created_at' => $attachment->created_at?->format('Y-m-d H:i:s'),
                     'type' => $attachment->getTypeLabel(),
                     'thumbnail_url' => $attachment->isImage() ? $publicDisk->url($attachment->file_path) : null,
+                    'is_protected' => in_array($attachment->parent_type, AttachmentService::PROTECTED_PARENT_TYPES, true),
+                    'usage_label' => $isAdmin ? $this->attachments->usageLabel($attachment) : null,
                 ];
             });
 
@@ -193,8 +204,19 @@ class AttachmentController extends Controller
         return redirect()->route('attachments.index');
     }
 
-    public function destroy(Attachment $attachment)
+    public function destroy(Request $request, Attachment $attachment)
     {
+        // 系统用途图像不可在媒体库删除，只能通过对应设置页更换/恢复默认
+        if (in_array($attachment->parent_type, AttachmentService::PROTECTED_PARENT_TYPES, true)) {
+            $message = '系统图像不能在媒体库中删除，请在对应的设置页更换或恢复默认。';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => $message], 403);
+            }
+
+            return back()->with('toast', ['type' => 'error', 'message' => $message]);
+        }
+
         $this->attachments->deleteAttachment($attachment);
 
         return redirect()->back();
@@ -217,7 +239,41 @@ class AttachmentController extends Controller
 
         $attachments = Attachment::whereIn('id', $validated['ids'])->get();
 
-        [$succeeded, $failed] = $this->attachments->deleteAttachments($attachments);
+        // 系统用途图像受保护，从待删列表中剔除
+        [$protected, $deletable] = $attachments->partition(
+            fn ($attachment) => in_array($attachment->parent_type, AttachmentService::PROTECTED_PARENT_TYPES, true),
+        );
+
+        [$succeeded, $failed] = $this->attachments->deleteAttachments($deletable);
+
+        if ($protected->isNotEmpty()) {
+            $message = "已删除 {$succeeded} 个文件；{$protected->count()} 个系统图像受保护，未删除。";
+
+            // 所选全部为受保护图像时拒绝删除
+            if ($deletable->isEmpty()) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json(['message' => '系统图像受保护，不能删除。'], 403);
+                }
+
+                return redirect()->back()->with([
+                    'flash' => [
+                        'banner' => '系统图像受保护，不能删除。',
+                        'bannerStyle' => 'warning',
+                    ],
+                ]);
+            }
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => $message]);
+            }
+
+            return redirect()->back()->with([
+                'flash' => [
+                    'banner' => $message,
+                    'bannerStyle' => 'warning',
+                ],
+            ]);
+        }
 
         if ($failed > 0) {
             return redirect()->back()->with([
