@@ -1,17 +1,25 @@
 import { Head, Link } from '@inertiajs/react';
+import { ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import PageSearch from '@/components/page-search';
-import tools from '@/routes/tools';
 
 type Tool = {
-    slug: string;
+    id: number;
+    slug: string | null;
     name: string;
-    description: string;
+    url: string | null;
+    description: string | null;
     icon: string;
 };
 
+type ToolCategoryData = {
+    id: number;
+    name: string;
+    tools: Tool[];
+};
+
 type Props = {
-    toolCategories: Record<string, Tool[]>;
+    toolCategories: ToolCategoryData[];
 };
 
 const iconMap: Record<string, string> = {
@@ -27,24 +35,31 @@ const iconMap: Record<string, string> = {
     CaseSensitive: 'Aa',
     Ruler: '📏',
     Clock: '⏱',
+    Wrench: '🔧',
+    Calculator: '🧮',
+    Globe: '🌐',
+    Terminal: '⌨',
 };
 
 export default function Index({ toolCategories }: Props) {
     const [query, setQuery] = useState('');
 
-    const filteredCategories = query
-        ? Object.fromEntries(
-            Object.entries(toolCategories).map(([category, items]) => [
-                category,
-                items.filter((tool) =>
-                    tool.name.toLowerCase().includes(query.toLowerCase())
-                    || tool.description.toLowerCase().includes(query.toLowerCase()),
-                ),
-            ]),
-        )
-        : toolCategories;
+    const keyword = query.trim().toLowerCase();
 
-    const totalFiltered = Object.values(filteredCategories).reduce((sum, items) => sum + items.length, 0);
+    const filteredCategories = toolCategories
+        .map((category) => ({
+            ...category,
+            tools: keyword
+                ? category.tools.filter(
+                    (tool) =>
+                        tool.name.toLowerCase().includes(keyword)
+                        || (tool.description ?? '').toLowerCase().includes(keyword),
+                )
+                : category.tools,
+        }))
+        .filter((category) => category.tools.length > 0);
+
+    const totalFiltered = filteredCategories.reduce((sum, category) => sum + category.tools.length, 0);
 
     return (
         <>
@@ -61,47 +76,66 @@ export default function Index({ toolCategories }: Props) {
                     <PageSearch placeholder="搜索工具" buttonLabel="搜索工具" onSubmit={setQuery} />
                 </div>
 
-                {query && (
+                {keyword && (
                     <p className="mb-8 text-body text-muted-foreground">
                         搜索“{query}”的工具，共 {totalFiltered} 个
                     </p>
                 )}
 
-                {!query && totalFiltered === 0 && (
-                    <div className="apple-card p-12 text-center text-muted-foreground">暂无工具</div>
-                )}
-
-                {query && totalFiltered === 0 && (
+                {totalFiltered === 0 && (
                     <div className="apple-card p-12 text-center text-muted-foreground">
-                        没有找到与“{query}”相关的工具
+                        {keyword ? `没有找到与“${query}”相关的工具` : '暂无工具'}
                     </div>
                 )}
 
-                {Object.entries(filteredCategories)
-                    .filter(([, items]) => items.length > 0)
-                    .map(([category, items]) => (
-                        <section key={category} className="mb-10">
-                            <h2 className="text-title mb-5">{category}</h2>
+                {filteredCategories.map((category) => (
+                    <section key={category.id} className="mb-10">
+                        <h2 className="text-title mb-5">{category.name}</h2>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {items.map((tool) => (
-                                <Link
-                                    key={tool.slug}
-                                    href={tools.show({ slug: tool.slug })}
-                                    className="apple-card apple-press group flex items-start gap-4 p-5 hover:-translate-y-0.5"
-                                >
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                                        <span className="text-lg font-bold">{iconMap[tool.icon] ?? '⚙'}</span>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <h3 className="text-headline group-hover:text-primary transition-colors">
-                                            {tool.name}
-                                        </h3>
-                                        <p className="mt-1 text-footnote line-clamp-2 text-muted-foreground">
-                                            {tool.description}
-                                        </p>
-                                    </div>
-                                </Link>
-                            ))}
+                            {category.tools.map((tool) => {
+                                const isExternal = !!tool.url;
+
+                                const inner = (
+                                    <>
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                                            <span className="text-lg font-bold">
+                                                {iconMap[tool.icon] ?? '⚙'}
+                                            </span>
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="text-headline group-hover:text-primary transition-colors">
+                                                {tool.name}
+                                            </h3>
+                                            <p className="mt-1 text-footnote line-clamp-2 text-muted-foreground">
+                                                {tool.description}
+                                            </p>
+                                        </div>
+                                        {isExternal && (
+                                            <ExternalLink className="h-3.5 w-3.5 shrink-0 self-start text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                        )}
+                                    </>
+                                );
+
+                                return isExternal ? (
+                                    <a
+                                        key={tool.id}
+                                        href={tool.url ?? '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="apple-card apple-press group flex items-start gap-4 p-5 hover:-translate-y-0.5"
+                                    >
+                                        {inner}
+                                    </a>
+                                ) : (
+                                    <Link
+                                        key={tool.id}
+                                        href={`/tools/${tool.slug}`}
+                                        className="apple-card apple-press group flex items-start gap-4 p-5 hover:-translate-y-0.5"
+                                    >
+                                        {inner}
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </section>
                 ))}

@@ -11,7 +11,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Attachment;
+use App\Models\Option;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 use Laravel\Fortify\Features;
 
@@ -53,6 +57,39 @@ class HandleInertiaRequests extends Middleware
             ],
             'canRegister' => Features::enabled(Features::registration()),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'assistant' => $this->assistantProps(),
+        ];
+    }
+
+    /**
+     * AI 小助手前台配置（仅在启用时携带名称、头像与欢迎语）。
+     *
+     * @return array<string, mixed>
+     */
+    protected function assistantProps(): array
+    {
+        if (Option::get('assistant_enabled') !== '1') {
+            return ['enabled' => false];
+        }
+
+        $avatarId = (int) Option::get('assistant_avatar', '');
+        $avatarUrl = null;
+
+        if ($avatarId > 0) {
+            $attachment = Attachment::find($avatarId);
+
+            if ($attachment && $attachment->isImage()) {
+                /** @var FilesystemAdapter $publicDisk */
+                $publicDisk = Storage::disk('public');
+                $avatarUrl = $publicDisk->url($attachment->file_path);
+            }
+        }
+
+        return [
+            'enabled' => true,
+            'name' => (string) Option::get('assistant_name', 'AI 小助手'),
+            'avatarUrl' => $avatarUrl,
+            'welcome' => (string) Option::get('assistant_welcome', ''),
         ];
     }
 }

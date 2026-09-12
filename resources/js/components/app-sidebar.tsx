@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Settings2, Users, Home, FileText, FileStack, Image, MessageSquare, Menu as MenuIcon, Globe } from 'lucide-react';
+import { LayoutGrid, Settings2, Users, Home, FileText, FileStack, Image, MessageSquare, Menu as MenuIcon, Globe, Wrench } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooterSettings } from '@/components/nav-footer-settings';
 import { NavMain } from '@/components/nav-main';
@@ -20,6 +20,9 @@ import { index as smiliesIndex } from '@/routes/smilies';
 import { index as menusIndex } from '@/routes/menus';
 import { edit as editNavigation } from '@/routes/navigation';
 import { edit as editAi } from '@/routes/ai';
+import { edit as editAssistant } from '@/routes/assistant';
+import { edit as editSidebar } from '@/routes/sidebar';
+import { admin as toolsAdmin } from '@/routes/tools';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -125,6 +128,11 @@ export function AppSidebar() {
             icon: Globe,
         });
         mainNavItems.push({
+            title: 'settings.tools.title',
+            href: toolsAdmin(),
+            icon: Wrench,
+        });
+        mainNavItems.push({
             title: 'userManagement.title',
             href: '/users',
             icon: Users,
@@ -145,6 +153,14 @@ export function AppSidebar() {
                 {
                     title: 'settings.ai.title',
                     href: editAi(),
+                },
+                {
+                    title: 'settings.assistant.title',
+                    href: editAssistant(),
+                },
+                {
+                    title: 'settings.sidebar.title',
+                    href: editSidebar(),
                 },
             ],
         });

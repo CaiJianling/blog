@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AiSettingController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ArticleLikeController;
+use App\Http\Controllers\AssistantChatController;
+use App\Http\Controllers\AssistantSettingController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
@@ -14,9 +17,11 @@ use App\Http\Controllers\NavigationSettingController;
 use App\Http\Controllers\OptionController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PermalinkController;
+use App\Http\Controllers\SidebarSettingController;
 use App\Http\Controllers\SmileyController;
 use App\Http\Controllers\TermTaxonomyController;
 use App\Http\Controllers\ToolController;
+use App\Http\Controllers\ToolSettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +35,16 @@ Route::get('/tools', [ToolController::class, 'index'])->name('tools.index');
 Route::get('/tools/{slug}', [ToolController::class, 'show'])->name('tools.show');
 Route::get('/nav', [NavController::class, 'index'])->name('nav.index');
 Route::get('/nav/links/{link}', [NavController::class, 'show'])->name('nav.show');
+
+// 文章点赞（前台游客可用，按 IP 限流）
+Route::post('/articles/{article}/like', [ArticleLikeController::class, '__invoke'])
+    ->middleware('throttle:30,1')
+    ->name('articles.like');
+
+// AI 小助手对话（前台游客可用，按 IP 限流）
+Route::post('/assistant/chat', [AssistantChatController::class, 'store'])
+    ->middleware('throttle:20,1')
+    ->name('assistant.chat');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -130,6 +145,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('settings/ai', [AiSettingController::class, 'edit'])->name('ai.edit');
         Route::put('settings/ai', [AiSettingController::class, 'update'])->name('ai.update');
         Route::get('settings/ai/models', [AiSettingController::class, 'models'])->name('ai.models');
+
+        // 工具页内容管理（分组、工具、排序、链接地址）
+        Route::get('settings/tools', [ToolSettingController::class, 'edit'])->name('tools.admin');
+        Route::put('settings/tools/reorder', [ToolSettingController::class, 'reorder'])->name('tools.reorder');
+        Route::post('settings/tools/categories', [ToolSettingController::class, 'storeCategory'])->name('tools.categories.store');
+        Route::put('settings/tools/categories/{category}', [ToolSettingController::class, 'updateCategory'])->name('tools.categories.update');
+        Route::delete('settings/tools/categories/{category}', [ToolSettingController::class, 'destroyCategory'])->name('tools.categories.destroy');
+        Route::post('settings/tools/items', [ToolSettingController::class, 'storeTool'])->name('tools.items.store');
+        Route::put('settings/tools/items/{tool}', [ToolSettingController::class, 'updateTool'])->name('tools.items.update');
+        Route::delete('settings/tools/items/{tool}', [ToolSettingController::class, 'destroyTool'])->name('tools.items.destroy');
+
+        // AI 小助手设置
+        Route::get('settings/assistant', [AssistantSettingController::class, 'edit'])->name('assistant.edit');
+        Route::put('settings/assistant', [AssistantSettingController::class, 'update'])->name('assistant.update');
+        Route::post('settings/assistant/avatar', [AssistantSettingController::class, 'uploadAvatar'])->name('assistant.avatar.store');
+        Route::delete('settings/assistant/avatar', [AssistantSettingController::class, 'removeAvatar'])->name('assistant.avatar.destroy');
+
+        // 博客侧边栏设置（博主信息、自定义菜单）
+        Route::get('settings/sidebar', [SidebarSettingController::class, 'edit'])->name('sidebar.edit');
+        Route::put('settings/sidebar', [SidebarSettingController::class, 'update'])->name('sidebar.update');
+        Route::post('settings/sidebar/avatar', [SidebarSettingController::class, 'uploadAvatar'])->name('sidebar.avatar.store');
+        Route::delete('settings/sidebar/avatar', [SidebarSettingController::class, 'removeAvatar'])->name('sidebar.avatar.destroy');
     });
 });
 

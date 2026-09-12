@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Eye, MessageSquare, Clock, ChevronRight, ArrowLeft, ArrowRight, Home } from 'lucide-react';
+import { Eye, MessageSquare, Clock, ChevronRight, ArrowLeft, ArrowRight, Home, ListTree, Heart } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CommentSection, { type CommentItem, type SmileyGroupData } from '@/components/comments/comment-section';
 import { blocknoteToHtml } from '@/lib/blocknote-to-html';
@@ -21,6 +22,8 @@ type Article = {
     created_at: string;
     permalink: string;
     comment_status: string;
+    likes: number;
+    liked_by_me: boolean | null;
 };
 
 type Related = {
@@ -46,16 +49,185 @@ type Props = {
     nextArticle: PrevNext;
 };
 
+/** 游客读取本地点赞记录 */
+function readGuestLiked(articleId: number): boolean {
+    try {
+        const likedList: number[] = JSON.parse(localStorage.getItem('blog-liked-articles') ?? '[]');
+
+        return likedList.includes(articleId);
+    } catch {
+        return false;
+    }
+}
+
+type TocItem = {
+    id: string;
+    text: string;
+    level: number;
+};
+
+/** 从 BlockNote 内容中提取标题生成文章大纲。 */
+function extractHeadings(content: BlockNoteDocument): TocItem[] {
+    const items: TocItem[] = [];
+
+    const walk = (blocks: BlockNoteDocument) => {
+        for (const block of blocks) {
+            if ((block as { type?: string }).type === 'heading') {
+                const typed = block as { props?: { level?: number }; content?: unknown };
+                const level = Math.min(Math.max(Number(typed.props?.level) || 1, 1), 4);
+                const text = Array.isArray(typed.content)
+                    ? typed.content
+                        .map((inline) => (typeof inline === 'object' && inline !== null && 'text' in inline ? String((inline as { text?: unknown }).text ?? '') : ''))
+                        .join('')
+                    : '';
+
+                if (text.trim() !== '') {
+                    items.push({ id: `heading-${items.length}`, text: text.trim(), level });
+                }
+            }
+
+            const children = (block as { children?: BlockNoteDocument }).children;
+
+            if (Array.isArray(children)) {
+                walk(children);
+            }
+        }
+    };
+
+    walk(content ?? []);
+
+    return items;
+}
+
 export default function Show({ article, comments, captcha, smileyGroups, relatedArticles, prevArticle, nextArticle }: Props) {
     const { t } = useTranslation();
     const { name } = usePage().props as { name?: string };
     const firstCategory = article.categories[0];
 
+    const tocItems = useMemo(() => extractHeadings(article.content ?? []), [article.content]);
+    const [activeHeading, setActiveHeading] = useState<string | null>(null);
+
+    const isLoggedIn = !!usePage().props.auth?.user;
+    const [likes, setLikes] = useState(article.likes);
+    const [liked, setLiked] = useState<boolean>(
+        // 游客根据浏览器本地记录判断是否点赞过
+        article.liked_by_me ?? readGuestLiked(article.id),
+    );
+    const [likeSending, setLikeSending] = useState(false);
+
+    const guestId = useCallback((): string => {
+        let id = localStorage.getItem('blog-guest-id');
+
+        if (!id) {
+            id = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `guest-${Date.now()}`;
+            localStorage.setItem('blog-guest-id', id);
+        }
+
+        return id;
+    }, []);
+
+    const toggleLike = async () => {
+        if (likeSending) {
+            return;
+        }
+
+        setLikeSending(true);
+
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+            const xsrf = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)?.[1];
+            const headers: Record<string, string> = {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            };
+
+            if (csrf) {
+                headers['X-CSRF-TOKEN'] = csrf;
+            } else if (xsrf) {
+                headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrf);
+            }
+
+            const response = await fetch(`/articles/${article.id}/like`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(isLoggedIn ? {} : { guestId: guestId() }),
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(data?.message ?? '点赞失败');
+            }
+
+            setLikes(data.likes);
+            setLiked(data.liked);
+
+            // 游客的点赞状态记录在浏览器本地
+            if (!isLoggedIn) {
+                const likedList: number[] = JSON.parse(localStorage.getItem('blog-liked-articles') ?? '[]');
+                const next = data.liked
+                    ? [...likedList.filter((id) => id !== article.id), article.id]
+                    : likedList.filter((id) => id !== article.id);
+
+                localStorage.setItem('blog-liked-articles', JSON.stringify(next));
+            }
+        } catch {
+            // 静默失败，不打断阅读
+        } finally {
+            setLikeSending(false);
+        }
+    };
+
+    // 为渲染后的标题 DOM 按顺序写入锚点 id
+    useEffect(() => {
+        if (tocItems.length === 0) {
+            return;
+        }
+
+        const nodes = document.querySelectorAll('.article-content h1, .article-content h2, .article-content h3, .article-content h4');
+
+        nodes.forEach((node, index) => {
+            if (tocItems[index]) {
+                node.id = tocItems[index].id;
+                (node as HTMLElement).style.scrollMarginTop = '5.5rem';
+            }
+        });
+    }, [tocItems]);
+
+    // 滚动高亮当前所在章节
+    useEffect(() => {
+        if (tocItems.length === 0) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    if (entry.isIntersecting) {
+                        setActiveHeading(entry.target.id);
+                    }
+                }
+            },
+            { rootMargin: '-20% 0px -70% 0px' },
+        );
+
+        tocItems.forEach((item) => {
+            const node = document.getElementById(item.id);
+
+            if (node) {
+                observer.observe(node);
+            }
+        });
+
+        return () => observer.disconnect();
+    }, [tocItems]);
+
     return (
         <>
             <Head title={article.title} />
 
-            <div className="mx-auto max-w-4xl px-5 py-8 md:px-8 md:py-12">
+            <div className="mx-auto max-w-6xl px-5 py-8 md:px-8 md:py-12">
                 {/* 面包屑 */}
                 <nav aria-label="breadcrumb" className="flex flex-wrap items-center gap-1.5 text-footnote text-muted-foreground">
                     <Link href={home()} className="apple-press inline-flex items-center gap-1 rounded-md px-1.5 py-1 hover:bg-muted hover:text-foreground">
@@ -81,7 +253,38 @@ export default function Show({ article, comments, captcha, smileyGroups, related
                     <span className="line-clamp-1 max-w-[12rem] text-foreground/80">{article.title}</span>
                 </nav>
 
-                <article className="mt-6">
+                <div className="mt-6 flex items-start gap-6">
+                    {/* 文章大纲 */}
+                    {tocItems.length > 0 && (
+                        <aside className="top-24 hidden w-60 shrink-0 self-start xl:sticky xl:block">
+                            <div className="apple-card p-4">
+                                <h3 className="mb-2.5 flex items-center gap-1.5 px-1 text-callout font-medium">
+                                    <ListTree className="h-3.5 w-3.5 text-primary" />
+                                    大纲
+                                </h3>
+                                <nav className="max-h-[60vh] space-y-0.5 overflow-y-auto">
+                                    {tocItems.map((item) => (
+                                        <a
+                                            key={item.id}
+                                            href={`#${item.id}`}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
+                                            }}
+                                            className={`block truncate rounded-lg py-1.5 pr-2 text-xs transition-colors hover:text-primary ${
+                                                activeHeading === item.id ? 'font-medium text-primary' : 'text-muted-foreground'
+                                            } ${item.level === 2 ? 'pl-2.5' : item.level === 3 ? 'pl-5' : 'pl-1.5'}`}
+                                            title={item.text}
+                                        >
+                                            {item.text}
+                                        </a>
+                                    ))}
+                                </nav>
+                            </div>
+                        </aside>
+                    )}
+                    <div className="min-w-0 flex-1">
+                <article className="mt-0">
                     {/* 文章头部 */}
                     <header className="apple-card p-6 md:p-10">
                         {article.categories.length > 0 && (
@@ -157,6 +360,36 @@ export default function Show({ article, comments, captcha, smileyGroups, related
                     </div>
                 </article>
 
+                {/* 点赞 */}
+                <div className="mt-5 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={() => void toggleLike()}
+                        disabled={likeSending}
+                        className={`apple-press flex items-center gap-2 rounded-full border px-6 py-2.5 text-sm font-medium transition-all disabled:opacity-60 ${
+                            liked
+                                ? 'border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400'
+                                : 'border-border/60 bg-popover text-muted-foreground hover:border-rose-200 hover:text-rose-500 dark:hover:border-rose-500/30'
+                        }`}
+                        aria-pressed={liked}
+                    >
+                        <Heart className={`h-4 w-4 ${liked ? 'fill-rose-500 text-rose-500 dark:fill-rose-400 dark:text-rose-400' : ''}`} />
+                        {liked ? '已点赞' : '点赞'}
+                        <span className="tabular-nums">{likes}</span>
+                    </button>
+                </div>
+
+                {/* 评论：置于正文之后、上下篇之前 */}
+                <div className="mt-12">
+                    <CommentSection
+                        articleId={article.id}
+                        comments={comments}
+                        captcha={captcha}
+                        smileyGroups={smileyGroups}
+                        commentStatus={article.comment_status}
+                    />
+                </div>
+
                 {/* 上一篇 / 下一篇 */}
                 {(prevArticle || nextArticle) && (
                     <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -208,14 +441,8 @@ export default function Show({ article, comments, captcha, smileyGroups, related
                     </div>
                 )}
 
-                {/* 评论 */}
-                <CommentSection
-                    articleId={article.id}
-                    comments={comments}
-                    captcha={captcha}
-                    smileyGroups={smileyGroups}
-                    commentStatus={article.comment_status}
-                />
+                    </div>
+                </div>
             </div>
         </>
     );

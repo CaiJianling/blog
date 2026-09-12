@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\ArticleLike;
+use App\Models\Attachment;
 use App\Models\Comment;
+use App\Models\Option;
 use App\Models\SmileyGroup;
 use App\Models\TermTaxonomy;
 use App\Models\User;
@@ -84,6 +87,7 @@ class BlogController extends Controller
             'currentCategory' => $category,
             'currentTag' => $tag,
             'currentQuery' => $q,
+            'sidebar' => $this->sidebarPayload(),
         ]);
     }
 
@@ -104,6 +108,39 @@ class BlogController extends Controller
         abort_if($article === null, 404);
 
         return $this->renderArticle($article, $request);
+    }
+
+    /**
+     * 博客侧边栏数据：博主信息、站点统计与后台维护的自定义菜单。
+     *
+     * @return array<string, mixed>
+     */
+    private function sidebarPayload(): array
+    {
+        $avatarId = (int) Option::get('sidebar_blogger_avatar', '');
+        $avatarUrl = null;
+
+        if ($avatarId > 0) {
+            $attachment = Attachment::find($avatarId);
+
+            if ($attachment && $attachment->isImage()) {
+                $avatarUrl = Storage::disk('public')->url($attachment->file_path);
+            }
+        }
+
+        return [
+            'blogger' => [
+                'name' => trim((string) Option::get('sidebar_blogger_name', '')) ?: '博主',
+                'avatar_url' => $avatarUrl,
+                'intro' => (string) Option::get('sidebar_blogger_intro', ''),
+            ],
+            'stats' => [
+                'articles' => Article::where('status', 'publish')->count(),
+                'views' => (int) Article::where('status', 'publish')->sum('views'),
+                'comments' => (int) Article::where('status', 'publish')->sum('comment_count'),
+            ],
+            'menus' => SidebarSettingController::menus(),
+        ];
     }
 
     /**
@@ -195,6 +232,10 @@ class BlogController extends Controller
                 'created_at' => $article->created_at->format('Y-m-d'),
                 'permalink' => $this->permalinks->articlePath($article),
                 'comment_status' => $article->comment_status,
+                'likes' => $article->likes,
+                'liked_by_me' => $request->user()
+                    ? ArticleLike::where('article_id', $article->id)->where('user_id', $request->user()->id)->exists()
+                    : null,
             ],
             'comments' => $commentTree,
             'captcha' => $captcha,

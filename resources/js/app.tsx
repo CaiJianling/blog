@@ -36,6 +36,9 @@ initPromise.then(() => {
                 case name === 'settings/navigation':
                 case name === 'settings/navigation-intro':
                 case name === 'settings/ai':
+                case name === 'settings/assistant':
+                case name === 'settings/tools':
+                case name === 'settings/sidebar':
                     return AppLayout;
                 case name.startsWith('settings/'):
                     return [AppLayout, SettingsLayout];
@@ -54,8 +57,10 @@ initPromise.then(() => {
                 </I18nextProvider>
             );
         },
+        // 顶部细条为 Inertia 页面加载进度（非阅读进度）
         progress: {
-            color: '#4B5563',
+            color: '#2563eb',
+            showSpinner: false,
         },
     });
 
