@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Attachment;
+use App\Models\NavLink;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -80,6 +82,118 @@ class AttachmentService
      * 最大上传尺寸：50 MB（单位：字节）。
      */
     public const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
+    /**
+     * 系统用途图像的 parent_type（站点图标、各类头像与图标）。
+     * 这类图像在媒体库中仅管理员可见（只读），删除只能通过对应设置页的更换/恢复操作。
+     */
+    public const PROTECTED_PARENT_TYPES = [
+        'site_icon',
+        'assistant_avatar',
+        'sidebar_avatar',
+        'nav_link_icon',
+        'user_avatar',
+    ];
+
+    /**
+     * 系统图像的用途标签（媒体库展示）。
+     */
+    public const PROTECTED_TYPE_LABELS = [
+        'site_icon' => '站点图标',
+        'assistant_avatar' => 'AI 小助手头像',
+        'sidebar_avatar' => '博主头像',
+        'nav_link_icon' => '导航图标',
+        'user_avatar' => '用户头像',
+    ];
+
+    /**
+     * 删除某系统用途下的全部图像（文件 + 数据库记录）。
+     * 用于"更换图片"与"恢复默认"场景：旧图必须从文件库中移除。
+     */
+    public function deleteByParent(string $parentType, ?int $parentId): int
+    {
+        $query = Attachment::where('parent_type', $parentType);
+
+        if ($parentId !== null) {
+            $query->where('parent_id', $parentId);
+        } else {
+            $query->whereNull('parent_id');
+        }
+
+        $attachments = $query->get();
+        $count = 0;
+
+        foreach ($attachments as $attachment) {
+            if ($this->deleteAttachment($attachment)) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * 上传并替换某系统用途的图像：先删除旧图再存新图。
+     */
+    public function replaceSystemImage(string $parentType, ?int $parentId, UploadedFile $file, array $meta): Attachment
+    {
+        $this->deleteByParent($parentType, $parentId);
+
+        return $this->persistFile($file, $meta, $parentType, $parentId);
+    }
+
+    /**
+     * 获取某系统用途当前的图像。
+     */
+    public function systemImage(string $parentType, ?int $parentId): ?Attachment
+    {
+        return Attachment::where('parent_type', $parentType)
+            ->when($parentId !== null, fn ($query) => $query->where('parent_id', $parentId))
+            ->when($parentId === null, fn ($query) => $query->whereNull('parent_id'))
+            ->first();
+    }
+
+    /**
+     * 获取某系统用途图像的访问 URL。
+     */
+    public function systemImageUrl(string $parentType, ?int $parentId): ?string
+    {
+        $attachment = $this->systemImage($parentType, $parentId);
+
+        if (! $attachment || ! $attachment->isImage()) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($attachment->file_path);
+    }
+
+    /**
+     * 系统图像的用途标签（含关联对象名称），非系统图像返回 null。
+     */
+    public function usageLabel(Attachment $attachment): ?string
+    {
+        $base = self::PROTECTED_TYPE_LABELS[$attachment->parent_type] ?? null;
+
+        if ($base === null) {
+            return null;
+        }
+
+        switch ($attachment->parent_type) {
+            case 'nav_link_icon':
+                $link = NavLink::find($attachment->parent_id);
+
+                return $link ? "导航图标：{$link->name}" : '导航图标';
+
+            case 'user_avatar':
+                $user = User::find($attachment->parent_id);
+                $name = $user?->nickname ?: ($user?->name ?? "ID {$attachment->parent_id}");
+
+                return "用户头像：{$name}";
+
+            default:
+                return $base;
+        }
+    }
 
     /**
      * 单个文件完整的三重校验流程。

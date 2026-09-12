@@ -14,15 +14,22 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Services\AttachmentService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    public function __construct(
+        protected AttachmentService $attachments,
+    ) {}
+
     /**
      * Show the user's profile settings page.
      */
@@ -31,7 +38,45 @@ class ProfileController extends Controller
         return Inertia::render('settings/profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'avatar_url' => $request->user()->avatarUrl(),
         ]);
+    }
+
+    /**
+     * 上传用户头像（更换时删除旧图）。
+     */
+    public function uploadAvatar(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'max:2048',
+                'mimes:jpg,jpeg,png,gif,webp',
+            ],
+        ], [
+            'file.required' => '请选择一个图片文件。',
+            'file.max' => '头像不能超过 2 MB。',
+            'file.mimes' => '仅支持 jpg/jpeg/png/gif/webp 格式。',
+        ]);
+
+        $meta = $this->attachments->validateUploadedFile($validated['file']);
+        $attachment = $this->attachments->replaceSystemImage('user_avatar', $request->user()->id, $validated['file'], $meta);
+
+        return response()->json([
+            'id' => $attachment->id,
+            'url' => $attachment->isImage() ? Storage::disk('public')->url($attachment->file_path) : null,
+        ]);
+    }
+
+    /**
+     * 恢复默认头像（从文件库删除自定义头像）。
+     */
+    public function removeAvatar(): RedirectResponse
+    {
+        $this->attachments->deleteByParent('user_avatar', $request->user()->id ?? Auth::id());
+
+        return to_route('profile.edit')->with('toast', ['type' => 'success', 'message' => '已恢复默认头像。']);
     }
 
     /**

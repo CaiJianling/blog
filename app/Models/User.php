@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -47,5 +48,21 @@ class User extends Authenticatable implements PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * 用户头像 URL（存储于附件库，parent_type = user_avatar）。
+     */
+    public function avatarUrl(): ?string
+    {
+        $attachment = Attachment::where('parent_type', 'user_avatar')
+            ->where('parent_id', $this->id)
+            ->first();
+
+        if (! $attachment || ! $attachment->isImage()) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($attachment->file_path);
     }
 }

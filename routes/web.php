@@ -137,6 +137,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('settings/navigation/categories/{category}', [NavigationSettingController::class, 'destroyCategory'])->name('navigation.categories.destroy');
         Route::get('settings/navigation/links/{link}/intro', [NavigationSettingController::class, 'editIntro'])->name('navigation.links.intro');
         Route::put('settings/navigation/links/{link}/intro', [NavigationSettingController::class, 'updateIntro'])->name('navigation.links.intro.update');
+        Route::post('settings/navigation/links/{link}/icon', [NavigationSettingController::class, 'uploadLinkIcon'])->name('navigation.links.icon');
+        Route::delete('settings/navigation/links/{link}/icon', [NavigationSettingController::class, 'resetLinkIcon'])->name('navigation.links.icon.reset');
         Route::post('settings/navigation/links', [NavigationSettingController::class, 'storeLink'])->name('navigation.links.store');
         Route::put('settings/navigation/links/{link}', [NavigationSettingController::class, 'updateLink'])->name('navigation.links.update');
         Route::delete('settings/navigation/links/{link}', [NavigationSettingController::class, 'destroyLink'])->name('navigation.links.destroy');

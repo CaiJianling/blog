@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\NavCategory;
 use App\Models\NavLink;
+use App\Services\AttachmentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -14,6 +17,10 @@ use Inertia\Response;
  */
 class NavigationSettingController extends Controller
 {
+    public function __construct(
+        protected AttachmentService $attachments,
+    ) {}
+
     /**
      * 导航管理页面。
      */
@@ -188,6 +195,48 @@ class NavigationSettingController extends Controller
     }
 
     /**
+     * 上传导航链接图标。
+     */
+    public function uploadLinkIcon(Request $request, NavLink $link): JsonResponse
+    {
+        $validated = $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'max:2048',
+                'mimes:jpg,jpeg,png,gif,webp',
+            ],
+        ], [
+            'file.required' => '请选择一个图片文件。',
+            'file.max' => '图标不能超过 2 MB。',
+            'file.mimes' => '仅支持 jpg/jpeg/png/gif/webp 格式。',
+        ]);
+
+        $meta = $this->attachments->validateUploadedFile($validated['file']);
+
+        // 更换图标：先从文件库删除旧图
+        $attachment = $this->attachments->replaceSystemImage('nav_link_icon', $link->id, $validated['file'], $meta);
+
+        /** @var FilesystemAdapter $publicDisk */
+        $publicDisk = Storage::disk('public');
+
+        return response()->json([
+            'id' => $attachment->id,
+            'url' => $publicDisk->url($attachment->file_path),
+        ]);
+    }
+
+    /**
+     * 恢复默认图标（从文件库删除自定义图标，回到颜色+首字样式）。
+     */
+    public function resetLinkIcon(NavLink $link): JsonResponse
+    {
+        $deleted = $this->attachments->deleteByParent('nav_link_icon', $link->id);
+
+        return response()->json(['reset' => true, 'deleted' => $deleted]);
+    }
+
+    /**
      * 链接表单校验规则。
      *
      * @return array<string, mixed>
@@ -243,6 +292,7 @@ class NavigationSettingController extends Controller
             'color' => $link->color,
             'description' => $link->description,
             'has_intro' => $link->intro_content !== null,
+            'icon_url' => $this->attachments->systemImageUrl('nav_link_icon', $link->id),
         ];
 
         if ($withIntro) {

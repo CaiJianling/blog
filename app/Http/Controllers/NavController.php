@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\NavCategory;
 use App\Models\NavLink;
+use App\Services\AttachmentService;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -12,6 +13,10 @@ use Inertia\Response;
  */
 class NavController extends Controller
 {
+    public function __construct(
+        protected AttachmentService $attachments,
+    ) {}
+
     public function index(): Response
     {
         $navigationCategories = NavCategory::orderBy('sort_order')
@@ -27,6 +32,7 @@ class NavController extends Controller
                         'url' => $link->url,
                         'description' => $link->description,
                         'color' => $link->color,
+                        'icon_url' => $this->attachments->systemImageUrl('nav_link_icon', $link->id),
                         'has_intro' => $link->intro_content !== null,
                     ])
                     ->values(),

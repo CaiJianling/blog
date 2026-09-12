@@ -98,7 +98,9 @@ class AssistantSettingController extends Controller
         ]);
 
         $meta = $this->attachments->validateUploadedFile($validated['file']);
-        $attachment = $this->attachments->persistFile($validated['file'], $meta, 'assistant_avatar', null);
+
+        // 更换头像：先从文件库删除旧图
+        $attachment = $this->attachments->replaceSystemImage('assistant_avatar', null, $validated['file'], $meta);
 
         Option::set('assistant_avatar', (string) $attachment->id);
 
@@ -116,9 +118,11 @@ class AssistantSettingController extends Controller
      */
     public function removeAvatar()
     {
+        // 恢复默认头像：从文件库删除自定义头像
+        $this->attachments->deleteByParent('assistant_avatar', null);
         Option::set('assistant_avatar', '');
 
-        return to_route('assistant.edit')->with('toast', ['type' => 'success', 'message' => '头像已移除。']);
+        return to_route('assistant.edit')->with('toast', ['type' => 'success', 'message' => '已恢复默认头像。']);
     }
 
     /**

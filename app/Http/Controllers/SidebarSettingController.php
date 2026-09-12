@@ -87,7 +87,9 @@ class SidebarSettingController extends Controller
         ]);
 
         $meta = $this->attachments->validateUploadedFile($validated['file']);
-        $attachment = $this->attachments->persistFile($validated['file'], $meta, 'sidebar_avatar', null);
+
+        // 更换头像：先从文件库删除旧图
+        $attachment = $this->attachments->replaceSystemImage('sidebar_avatar', null, $validated['file'], $meta);
 
         Option::set('sidebar_blogger_avatar', (string) $attachment->id);
 
@@ -105,9 +107,11 @@ class SidebarSettingController extends Controller
      */
     public function removeAvatar()
     {
+        // 恢复默认头像：从文件库删除自定义头像
+        $this->attachments->deleteByParent('sidebar_avatar', null);
         Option::set('sidebar_blogger_avatar', '');
 
-        return to_route('sidebar.edit')->with('toast', ['type' => 'success', 'message' => '头像已移除。']);
+        return to_route('sidebar.edit')->with('toast', ['type' => 'success', 'message' => '已恢复默认头像。']);
     }
 
     /**

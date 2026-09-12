@@ -61,8 +61,8 @@ class Comment extends Model
      */
     public function getAvatarUrlAttribute(): string
     {
-        if ($this->user?->avatar) {
-            return $this->user->avatar;
+        if ($this->user?->avatarUrl()) {
+            return $this->user->avatarUrl();
         }
 
         if ($this->author_qq) {

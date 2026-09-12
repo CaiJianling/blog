@@ -137,6 +137,8 @@ class OptionController extends Controller
      */
     public function removeSiteIcon()
     {
+        // 恢复默认：从文件库删除站点图标
+        $this->attachments->deleteByParent('site_icon', null);
         Option::set('site_icon', '');
 
         return to_route('site.edit');
@@ -163,12 +165,9 @@ class OptionController extends Controller
 
         $file = $validated['file'];
         $meta = $this->attachments->validateUploadedFile($file);
-        $attachment = $this->attachments->persistFile(
-            $file,
-            $meta,
-            'site_icon',
-            null,
-        );
+
+        // 更换图标：先从文件库删除旧图
+        $attachment = $this->attachments->replaceSystemImage('site_icon', null, $file, $meta);
 
         Option::set('site_icon', (string) $attachment->id);
 

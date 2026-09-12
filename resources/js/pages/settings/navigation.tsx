@@ -8,8 +8,9 @@ import {
     Plus,
     Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,8 +33,53 @@ type NavLinkData = {
     url: string;
     color: string;
     description: string | null;
+    icon_url: string | null;
     has_intro: boolean;
 };
+
+const ICON_GLYPHS: Record<string, string> = {
+    Braces: '{}',
+    CodeXml: '</>',
+    Database: 'DB',
+    Hash: '#',
+    Binary: '01',
+    Link: '∿',
+    Type: 'T',
+    Regex: '.*',
+    GitCompare: '⇔',
+    CaseSensitive: 'Aa',
+    Ruler: '📏',
+    Clock: '⏱',
+    Wrench: '🔧',
+    Calculator: '🧮',
+    Globe: '🌐',
+    Terminal: '⌨',
+};
+
+function glyph(icon: string): string {
+    return ICON_GLYPHS[icon] ?? '⚙';
+}
+
+function getCsrfToken(): { headerName: string; value: string } | null {
+    const meta = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
+
+    if (meta) {
+        return { headerName: 'X-CSRF-TOKEN', value: meta };
+    }
+
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+
+    if (match?.[1]) {
+        return {
+            headerName: 'X-XSRF-TOKEN',
+            value: decodeURIComponent(match[1]),
+        };
+    }
+
+    return null;
+}
 
 type NavCategoryData = {
     id: number;
@@ -69,6 +115,75 @@ export default function Navigation({ categories }: Props) {
     });
 
     const active = categories.find((category) => category.id === activeId) ?? categories[0] ?? null;
+    const iconInputRef = useRef<HTMLInputElement>(null);
+    const [iconUploading, setIconUploading] = useState(false);
+
+    const uploadIcon = (linkId: number, file: File) => {
+        const csrf = getCsrfToken();
+
+        if (!csrf) {
+            return;
+        }
+
+        setIconUploading(true);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch(`/settings/navigation/links/${linkId}/icon`, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                [csrf.headerName]: csrf.value,
+            },
+            body: formData,
+        })
+            .then(async (response) => {
+                const data = await response.json().catch(() => null);
+
+                if (!response.ok) {
+                    toast.error(data?.message ?? t('settings.navigation.iconUploadFailed'));
+
+                    return;
+                }
+
+                toast.success(t('settings.navigation.iconUploadSuccess'));
+                setLinkDialogOpen(false);
+                router.reload({ only: ['categories'] });
+            })
+            .catch(() => toast.error(t('settings.navigation.iconUploadFailed')))
+            .finally(() => setIconUploading(false));
+    };
+
+    const resetIcon = (linkId: number) => {
+        const csrf = getCsrfToken();
+
+        if (!csrf) {
+            return;
+        }
+
+        fetch(`/settings/navigation/links/${linkId}/icon`, {
+            method: 'DELETE',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                [csrf.headerName]: csrf.value,
+            },
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    toast.error(t('settings.navigation.iconResetFailed'));
+
+                    return;
+                }
+
+                toast.success(t('settings.navigation.iconResetSuccess'));
+                setLinkDialogOpen(false);
+                router.reload({ only: ['categories'] });
+            })
+            .catch(() => toast.error(t('settings.navigation.iconResetFailed')));
+    };
 
     const openCategoryDialog = (category: NavCategoryData | null) => {
         setEditingCategory(category);
@@ -401,6 +516,57 @@ export default function Navigation({ categories }: Props) {
                         <DialogDescription>{t('settings.navigation.linkDialogDescription')}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-3">
+                        {editingLink && (
+                            <div className="space-y-1.5">
+                                <Label>{t('settings.navigation.icon')}</Label>
+                                <div className="flex items-center gap-3">
+                                    {editingLink.icon_url ? (
+                                        <img src={editingLink.icon_url} alt={editingLink.name} className="h-10 w-10 rounded-xl object-cover" />
+                                    ) : (
+                                        <span
+                                            className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                            style={{ backgroundColor: linkForm.color || '#6b7280' }}
+                                        >
+                                            {glyph('Wrench')}
+                                        </span>
+                                    )}
+                                    <input
+                                        ref={iconInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/gif,image/webp"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+
+                                            if (file && editingLink) {
+                                                uploadIcon(editingLink.id, file);
+                                                e.target.value = '';
+                                            }
+                                        }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={iconUploading}
+                                        onClick={() => iconInputRef.current?.click()}
+                                    >
+                                        {iconUploading ? t('common.saving') : t('settings.navigation.uploadIcon')}
+                                    </Button>
+                                    {editingLink.icon_url && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => resetIcon(editingLink.id)}
+                                        >
+                                            {t('settings.navigation.resetIcon')}
+                                        </Button>
+                                    )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">{t('settings.navigation.iconHint')}</p>
+                            </div>
+                        )}
                         <div className="space-y-1.5">
                             <Label htmlFor="link-name">{t('settings.navigation.name')}</Label>
                             <Input

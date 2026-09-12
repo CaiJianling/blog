@@ -9,6 +9,7 @@ type NavLink = {
     url: string;
     description: string | null;
     color: string;
+    icon_url: string | null;
     has_intro: boolean;
 };
 
@@ -87,12 +88,20 @@ export default function Index({ navigationCategories }: Props) {
                                         rel="noopener noreferrer"
                                         className="apple-card apple-press group flex items-start gap-3 p-4 hover:-translate-y-0.5"
                                     >
-                                        <div
-                                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                                            style={{ backgroundColor: link.color || '#6b7280' }}
-                                        >
-                                            {link.name.charAt(0)}
-                                        </div>
+                                        {link.icon_url ? (
+                                            <img
+                                                src={link.icon_url}
+                                                alt={link.name}
+                                                className="h-10 w-10 shrink-0 rounded-xl object-cover"
+                                            />
+                                        ) : (
+                                            <div
+                                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
+                                                style={{ backgroundColor: link.color || '#6b7280' }}
+                                            >
+                                                {link.name.charAt(0)}
+                                            </div>
+                                        )}
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-1">
                                                 <h3 className="truncate text-headline group-hover:text-primary transition-colors">
