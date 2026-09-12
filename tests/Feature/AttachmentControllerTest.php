@@ -388,6 +388,53 @@ test('bulk delete rejects non-existent ids', function () {
     $response->assertSessionHasErrors(['ids.0']);
 });
 
+test('ajax upload returns json with attachment url for editor insert', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+    $file = UploadedFile::fake()->image('editor-upload.png', 640, 480);
+
+    $response = $this->actingAs($user)
+        ->postJson(route('attachments.store'), ['files' => [$file]]);
+
+    $response->assertCreated()
+        ->assertJsonStructure([
+            'data' => [
+                ['id', 'file_name', 'file_path', 'mime_type', 'url'],
+            ],
+        ]);
+
+    $attachment = Attachment::first();
+
+    expect($attachment)->not->toBeNull()
+        ->and($response->json('data.0.url'))->toBe(Storage::disk('public')->url($attachment->file_path))
+        ->and($response->json('data.0.mime_type'))->toStartWith('image/');
+});
+
+test('ajax upload returns 422 json when a file fails validation', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+    // 内容为文本的伪装 png：扩展名合法但文件头校验会失败
+    $file = new UploadedFile(
+        tmpfile_stream('not a real png'),
+        'fake-image.png',
+        'image/png',
+        null,
+        true
+    );
+
+    $response = $this->actingAs($user)
+        ->postJson(route('attachments.store'), ['files' => [$file]], [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
+
+    $response->assertStatus(422)
+        ->assertJsonStructure(['message', 'errors']);
+
+    expect(Attachment::count())->toBe(0);
+});
+
 /**
  * 测试辅助：根据给定的字符串内容创建一个临时文件句柄，
  * 配合 UploadedFile($test = true) 构造方式让 PHP 把它当成上传文件。

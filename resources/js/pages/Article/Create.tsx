@@ -12,11 +12,15 @@ import {
     Link2,
     FileText,
     ChevronRight,
+    Sparkles,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import AiGenerateDialog from '@/components/ai-generate-dialog';
+import type { AiArticleResult } from '@/components/ai-generate-dialog';
 import { BlockNoteEditor  } from '@/components/blocknote-editor';
-import type {BlockNoteDocument} from '@/components/blocknote-editor';
+import type {BlockNoteDocument, BlockNoteEditorRef} from '@/components/blocknote-editor';
 import type { CategoryItem } from '@/components/category-picker';
 import { CategoryPicker } from '@/components/category-picker';
 import MediaQuickUpload from '@/components/media-quick-upload';
@@ -102,6 +106,7 @@ function SidebarSection({
 export default function CreateArticle({ categories, tags }: Props) {
     const { t } = useTranslation();
     const titleRef = useRef<HTMLInputElement>(null);
+    const editorRef = useRef<BlockNoteEditorRef | null>(null);
     const [formData, setFormData] = useState({
         title: '',
         slug: '',
@@ -114,6 +119,7 @@ export default function CreateArticle({ categories, tags }: Props) {
         newTag: '',
     });
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
     useEffect(() => {
         if (titleRef.current) {
@@ -136,6 +142,41 @@ export default function CreateArticle({ categories, tags }: Props) {
         };
 
         router.post('/articles', data as unknown as Parameters<typeof router.post>[1]);
+    };
+
+    // AI 生成结果填入编辑器，作者检查确认后再手动保存录入
+    const applyAiResult = async (result: AiArticleResult) => {
+        const editor = editorRef.current;
+
+        const hasContent = formData.title.trim() !== ''
+            || (Array.isArray(formData.content) && formData.content.length > 1);
+
+        if (hasContent && !window.confirm(t('articles.ai.confirmOverwrite'))) {
+            return;
+        }
+
+        setFormData((prev) => ({
+            ...prev,
+            title: result.title,
+            excerpt: result.excerpt || prev.excerpt,
+        }));
+
+        if (!editor || typeof editor.tryParseMarkdownToBlocks !== 'function') {
+            toast.error(t('articles.ai.parseFailed'));
+
+            return;
+        }
+
+        const blocks = await editor.tryParseMarkdownToBlocks(result.markdown);
+
+        if (!blocks || blocks.length === 0) {
+            toast.error(t('articles.ai.parseFailed'));
+
+            return;
+        }
+
+        editor.replaceBlocks(editor.document, blocks);
+        setFormData((prev) => ({ ...prev, content: editor.document as BlockNoteDocument }));
     };
 
     return (
@@ -163,6 +204,10 @@ export default function CreateArticle({ categories, tags }: Props) {
                             {sidebarOpen
                                 ? <PanelRightClose className="h-[18px] w-[18px]" />
                                 : <PanelRightOpen className="h-[18px] w-[18px]" />}
+                        </Button>
+                        <Button variant="outline" onClick={() => setAiDialogOpen(true)}>
+                            <Sparkles className="h-4 w-4" />
+                            {t('articles.ai.button')}
                         </Button>
                         <Button variant="secondary" onClick={(e) => handleSubmit(e, 'draft')}>
                             <Save className="h-4 w-4" />
@@ -195,7 +240,10 @@ export default function CreateArticle({ categories, tags }: Props) {
                                 <div className="px-8 pb-8 pt-3">
                                     <BlockNoteEditor
                                         initialContent={formData.content}
-                                        onChange={(document) => setFormData({ ...formData, content: document })}
+                                        onChange={(document) => setFormData((prev) => ({ ...prev, content: document }))}
+                                        onReady={(editor) => {
+                                            editorRef.current = editor;
+                                        }}
                                     />
                                 </div>
                             </CardContent>
@@ -319,6 +367,12 @@ export default function CreateArticle({ categories, tags }: Props) {
                     </div>
                 </div>
             </div>
+
+            <AiGenerateDialog
+                open={aiDialogOpen}
+                onOpenChange={setAiDialogOpen}
+                onApply={applyAiResult}
+            />
         </>
     );
 }

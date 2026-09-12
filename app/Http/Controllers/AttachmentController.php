@@ -144,12 +144,14 @@ class AttachmentController extends Controller
         $parentType = $request->input('parent_type', '');
         $parentId = $request->input('parent_id', '');
 
+        $created = [];
+
         foreach ($files as $index => $file) {
             try {
                 // 三重校验
                 $meta = $this->attachments->validateUploadedFile($file);
                 // 持久化（uploads/YYYY/MM/xxx.ext）
-                $this->attachments->persistFile(
+                $created[] = $this->attachments->persistFile(
                     $file,
                     $meta,
                     $parentType !== '' ? $parentType : null,
@@ -159,6 +161,29 @@ class AttachmentController extends Controller
                 $displayName = $file->getClientOriginalName() ?: "文件索引 {$index}";
                 $errors[] = "{$displayName}：{$e->getMessage()}";
             }
+        }
+
+        // 非 Inertia 的 AJAX 请求返回 JSON（供编辑器插图、快速上传等组件使用）
+        if (! $request->header('X-Inertia') && ($request->expectsJson() || $request->ajax())) {
+            /** @var FilesystemAdapter $publicDisk */
+            $publicDisk = Storage::disk('public');
+
+            if ($errors !== []) {
+                return response()->json([
+                    'message' => '部分文件上传失败。',
+                    'errors' => $errors,
+                ], 422);
+            }
+
+            return response()->json([
+                'data' => collect($created)->map(fn (Attachment $attachment) => [
+                    'id' => $attachment->id,
+                    'file_name' => $attachment->file_name,
+                    'file_path' => $attachment->file_path,
+                    'mime_type' => $attachment->mime_type,
+                    'url' => $publicDisk->url($attachment->file_path),
+                ])->values(),
+            ], 201);
         }
 
         if ($errors !== []) {

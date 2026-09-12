@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Settings2, Users, Home, FileText, FileStack, Image, MessageSquare, Menu as MenuIcon } from 'lucide-react';
+import { LayoutGrid, Settings2, Users, Home, FileText, FileStack, Image, MessageSquare, Menu as MenuIcon, Globe } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooterSettings } from '@/components/nav-footer-settings';
 import { NavMain } from '@/components/nav-main';
@@ -18,6 +18,8 @@ import { edit as editSite } from '@/routes/site';
 import { edit as editPermalink } from '@/routes/permalink';
 import { index as smiliesIndex } from '@/routes/smilies';
 import { index as menusIndex } from '@/routes/menus';
+import { edit as editNavigation } from '@/routes/navigation';
+import { edit as editAi } from '@/routes/ai';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
@@ -96,10 +98,31 @@ export function AppSidebar() {
     ];
 
     if (isAdmin) {
+        // 表情管理挂在评论管理下
+        const commentsItem = mainNavItems.find((item) => item.title === 'comments.title');
+
+        if (commentsItem) {
+            commentsItem.children = [
+                {
+                    title: 'comments.allComments',
+                    href: '/comments',
+                },
+                {
+                    title: 'settings.smilies.title',
+                    href: smiliesIndex(),
+                },
+            ];
+        }
+
         mainNavItems.push({
             title: 'menus.title',
             href: menusIndex(),
             icon: MenuIcon,
+        });
+        mainNavItems.push({
+            title: 'settings.navigation.title',
+            href: editNavigation(),
+            icon: Globe,
         });
         mainNavItems.push({
             title: 'userManagement.title',
@@ -120,8 +143,8 @@ export function AppSidebar() {
                     href: editPermalink(),
                 },
                 {
-                    title: 'settings.smilies.title',
-                    href: smiliesIndex(),
+                    title: 'settings.ai.title',
+                    href: editAi(),
                 },
             ],
         });

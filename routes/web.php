@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AiSettingController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\BlogController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NavController;
+use App\Http\Controllers\NavigationSettingController;
 use App\Http\Controllers\OptionController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PermalinkController;
@@ -27,6 +29,7 @@ Route::post('/comments', [CommentPublicController::class, 'store'])->name('comme
 Route::get('/tools', [ToolController::class, 'index'])->name('tools.index');
 Route::get('/tools/{slug}', [ToolController::class, 'show'])->name('tools.show');
 Route::get('/nav', [NavController::class, 'index'])->name('nav.index');
+Route::get('/nav/links/{link}', [NavController::class, 'show'])->name('nav.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -35,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [ArticleController::class, 'index'])->name('articles.index');
         Route::get('/create', [ArticleController::class, 'create'])->name('articles.create');
         Route::post('/', [ArticleController::class, 'store'])->name('articles.store');
+        Route::post('/ai-generate', [ArticleController::class, 'aiGenerate'])->name('articles.ai-generate');
         Route::post('/batch', [ArticleController::class, 'batchUpdate'])->name('articles.batch');
         Route::get('/{article}/edit', [ArticleController::class, 'edit'])->name('articles.edit');
         Route::put('/{article}', [ArticleController::class, 'update'])->name('articles.update');
@@ -109,6 +113,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('menus', [MenuController::class, 'store'])->name('menus.store');
         Route::put('menus/{menu}', [MenuController::class, 'update'])->name('menus.update');
         Route::delete('menus/{menu}', [MenuController::class, 'destroy'])->name('menus.destroy');
+
+        // 导航页内容管理（分类、链接、图文介绍）
+        Route::get('settings/navigation', [NavigationSettingController::class, 'edit'])->name('navigation.edit');
+        Route::put('settings/navigation/reorder', [NavigationSettingController::class, 'reorder'])->name('navigation.reorder');
+        Route::post('settings/navigation/categories', [NavigationSettingController::class, 'storeCategory'])->name('navigation.categories.store');
+        Route::put('settings/navigation/categories/{category}', [NavigationSettingController::class, 'updateCategory'])->name('navigation.categories.update');
+        Route::delete('settings/navigation/categories/{category}', [NavigationSettingController::class, 'destroyCategory'])->name('navigation.categories.destroy');
+        Route::get('settings/navigation/links/{link}/intro', [NavigationSettingController::class, 'editIntro'])->name('navigation.links.intro');
+        Route::put('settings/navigation/links/{link}/intro', [NavigationSettingController::class, 'updateIntro'])->name('navigation.links.intro.update');
+        Route::post('settings/navigation/links', [NavigationSettingController::class, 'storeLink'])->name('navigation.links.store');
+        Route::put('settings/navigation/links/{link}', [NavigationSettingController::class, 'updateLink'])->name('navigation.links.update');
+        Route::delete('settings/navigation/links/{link}', [NavigationSettingController::class, 'destroyLink'])->name('navigation.links.destroy');
+
+        // AI 设置
+        Route::get('settings/ai', [AiSettingController::class, 'edit'])->name('ai.edit');
+        Route::put('settings/ai', [AiSettingController::class, 'update'])->name('ai.update');
+        Route::get('settings/ai/models', [AiSettingController::class, 'models'])->name('ai.models');
     });
 });
 

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AiRequestException;
 use App\Models\Article;
 use App\Models\TermRelationship;
 use App\Models\TermTaxonomy;
+use App\Services\AiService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -141,6 +144,42 @@ class ArticleController extends Controller
         }
 
         return redirect()->route('articles.index');
+    }
+
+    /**
+     * AI 生成文章：根据作者给出的写作提示生成标题、摘要与 Markdown 正文，
+     * 由前端解析为块数据填入编辑器，作者检查确认后再手动保存。
+     */
+    public function aiGenerate(Request $request, AiService $ai): JsonResponse
+    {
+        $validated = $request->validate([
+            'prompt' => ['required', 'string', 'max:2000'],
+        ], [
+            'prompt.required' => '请输入写作提示。',
+            'prompt.max' => '写作提示不能超过 2000 个字符。',
+        ]);
+
+        if (! $ai->isConfigured()) {
+            return response()->json([
+                'message' => '请先在后台「设置 → AI 设置」中完成 AI 接口配置。',
+            ], 422);
+        }
+
+        try {
+            $result = $ai->generateArticle($validated['prompt']);
+        } catch (AiRequestException $e) {
+            // 附带真实错误上下文（状态码/URL/上游原始返回），供前端"查看详情"展示
+            return response()->json([
+                'message' => $e->getMessage(),
+                'debug' => $e->context(),
+            ], 502);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 502);
+        }
+
+        return response()->json($result);
     }
 
     public function edit(Article $article)

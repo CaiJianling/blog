@@ -33,6 +33,9 @@ initPromise.then(() => {
                     return AuthLayout;
                 case name === 'settings/permalink':
                 case name === 'settings/smilies':
+                case name === 'settings/navigation':
+                case name === 'settings/navigation-intro':
+                case name === 'settings/ai':
                     return AppLayout;
                 case name.startsWith('settings/'):
                     return [AppLayout, SettingsLayout];
