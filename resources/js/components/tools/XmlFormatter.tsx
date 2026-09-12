@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import HighlightedCode from '@/components/tools/highlighted-code';
 import { Check, Copy, Wand2, Minimize2, X } from 'lucide-react';
 
 export default function XmlFormatter() {
@@ -90,7 +91,7 @@ export default function XmlFormatter() {
                             <X className="mt-0.5 h-4 w-4 shrink-0" /><span className="font-mono">{error}</span>
                         </div>
                     ) : (
-                        <Textarea value={output} readOnly placeholder="格式化结果将显示在这里" className="h-80 font-mono text-sm" />
+                        <HighlightedCode code={output} lang="xml" />
                     )}
                 </div>
             </div>

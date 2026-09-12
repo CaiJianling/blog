@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import HighlightedCode from '@/components/tools/highlighted-code';
 import { Check, X, Copy, Wand2, Minimize2 } from 'lucide-react';
 
 export default function JsonFormatter() {
@@ -77,12 +78,7 @@ export default function JsonFormatter() {
                             <span className="font-mono">{error}</span>
                         </div>
                     ) : (
-                        <Textarea
-                            value={output}
-                            readOnly
-                            placeholder="格式化结果将显示在这里"
-                            className="h-80 font-mono text-sm"
-                        />
+                        <HighlightedCode code={output} lang="json" />
                     )}
                 </div>
             </div>

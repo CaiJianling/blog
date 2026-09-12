@@ -544,3 +544,57 @@
     min-height: 380px;
     padding-bottom: 2rem;
 }
+
+/* ===== 工具页代码高亮（JSON / XML / SQL） ===== */
+.tok-key {
+    color: #0284c7;
+}
+.tok-str {
+    color: #059669;
+}
+.tok-num {
+    color: #d97706;
+}
+.tok-kw {
+    color: #7c3aed;
+    font-weight: 600;
+}
+.tok-attr {
+    color: #ca8a04;
+}
+.tok-tag {
+    color: #0284c7;
+}
+.tok-punct {
+    color: #94a3b8;
+}
+.tok-comment {
+    color: #94a3b8;
+    font-style: italic;
+}
+.tok-plain {
+    color: inherit;
+}
+
+.dark .tok-key {
+    color: #38bdf8;
+}
+.dark .tok-str {
+    color: #34d399;
+}
+.dark .tok-num {
+    color: #fbbf24;
+}
+.dark .tok-kw {
+    color: #a78bfa;
+}
+.dark .tok-attr {
+    color: #facc15;
+}
+.dark .tok-tag {
+    color: #38bdf8;
+}
+.dark .tok-punct,
+.dark .tok-comment {
+    color: #64748b;
+}

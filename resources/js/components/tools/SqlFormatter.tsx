@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import HighlightedCode from '@/components/tools/highlighted-code';
 import { Wand2, Check, Copy } from 'lucide-react';
 
 export default function SqlFormatter() {
@@ -52,7 +53,7 @@ export default function SqlFormatter() {
                 </div>
                 <div>
                     <label className="mb-2 block text-footnote font-medium">输出</label>
-                    <Textarea value={output} readOnly placeholder="格式化结果将显示在这里" className="h-80 font-mono text-sm" />
+                    <HighlightedCode code={output} lang="sql" />
                 </div>
             </div>
         </div>
