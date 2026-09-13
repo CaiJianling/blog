@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowRight, Eye, MessageSquare, ChevronRight } from 'lucide-react';
 import blog from '@/routes/blog';
 import tools from '@/routes/tools';
@@ -40,13 +40,8 @@ export default function Home() {
 
     return (
         <>
-            <Head title={name} />
-
             {/* Hero */}
-            <section className="relative overflow-hidden">
-                <div className="pointer-events-none absolute inset-0 -z-10">
-                    <div className="absolute left-1/2 top-0 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-to-br from-primary/20 via-accent/10 to-transparent blur-3xl" />
-                </div>
+            <section className="overflow-hidden">
                 <div className="mx-auto max-w-6xl px-5 pb-16 pt-20 md:px-8 md:pb-24 md:pt-28">
                     <div className="mx-auto max-w-3xl text-center">
                         <span className="inline-flex items-center rounded-full border border-border/60 bg-card/60 px-4 py-1.5 text-footnote text-muted-foreground backdrop-blur">
