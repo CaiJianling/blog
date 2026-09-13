@@ -106,7 +106,7 @@ class FooterSettingController extends Controller
             JSON_UNESCAPED_UNICODE,
         ));
 
-        return to_route('footer.edit')->with('toast', ['type' => 'success', 'message' => '页脚设置已保存。']);
+        return to_route('home.edit')->with('toast', ['type' => 'success', 'message' => '页脚设置已保存。']);
     }
 
     /**

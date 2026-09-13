@@ -441,6 +441,22 @@
             "moveUp": "上移",
             "moveDown": "下移",
             "delete": "删除"
+        },
+        "home": {
+            "title": "前台显示",
+            "heading": "前台显示设置",
+            "description": "配置站点首页的文字内容，留空使用默认文案",
+            "hero": "Hero 区文案",
+            "badge": "徽章文案",
+            "mainTitle": "主标题",
+            "accentTitle": "渐变副标题",
+            "accentHint": "显示在主标题下方，以渐变色呈现。",
+            "desc": "描述",
+            "sections": "栏目标题",
+            "latestSection": "最新文章栏目",
+            "toolsSection": "精选工具栏目",
+            "navSection": "网站导航栏目",
+            "emptyFallback": "留空的字段将使用默认文案。"
         }
     },
     "nav": {

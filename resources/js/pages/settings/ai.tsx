@@ -1,17 +1,40 @@
 import { Head, router } from '@inertiajs/react';
-import { Bot, KeyRound, Link2, Loader2, RefreshCw, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import {
+    Bot,
+    Image as ImageIcon,
+    KeyRound,
+    Link2,
+    Loader2,
+    RefreshCw,
+    Sparkles,
+    Trash2,
+} from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import AdminSettingsShell from '@/components/admin-settings-shell';
 import ErrorDetailDialog from '@/components/error-detail-dialog';
 import type { AiErrorDetail } from '@/components/error-detail-dialog';
-import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+
+interface AssistantProps {
+    assistant_enabled: boolean;
+    assistant_name: string;
+    assistant_welcome: string;
+    assistant_system_prompt: string;
+    assistant_mode: 'standard' | 'fastgpt';
+    assistant_api_url: string;
+    assistant_model: string;
+    assistant_api_key_masked: string;
+    assistant_avatar: { id: number; url: string } | null;
+}
 
 interface Props {
     ai_api_format: 'openai' | 'anthropic';
@@ -23,6 +46,7 @@ interface Props {
         openai: string;
         anthropic: string;
     };
+    assistant: AssistantProps;
 }
 
 const API_FORMATS: Array<{ value: 'openai' | 'anthropic'; labelKey: string }> = [
@@ -58,6 +82,7 @@ export default function AiSettings({
     ai_api_key_masked,
     ai_configured,
     api_url_defaults,
+    assistant,
 }: Props) {
     const { t } = useTranslation();
     const [format, setFormat] = useState<'openai' | 'anthropic'>(ai_api_format);
@@ -69,6 +94,20 @@ export default function AiSettings({
     const [modelFilter, setModelFilter] = useState('');
     const [loadingModels, setLoadingModels] = useState(false);
     const [errorDetail, setErrorDetail] = useState<AiErrorDetail | null>(null);
+
+    // AI 小助手表单状态
+    const [assistantEnabled, setAssistantEnabled] = useState(assistant.assistant_enabled);
+    const [assistantName, setAssistantName] = useState(assistant.assistant_name);
+    const [assistantWelcome, setAssistantWelcome] = useState(assistant.assistant_welcome);
+    const [assistantPrompt, setAssistantPrompt] = useState(assistant.assistant_system_prompt);
+    const [assistantMode, setAssistantMode] = useState<'standard' | 'fastgpt'>(assistant.assistant_mode);
+    const [assistantApiUrl, setAssistantApiUrl] = useState(assistant.assistant_api_url);
+    const [assistantModel, setAssistantModel] = useState(assistant.assistant_model);
+    const [assistantApiKey, setAssistantApiKey] = useState('');
+    const [assistantAvatar, setAssistantAvatar] = useState(assistant.assistant_avatar);
+    const [assistantSaving, setAssistantSaving] = useState(false);
+    const [avatarUploading, setAvatarUploading] = useState(false);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
 
     const fetchModels = async () => {
         if (loadingModels) {
@@ -129,7 +168,7 @@ export default function AiSettings({
         id.toLowerCase().includes(modelFilter.trim().toLowerCase()),
     );
 
-    const submit = (e: React.FormEvent) => {
+    const submitApi = (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
 
@@ -150,18 +189,86 @@ export default function AiSettings({
         );
     };
 
+    const submitAssistant = (e: React.FormEvent) => {
+        e.preventDefault();
+        setAssistantSaving(true);
+
+        router.put(
+            '/settings/assistant',
+            {
+                assistant_enabled: assistantEnabled ? '1' : '0',
+                assistant_name: assistantName,
+                assistant_welcome: assistantWelcome,
+                assistant_system_prompt: assistantPrompt,
+                assistant_mode: assistantMode,
+                assistant_api_url: assistantApiUrl,
+                assistant_model: assistantModel,
+                assistant_api_key: assistantApiKey,
+            },
+            {
+                onFinish: () => {
+                    setAssistantSaving(false);
+                    setAssistantApiKey('');
+                },
+            },
+        );
+    };
+
+    const uploadAvatar = (file: File) => {
+        const csrf = getCsrfToken();
+
+        if (!csrf) {
+            toast.error(t('settings.assistant.uploadFailed'));
+
+            return;
+        }
+
+        setAvatarUploading(true);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/settings/assistant/avatar', {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                [csrf.headerName]: csrf.value,
+            },
+            body: formData,
+        })
+            .then(async (response) => {
+                const data = await response.json().catch(() => null);
+
+                if (!response.ok) {
+                    toast.error(data?.message ?? t('settings.assistant.uploadFailed'));
+
+                    return;
+                }
+
+                setAssistantAvatar({ id: data.id, url: data.url });
+                toast.success(t('settings.assistant.uploadSuccess'));
+            })
+            .catch(() => toast.error(t('settings.assistant.uploadFailed')))
+            .finally(() => setAvatarUploading(false));
+    };
+
+    const removeAvatar = () => {
+        router.delete('/settings/assistant/avatar', { preserveScroll: true });
+        setAssistantAvatar(null);
+    };
+
     return (
         <>
             <Head title={t('settings.ai.title')} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="mx-auto w-full max-w-2xl space-y-6">
-                    <Heading
-                        variant="small"
-                        title={t('settings.ai.heading')}
-                        description={t('settings.ai.description')}
-                    />
-
+            <AdminSettingsShell
+                title={t('settings.ai.heading')}
+                description={t('settings.ai.description')}
+                active="/settings/ai"
+            >
+                <div className="space-y-6">
+                    {/* AI 接口配置 */}
                     <Card className="overflow-hidden py-0 gap-0">
                         <CardContent className="!p-0">
                             <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
@@ -176,7 +283,7 @@ export default function AiSettings({
                                 </Badge>
                             </div>
 
-                            <form onSubmit={submit} className="space-y-5 px-6 py-5">
+                            <form onSubmit={submitApi} className="space-y-5 px-6 py-5">
                                 <div className="space-y-1.5">
                                     <Label>{t('settings.ai.format')}</Label>
                                     <div className="grid grid-cols-2 gap-2">
@@ -325,10 +432,199 @@ export default function AiSettings({
                             </form>
                         </CardContent>
                     </Card>
-                </div>
-            </div>
 
-            <ErrorDetailDialog detail={errorDetail} onClose={() => setErrorDetail(null)} />
+                    {/* AI 小助手 */}
+                    <Card className="overflow-hidden py-0 gap-0">
+                        <CardContent className="!p-0">
+                            <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                                        <Bot className="h-4 w-4" />
+                                    </div>
+                                    <span className="text-callout font-medium">{t('settings.assistant.title')}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-muted-foreground">{t('settings.assistant.enable')}</span>
+                                    <Switch checked={assistantEnabled} onCheckedChange={(checked) => setAssistantEnabled(checked)} />
+                                </div>
+                            </div>
+
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    setAssistantSaving(true);
+
+                                    router.put(
+                                        '/settings/assistant',
+                                        {
+                                            assistant_enabled: assistantEnabled ? '1' : '0',
+                                            assistant_name: assistantName,
+                                            assistant_welcome: assistantWelcome,
+                                            assistant_system_prompt: assistantPrompt,
+                                            assistant_mode: assistantMode,
+                                            assistant_api_url: assistantApiUrl,
+                                            assistant_model: assistantModel,
+                                            assistant_api_key: assistantApiKey,
+                                        },
+                                        {
+                                            onFinish: () => {
+                                                setAssistantSaving(false);
+                                                setAssistantApiKey('');
+                                            },
+                                        },
+                                    );
+                                }}
+                                className="space-y-5 px-6 py-5"
+                            >
+                                <div className="space-y-1.5">
+                                    <Label className="flex items-center gap-1.5">
+                                        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                        {t('settings.assistant.avatar')}
+                                    </Label>
+                                    <div className="flex items-center gap-3">
+                                        {assistantAvatar ? (
+                                            <img src={assistantAvatar.url} alt={assistantName} className="h-12 w-12 rounded-full object-cover" />
+                                        ) : (
+                                            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+                                                <Bot className="h-5 w-5" />
+                                            </span>
+                                        )}
+                                        <input
+                                            ref={avatarInputRef}
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/gif,image/webp"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+
+                                                if (file) {
+                                                    uploadAvatar(file);
+                                                    e.target.value = '';
+                                                }
+                                            }}
+                                        />
+                                        <Button type="button" variant="outline" size="sm" disabled={avatarUploading} onClick={() => avatarInputRef.current?.click()}>
+                                            {avatarUploading ? t('common.saving') : t('settings.assistant.changeAvatar')}
+                                        </Button>
+                                        {assistantAvatar && (
+                                            <Button type="button" variant="ghost" size="sm" onClick={removeAvatar}>
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                                {t('settings.assistant.removeAvatar')}
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="assistant-name">{t('settings.assistant.name')}</Label>
+                                    <Input
+                                        id="assistant-name"
+                                        value={assistantName}
+                                        onChange={(e) => setAssistantName(e.target.value)}
+                                        placeholder="AI 小助手"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="assistant-welcome">{t('settings.assistant.welcome')}</Label>
+                                    <Textarea
+                                        id="assistant-welcome"
+                                        value={assistantWelcome}
+                                        onChange={(e) => setAssistantWelcome(e.target.value)}
+                                        placeholder="你好！我是 AI 小助手…"
+                                        className="min-h-[60px]"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="assistant-prompt">{t('settings.assistant.systemPrompt')}</Label>
+                                    <Textarea
+                                        id="assistant-prompt"
+                                        value={assistantPrompt}
+                                        onChange={(e) => setAssistantPrompt(e.target.value)}
+                                        placeholder={t('settings.assistant.systemPromptPlaceholder')}
+                                        className="min-h-[100px]"
+                                    />
+                                    {assistantMode === 'fastgpt' && (
+                                        <p className="text-xs text-amber-600 dark:text-amber-400">{t('settings.assistant.promptFastgptHint')}</p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label>{t('settings.assistant.mode')}</Label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {(['standard', 'fastgpt'] as const).map((value) => (
+                                            <button
+                                                key={value}
+                                                type="button"
+                                                onClick={() => setAssistantMode(value)}
+                                                className={cn(
+                                                    'apple-press rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+                                                    assistantMode === value
+                                                        ? 'border-primary bg-primary/10 text-primary'
+                                                        : 'border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+                                                )}
+                                            >
+                                                {value === 'standard' ? t('settings.assistant.modeStandard') : t('settings.assistant.modeFastgpt')}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        {assistantMode === 'fastgpt'
+                                            ? t('settings.assistant.modeFastgptHint')
+                                            : t('settings.assistant.modeStandardHint')}
+                                    </p>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="assistant-api-url">{t('settings.assistant.apiUrl')}</Label>
+                                    <Input
+                                        id="assistant-api-url"
+                                        value={assistantApiUrl}
+                                        onChange={(e) => setAssistantApiUrl(e.target.value)}
+                                        placeholder={assistantMode === 'fastgpt' ? 'https://your-fastgpt.com/api/v1' : 'https://api.openai.com/v1'}
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="assistant-api-key">{t('settings.assistant.apiKey')}</Label>
+                                    <Input
+                                        id="assistant-api-key"
+                                        type="password"
+                                        value={assistantApiKey}
+                                        onChange={(e) => setAssistantApiKey(e.target.value)}
+                                        placeholder={
+                                            assistant.assistant_api_key_masked
+                                                ? t('settings.assistant.apiKeyPlaceholderConfigured', { masked: assistant.assistant_api_key_masked })
+                                                : t('settings.assistant.apiKeyPlaceholder')
+                                        }
+                                        autoComplete="new-password"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="assistant-model">{t('settings.assistant.model')}</Label>
+                                    <Input
+                                        id="assistant-model"
+                                        value={assistantModel}
+                                        onChange={(e) => setAssistantModel(e.target.value)}
+                                        placeholder={assistantMode === 'fastgpt' ? t('settings.assistant.modelFastgptPlaceholder') : 'gpt-4o-mini'}
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between gap-3 border-t border-border/40 pt-4">
+                                    <p className="text-xs text-muted-foreground">{t('settings.assistant.usageHint')}</p>
+                                    <Button type="submit" disabled={assistantSaving}>
+                                        {assistantSaving ? t('common.saving') : t('common.save')}
+                                    </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <ErrorDetailDialog detail={errorDetail} onClose={() => setErrorDetail(null)} />
+            </AdminSettingsShell>
         </>
     );
 }

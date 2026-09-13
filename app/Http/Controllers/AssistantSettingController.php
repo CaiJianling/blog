@@ -22,13 +22,23 @@ class AssistantSettingController extends Controller
     ) {}
 
     /**
-     * AI 小助手设置页面。
+     * AI 小助手设置页。
      */
     public function edit(): Response
     {
+        return Inertia::render('settings/assistant', self::props());
+    }
+
+    /**
+     * 组装小助手设置数据（供设置页与合并后的 AI 设置页共用）。
+     *
+     * @return array<string, mixed>
+     */
+    public static function props(): array
+    {
         $apiKey = (string) Option::get('assistant_api_key', '');
 
-        return Inertia::render('settings/assistant', [
+        return [
             'assistant_enabled' => Option::get('assistant_enabled') === '1',
             'assistant_name' => (string) Option::get('assistant_name', 'AI 小助手'),
             'assistant_welcome' => (string) Option::get('assistant_welcome', '你好！我是 AI 小助手，有什么可以帮你？'),
@@ -39,8 +49,8 @@ class AssistantSettingController extends Controller
             'assistant_api_key_masked' => $apiKey !== ''
                 ? str_repeat('•', 12).mb_substr($apiKey, -4)
                 : '',
-            'assistant_avatar' => $this->avatar(),
-        ]);
+            'assistant_avatar' => self::avatar(),
+        ];
     }
 
     /**
@@ -76,7 +86,7 @@ class AssistantSettingController extends Controller
             Option::set('assistant_api_key', $apiKey);
         }
 
-        return to_route('assistant.edit')->with('toast', ['type' => 'success', 'message' => 'AI 小助手设置已保存。']);
+        return to_route('ai.edit')->with('toast', ['type' => 'success', 'message' => 'AI 小助手设置已保存。']);
     }
 
     /**
@@ -122,13 +132,13 @@ class AssistantSettingController extends Controller
         $this->attachments->deleteByParent('assistant_avatar', null);
         Option::set('assistant_avatar', '');
 
-        return to_route('assistant.edit')->with('toast', ['type' => 'success', 'message' => '已恢复默认头像。']);
+        return to_route('ai.edit')->with('toast', ['type' => 'success', 'message' => '已恢复默认头像。']);
     }
 
     /**
      * 解析当前头像信息。
      */
-    protected function avatar(): ?array
+    protected static function avatar(): ?array
     {
         $avatarId = (int) Option::get('assistant_avatar', '');
 

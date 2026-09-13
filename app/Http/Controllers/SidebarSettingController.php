@@ -65,7 +65,7 @@ class SidebarSettingController extends Controller
 
         Option::set('sidebar_menus', json_encode(array_values($menus), JSON_UNESCAPED_UNICODE));
 
-        return to_route('sidebar.edit')->with('toast', ['type' => 'success', 'message' => '侧边栏设置已保存。']);
+        return to_route('home.edit')->with('toast', ['type' => 'success', 'message' => '侧边栏设置已保存。']);
     }
 
     /**
@@ -111,7 +111,7 @@ class SidebarSettingController extends Controller
         $this->attachments->deleteByParent('sidebar_avatar', null);
         Option::set('sidebar_blogger_avatar', '');
 
-        return to_route('sidebar.edit')->with('toast', ['type' => 'success', 'message' => '已恢复默认头像。']);
+        return to_route('home.edit')->with('toast', ['type' => 'success', 'message' => '已恢复默认头像。']);
     }
 
     /**
@@ -137,6 +137,35 @@ class SidebarSettingController extends Controller
         return [
             'id' => $attachment->id,
             'url' => $publicDisk->url($attachment->file_path),
+        ];
+    }
+
+    /**
+     * 组装侧边栏设置数据（供合并后的前台显示页共用）。
+     *
+     * @return array<string, mixed>
+     */
+    public static function props(): array
+    {
+        $avatarId = (int) Option::get('sidebar_blogger_avatar', '');
+        $avatar = null;
+
+        if ($avatarId > 0) {
+            $attachment = Attachment::find($avatarId);
+
+            if ($attachment && $attachment->isImage()) {
+                $avatar = [
+                    'id' => $attachment->id,
+                    'url' => Storage::disk('public')->url($attachment->file_path),
+                ];
+            }
+        }
+
+        return [
+            'sidebar_blogger_name' => (string) Option::get('sidebar_blogger_name', ''),
+            'sidebar_blogger_intro' => (string) Option::get('sidebar_blogger_intro', ''),
+            'sidebar_blogger_avatar' => $avatar,
+            'sidebar_menus' => self::menus(),
         ];
     }
 

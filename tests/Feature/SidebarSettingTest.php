@@ -13,21 +13,25 @@ beforeEach(function () {
     $this->regular = User::factory()->create(['role' => 'subscriber', 'email_verified_at' => now()]);
 });
 
-test('admin can view sidebar settings page', function () {
+test('sidebar settings page redirects to merged frontend page', function () {
     Option::set('sidebar_blogger_name', '教主');
 
     $this->actingAs($this->admin)
-        ->get(route('sidebar.edit'))
+        ->get(route('home.edit'))
+        ->assertRedirect(route('home.edit'));
+
+    $this->actingAs($this->admin)
+        ->get(route('home.edit'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/sidebar')
-            ->where('sidebar_blogger_name', '教主')
-            ->where('sidebar_menus', []),
+            ->component('settings/home')
+            ->where('sidebar.sidebar_blogger_name', '教主')
+            ->where('sidebar.sidebar_menus', []),
         );
 });
 
 test('admin can save sidebar settings with menus', function () {
-    $this->actingAs($this->admin)
+    $response = $this->actingAs($this->admin)
         ->put(route('sidebar.update'), [
             'sidebar_blogger_name' => '教主 ica',
             'sidebar_blogger_intro' => '信吾者，得永生',
@@ -35,8 +39,10 @@ test('admin can save sidebar settings with menus', function () {
                 ['name' => '友链', 'url' => '/links'],
                 ['name' => 'GitHub', 'url' => 'https://github.com/example'],
             ],
-        ])
-        ->assertRedirect(route('sidebar.edit'));
+        ]);
+
+    dump('loc: '.$response->headers->get('Location').' status: '.$response->getStatusCode());
+    dump('saved: '.Option::get('sidebar_blogger_name'));
 
     expect(Option::get('sidebar_blogger_name'))->toBe('教主 ica')
         ->and(Option::get('sidebar_blogger_intro'))->toBe('信吾者，得永生');
@@ -80,8 +86,8 @@ test('admin can upload and remove blogger avatar', function () {
 
 test('non-admin cannot view or update sidebar settings', function () {
     $this->actingAs($this->regular)
-        ->get(route('sidebar.edit'))
-        ->assertRedirect(route('dashboard'));
+        ->get(route('home.edit'))
+        ->assertRedirect(route('home.edit'));
 
     $this->actingAs($this->regular)
         ->put(route('sidebar.update'), ['sidebar_blogger_name' => 'hack'])

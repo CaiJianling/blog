@@ -25,6 +25,7 @@ class AiSettingController extends Controller
 
         return Inertia::render('settings/ai', [
             'ai_api_format' => $format,
+            'assistant' => AssistantSettingController::props(),
             'ai_api_url' => (string) Option::get('ai_api_url', ''),
             'ai_model' => (string) Option::get('ai_model', ''),
             // 密钥不回传明文，仅提示是否已配置与尾号

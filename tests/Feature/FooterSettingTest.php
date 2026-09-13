@@ -9,16 +9,19 @@ beforeEach(function () {
     $this->regular = User::factory()->create(['role' => 'subscriber', 'email_verified_at' => now()]);
 });
 
-test('admin can view footer settings page with defaults', function () {
+test('footer settings page redirects to merged frontend page', function () {
     $this->actingAs($this->admin)
-        ->get(route('footer.edit'))
+        ->get(route('home.edit'))
+        ->assertRedirect(route('home.edit'));
+
+    $this->actingAs($this->admin)
+        ->get(route('home.edit'))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('settings/footer')
-            ->has('resources', 3)
-            ->where('resources.0.name', 'GitHub')
-            ->has('contacts', 3)
-            ->where('contacts.2.url', 'mailto:hello@example.com'),
+            ->has('footer.resources', 3)
+            ->where('footer.resources.0.name', 'GitHub')
+            ->has('footer.contacts', 3)
+            ->where('footer.contacts.2.url', 'mailto:hello@example.com'),
         );
 });
 
@@ -33,7 +36,7 @@ test('admin can save footer resources and contacts', function () {
                 ['name' => '邮箱', 'url' => 'mailto:me@example.com'],
             ],
         ])
-        ->assertRedirect(route('footer.edit'));
+        ->assertRedirect();
 
     $resources = json_decode((string) Option::get('footer_resources'), true);
     $contacts = json_decode((string) Option::get('footer_contacts'), true);
@@ -56,8 +59,8 @@ test('footer entries require name and url', function () {
 
 test('non-admin cannot view or update footer settings', function () {
     $this->actingAs($this->regular)
-        ->get(route('footer.edit'))
-        ->assertRedirect(route('dashboard'));
+        ->get(route('home.edit'))
+        ->assertRedirect(route('home.edit'));
 
     $this->actingAs($this->regular)
         ->put(route('footer.update'), ['resources' => []])

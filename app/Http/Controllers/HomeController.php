@@ -42,6 +42,7 @@ class HomeController extends Controller
             'latestArticles' => $latestArticles,
             'featuredTools' => $featuredTools,
             'navigationCategories' => $navigation,
+            'texts' => HomeSettingController::texts(),
         ]);
     }
 

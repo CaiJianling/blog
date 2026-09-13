@@ -441,6 +441,22 @@
             "moveUp": "Move up",
             "moveDown": "Move down",
             "delete": "Delete"
+        },
+        "home": {
+            "title": "Frontend Display",
+            "heading": "Frontend Display Settings",
+            "description": "Configure the texts of the home page; leave blank to use defaults",
+            "hero": "Hero Texts",
+            "badge": "Badge text",
+            "mainTitle": "Main title",
+            "accentTitle": "Gradient subtitle",
+            "accentHint": "Shown below the main title with a gradient color.",
+            "desc": "Description",
+            "sections": "Section Titles",
+            "latestSection": "Latest articles section",
+            "toolsSection": "Featured tools section",
+            "navSection": "Navigation section",
+            "emptyFallback": "Blank fields fall back to the default texts."
         }
     },
     "nav": {

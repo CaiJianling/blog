@@ -12,6 +12,7 @@ use App\Http\Controllers\CommentPublicController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FooterSettingController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\HomeSettingController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NavController;
 use App\Http\Controllers\NavigationSettingController;
@@ -160,21 +161,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('settings/tools/items/{tool}', [ToolSettingController::class, 'updateTool'])->name('tools.items.update');
         Route::delete('settings/tools/items/{tool}', [ToolSettingController::class, 'destroyTool'])->name('tools.items.destroy');
 
-        // AI 小助手设置
-        Route::get('settings/assistant', [AssistantSettingController::class, 'edit'])->name('assistant.edit');
+        // AI 小助手设置（页面合并进 settings/ai，仅保留保存与头像接口）
         Route::put('settings/assistant', [AssistantSettingController::class, 'update'])->name('assistant.update');
         Route::post('settings/assistant/avatar', [AssistantSettingController::class, 'uploadAvatar'])->name('assistant.avatar.store');
         Route::delete('settings/assistant/avatar', [AssistantSettingController::class, 'removeAvatar'])->name('assistant.avatar.destroy');
+        Route::get('settings/assistant', fn () => to_route('settings/ai'))->name('assistant.edit');
 
         // 博客侧边栏设置（博主信息、自定义菜单）
-        Route::get('settings/sidebar', [SidebarSettingController::class, 'edit'])->name('sidebar.edit');
         Route::put('settings/sidebar', [SidebarSettingController::class, 'update'])->name('sidebar.update');
+        Route::get('settings/sidebar', fn () => to_route('settings/home'))->name('sidebar.edit');
         Route::post('settings/sidebar/avatar', [SidebarSettingController::class, 'uploadAvatar'])->name('sidebar.avatar.store');
         Route::delete('settings/sidebar/avatar', [SidebarSettingController::class, 'removeAvatar'])->name('sidebar.avatar.destroy');
 
+        // 首页文案设置
+        Route::get('settings/home', [HomeSettingController::class, 'edit'])->name('home.edit');
+        Route::put('settings/home', [HomeSettingController::class, 'update'])->name('home.update');
+
         // 页脚设置（资源、联系）
-        Route::get('settings/footer', [FooterSettingController::class, 'edit'])->name('footer.edit');
         Route::put('settings/footer', [FooterSettingController::class, 'update'])->name('footer.update');
+        Route::get('settings/footer', fn () => to_route('settings/home'))->name('footer.edit');
     });
 });
 

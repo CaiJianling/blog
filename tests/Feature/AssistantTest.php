@@ -18,7 +18,7 @@ test('admin can view assistant settings page', function () {
     Option::set('assistant_name', '博客助手');
 
     $this->actingAs($this->admin)
-        ->get(route('assistant.edit'))
+        ->get(route('ai.edit'))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->component('settings/assistant')
@@ -41,7 +41,7 @@ test('admin can save assistant settings', function () {
             'assistant_model' => '',
             'assistant_api_key' => 'fastgpt-key',
         ])
-        ->assertRedirect(route('assistant.edit'));
+        ->assertRedirect(route('ai.edit'));
 
     expect(Option::get('assistant_enabled'))->toBe('1')
         ->and(Option::get('assistant_name'))->toBe('小助手')
@@ -61,7 +61,7 @@ test('empty assistant api key keeps the existing one', function () {
             'assistant_mode' => 'standard',
             'assistant_api_key' => '',
         ])
-        ->assertRedirect(route('assistant.edit'));
+        ->assertRedirect(route('ai.edit'));
 
     expect(Option::get('assistant_api_key'))->toBe('keep-me')
         ->and(Option::get('assistant_enabled'))->toBe('0');
@@ -88,7 +88,7 @@ test('admin can upload and remove assistant avatar', function () {
 
 test('non-admin cannot view or update assistant settings', function () {
     $this->actingAs($this->regular)
-        ->get(route('assistant.edit'))
+        ->get(route('ai.edit'))
         ->assertRedirect(route('dashboard'));
 
     $this->actingAs($this->regular)

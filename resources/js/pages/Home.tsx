@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowRight, Eye, MessageSquare, ChevronRight } from 'lucide-react';
+import HeroCanvas from '@/components/hero-canvas';
 import blog from '@/routes/blog';
 import tools from '@/routes/tools';
 import nav from '@/routes/nav';
@@ -30,33 +31,48 @@ type NavSite = {
     color: string;
 };
 
+type HomeTexts = {
+    home_badge: string;
+    home_title: string;
+    home_title_accent: string;
+    home_description: string;
+    home_latest_title: string;
+    home_latest_desc: string;
+    home_tools_title: string;
+    home_tools_desc: string;
+    home_nav_title: string;
+    home_nav_desc: string;
+};
+
 export default function Home() {
     const { name } = usePage().props;
-    const { latestArticles, featuredTools, navigationCategories } = usePage<{
+    const { latestArticles, featuredTools, navigationCategories, texts } = usePage<{
         latestArticles: Article[];
         featuredTools: Tool[];
         navigationCategories: Record<string, NavSite[]>;
+        texts: HomeTexts;
     }>().props;
 
     return (
         <>
-            {/* Hero */}
-            <section className="overflow-hidden">
-                <div className="mx-auto max-w-6xl px-5 pb-16 pt-20 md:px-8 md:pb-24 md:pt-28">
+            {/* Hero：三层粒子背景（流体底色/可扰动网格/首字母点阵）+ 深色文案 */}
+            <div className="dark">
+                <section className="relative flex items-center overflow-hidden bg-[#08090c]">
+                    <HeroCanvas name={name ?? 'B'} />
+                    <div className="relative mx-auto w-full max-w-6xl px-5 pb-16 pt-20 md:px-8 md:pb-24 md:pt-28">
                     <div className="mx-auto max-w-3xl text-center">
                         <span className="inline-flex items-center rounded-full border border-border/60 bg-card/60 px-4 py-1.5 text-footnote text-muted-foreground backdrop-blur">
-                            博客 · 工具 · 导航 一站式
+                            {texts.home_badge}
                         </span>
                         <h1 className="mt-6 text-display">
-                            探索、创造与分享
+                            {texts.home_title}
                             <br />
                             <span className="bg-gradient-to-r from-primary via-accent-foreground to-primary bg-clip-text text-transparent">
-                                技术的无限可能
+                                {texts.home_title_accent}
                             </span>
                         </h1>
                         <p className="mx-auto mt-6 max-w-xl text-body text-muted-foreground">
-                            这里是我的个人空间 —— 记录技术教程与经验分享，提供实用的在线开发工具，
-                            以及精心整理的优质网站导航。
+                            {texts.home_description}
                         </p>
                         <div className="mt-10 flex items-center justify-center gap-3">
                             <Link
@@ -82,13 +98,14 @@ export default function Home() {
                     </div>
                 </div>
             </section>
+            </div>
 
             {/* Latest Articles */}
             <section className="mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-16">
                 <div className="flex items-end justify-between">
                     <div>
-                        <h2 className="text-title">最新文章</h2>
-                        <p className="mt-1 text-footnote text-muted-foreground">技术教程与经验分享</p>
+                        <h2 className="text-title">{texts.home_latest_title}</h2>
+                        <p className="mt-1 text-footnote text-muted-foreground">{texts.home_latest_desc}</p>
                     </div>
                     <Link href={blog.index()} className="apple-press inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
                         查看全部
@@ -136,8 +153,8 @@ export default function Home() {
             <section className="mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-16">
                 <div className="flex items-end justify-between">
                     <div>
-                        <h2 className="text-title">精选工具</h2>
-                        <p className="mt-1 text-footnote text-muted-foreground">常用的在线开发工具</p>
+                        <h2 className="text-title">{texts.home_tools_title}</h2>
+                        <p className="mt-1 text-footnote text-muted-foreground">{texts.home_tools_desc}</p>
                     </div>
                     <Link href={tools.index()} className="apple-press inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
                         全部工具
@@ -172,8 +189,8 @@ export default function Home() {
             <section className="mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-16">
                 <div className="flex items-end justify-between">
                     <div>
-                        <h2 className="text-title">网站导航</h2>
-                        <p className="mt-1 text-footnote text-muted-foreground">精选优质网站集合</p>
+                        <h2 className="text-title">{texts.home_nav_title}</h2>
+                        <p className="mt-1 text-footnote text-muted-foreground">{texts.home_nav_desc}</p>
                     </div>
                     <Link href={nav.index()} className="apple-press inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
                         完整导航

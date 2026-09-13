@@ -20,9 +20,7 @@ import { index as smiliesIndex } from '@/routes/smilies';
 import { index as menusIndex } from '@/routes/menus';
 import { edit as editNavigation } from '@/routes/navigation';
 import { edit as editAi } from '@/routes/ai';
-import { edit as editAssistant } from '@/routes/assistant';
-import { edit as editSidebar } from '@/routes/sidebar';
-import { edit as editFooter } from '@/routes/footer';
+import { edit as editHome } from '@/routes/home';
 import { admin as toolsAdmin } from '@/routes/tools';
 import type { NavItem } from '@/types';
 
@@ -148,24 +146,16 @@ export function AppSidebar() {
                     href: editSite(),
                 },
                 {
-                    title: 'settings.permalink.title',
-                    href: editPermalink(),
+                    title: 'settings.home.title',
+                    href: editHome(),
                 },
                 {
                     title: 'settings.ai.title',
                     href: editAi(),
                 },
                 {
-                    title: 'settings.assistant.title',
-                    href: editAssistant(),
-                },
-                {
-                    title: 'settings.sidebar.title',
-                    href: editSidebar(),
-                },
-                {
-                    title: 'settings.footer.title',
-                    href: editFooter(),
+                    title: 'settings.permalink.title',
+                    href: editPermalink(),
                 },
             ],
         });
