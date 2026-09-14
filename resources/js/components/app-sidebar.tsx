@@ -103,9 +103,15 @@ export function AppSidebar() {
             ],
         },
         {
-            title: 'comments.title',
+            title: 'commentManagement.title',
             href: '/comments',
             icon: MessageSquare,
+            children: [
+                {
+                    title: 'comments.title',
+                    href: '/comments',
+                },
+            ],
         },
     ];
 
@@ -132,11 +138,17 @@ export function AppSidebar() {
                     title: 'menus.title',
                     href: menusIndex(),
                 },
-                {
-                    title: 'settings.smilies.title',
-                    href: smiliesIndex(),
-                },
             ],
+        });
+
+        // 表情管理仅管理员可见，追加到「评论管理」分组
+        const commentsGroup = mainNavItems.find(
+            (item) => item.title === 'commentManagement.title',
+        );
+
+        commentsGroup?.children?.push({
+            title: 'settings.smilies.title',
+            href: smiliesIndex(),
         });
 
         mainNavItems.push({

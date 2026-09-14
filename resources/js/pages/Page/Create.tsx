@@ -9,21 +9,25 @@ import {
     Settings2,
     Link2,
     ChevronRight,
+    Search,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BlockNoteEditor  } from '@/components/blocknote-editor';
-import type {BlockNoteDocument} from '@/components/blocknote-editor';
+import { BlockNoteEditor } from '@/components/blocknote-editor';
+import type { BlockNoteDocument } from '@/components/blocknote-editor';
 import MediaQuickUpload from '@/components/media-quick-upload';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { create as pagesCreate } from '@/routes/pages';
-
 
 function SidebarSection({
     icon: Icon,
@@ -52,20 +56,22 @@ function SidebarSection({
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
-                        <span className="text-callout font-medium">{title}</span>
+                        <span className="text-callout font-medium">
+                            {title}
+                        </span>
                         {description && (
-                            <span className="truncate text-xs text-tertiary-label">
+                            <span className="text-tertiary-label truncate text-xs">
                                 {description}
                             </span>
                         )}
                     </div>
                 </div>
                 <ChevronRight
-                    className={`h-3.5 w-3.5 shrink-0 text-tertiary-label transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+                    className={`text-tertiary-label h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
                 />
             </button>
             <div
-                className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}
+                className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${open ? 'grid-rows-[1fr] opacity-100' : 'pointer-events-none grid-rows-[0fr] opacity-0'}`}
             >
                 <div className="overflow-hidden">
                     <div className="border-t border-border/40 px-3 py-2.5">
@@ -83,6 +89,8 @@ export default function CreatePage() {
     const [formData, setFormData] = useState({
         title: '',
         slug: '',
+        meta_title: '',
+        meta_description: '',
         content: null as BlockNoteDocument | null,
         status: 'draft',
         comment_status: 'close',
@@ -101,12 +109,17 @@ export default function CreatePage() {
         const data = {
             title: formData.title,
             slug: formData.slug,
+            meta_title: formData.meta_title,
+            meta_description: formData.meta_description,
             content: formData.content ?? [],
             status: overrideStatus ?? formData.status,
             comment_status: formData.comment_status,
         };
 
-        router.post('/pages', data as unknown as Parameters<typeof router.post>[1]);
+        router.post(
+            '/pages',
+            data as unknown as Parameters<typeof router.post>[1],
+        );
     };
 
     return (
@@ -131,11 +144,16 @@ export default function CreatePage() {
                             title={t('pages.toggleSidebar')}
                             className="h-10 w-10"
                         >
-                            {sidebarOpen
-                                ? <PanelRightClose className="h-[18px] w-[18px]" />
-                                : <PanelRightOpen className="h-[18px] w-[18px]" />}
+                            {sidebarOpen ? (
+                                <PanelRightClose className="h-[18px] w-[18px]" />
+                            ) : (
+                                <PanelRightOpen className="h-[18px] w-[18px]" />
+                            )}
                         </Button>
-                        <Button variant="secondary" onClick={(e) => handleSubmit(e, 'draft')}>
+                        <Button
+                            variant="secondary"
+                            onClick={(e) => handleSubmit(e, 'draft')}
+                        >
                             <Save className="h-4 w-4" />
                             {t('pages.saveDraft')}
                         </Button>
@@ -151,22 +169,34 @@ export default function CreatePage() {
                     {/* Editor area */}
                     <div className="flex min-w-0 flex-1 flex-col gap-4">
                         {/* Title card (floating paper) */}
-                        <Card className="overflow-hidden py-0 gap-0">
+                        <Card className="gap-0 overflow-hidden py-0">
                             <CardContent className="!p-0">
                                 <div className="border-b-0 px-8 pt-8 pb-3">
                                     <input
                                         ref={titleRef}
                                         type="text"
-                                        placeholder={t('pages.form.titlePlaceholder')}
+                                        placeholder={t(
+                                            'pages.form.titlePlaceholder',
+                                        )}
                                         value={formData.title}
-                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                        className="w-full border-none bg-transparent px-0 py-0 text-3xl font-semibold leading-[1.15] tracking-[-0.02em] outline-none placeholder:text-tertiary-label/50 selection:bg-primary/20"
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                title: e.target.value,
+                                            })
+                                        }
+                                        className="placeholder:text-tertiary-label/50 w-full border-none bg-transparent px-0 py-0 text-3xl leading-[1.15] font-semibold tracking-[-0.02em] outline-none selection:bg-primary/20"
                                     />
                                 </div>
-                                <div className="px-8 pb-8 pt-3">
+                                <div className="px-8 pt-3 pb-8">
                                     <BlockNoteEditor
                                         initialContent={formData.content}
-                                        onChange={(document) => setFormData({ ...formData, content: document })}
+                                        onChange={(document) =>
+                                            setFormData({
+                                                ...formData,
+                                                content: document,
+                                            })
+                                        }
                                     />
                                 </div>
                             </CardContent>
@@ -191,10 +221,16 @@ export default function CreatePage() {
                         >
                             <Select
                                 value={formData.status}
-                                onValueChange={(value) => setFormData({ ...formData, status: value })}
+                                onValueChange={(value) =>
+                                    setFormData({ ...formData, status: value })
+                                }
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder={t('pages.form.selectStatus')} />
+                                    <SelectValue
+                                        placeholder={t(
+                                            'pages.form.selectStatus',
+                                        )}
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="draft">
@@ -208,6 +244,54 @@ export default function CreatePage() {
                         </SidebarSection>
 
                         <SidebarSection
+                            icon={Search}
+                            title={t('pages.form.seo')}
+                            description={t('pages.form.seoDescription')}
+                        >
+                            <div className="flex flex-col gap-3">
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-tertiary-label text-xs">
+                                        {t('pages.form.seoTitleDescription')}
+                                    </span>
+                                    <Input
+                                        type="text"
+                                        placeholder={t(
+                                            'pages.form.seoTitlePlaceholder',
+                                        )}
+                                        value={formData.meta_title}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                meta_title: e.target.value,
+                                            })
+                                        }
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-tertiary-label text-xs">
+                                        {t(
+                                            'pages.form.seoDescriptionDescription',
+                                        )}
+                                    </span>
+                                    <Textarea
+                                        placeholder={t(
+                                            'pages.form.seoDescriptionPlaceholder',
+                                        )}
+                                        value={formData.meta_description}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                meta_description:
+                                                    e.target.value,
+                                            })
+                                        }
+                                        className="min-h-[72px] resize-y"
+                                    />
+                                </div>
+                            </div>
+                        </SidebarSection>
+
+                        <SidebarSection
                             icon={MessageSquare}
                             title={t('pages.form.comments')}
                             description="读者是否可以评论"
@@ -218,7 +302,12 @@ export default function CreatePage() {
                                 </span>
                                 <Select
                                     value={formData.comment_status}
-                                    onValueChange={(value) => setFormData({ ...formData, comment_status: value })}
+                                    onValueChange={(value) =>
+                                        setFormData({
+                                            ...formData,
+                                            comment_status: value,
+                                        })
+                                    }
                                 >
                                     <SelectTrigger className="w-28">
                                         <SelectValue />
@@ -244,7 +333,12 @@ export default function CreatePage() {
                                 type="text"
                                 placeholder={t('pages.form.slugPlaceholder')}
                                 value={formData.slug}
-                                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        slug: e.target.value,
+                                    })
+                                }
                             />
                         </SidebarSection>
                     </div>

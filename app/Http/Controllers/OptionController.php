@@ -23,6 +23,8 @@ class OptionController extends Controller
     private const SITE_OPTION_KEYS = [
         'site_title',
         'site_tagline',
+        'seo_description',
+        'seo_keywords',
         'site_icon',
         'cms_url',
         'site_url',
@@ -109,6 +111,8 @@ class OptionController extends Controller
         $validated = $request->validate([
             'site_title' => ['required', 'string', 'max:255'],
             'site_tagline' => ['nullable', 'string', 'max:500'],
+            'seo_description' => ['nullable', 'string', 'max:500'],
+            'seo_keywords' => ['nullable', 'string', 'max:200'],
             'site_icon' => ['nullable', 'integer'],
             'cms_url' => ['required', 'string', 'url', 'max:255'],
             'site_url' => ['required', 'string', 'url', 'max:255'],

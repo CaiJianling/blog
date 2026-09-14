@@ -511,6 +511,55 @@ export default function Site({
                                 </div>
                             </div>
 
+                            {/* SEO section */}
+                            <div className="space-y-6">
+                                <h3 className="text-base font-medium">
+                                    {t('settings.site.seo')}
+                                </h3>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="seo_description">
+                                        {t('settings.site.seoDescription')}
+                                    </Label>
+                                    <Textarea
+                                        id="seo_description"
+                                        name="seo_description"
+                                        className="mt-1 block w-full"
+                                        defaultValue={
+                                            options.seo_description ?? ''
+                                        }
+                                        rows={3}
+                                    />
+                                    <p className="text-sm text-muted-foreground">
+                                        {t(
+                                            'settings.site.seoDescriptionDescription',
+                                        )}
+                                    </p>
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.seo_description}
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="seo_keywords">
+                                        {t('settings.site.seoKeywords')}
+                                    </Label>
+                                    <Input
+                                        id="seo_keywords"
+                                        name="seo_keywords"
+                                        className="mt-1 block w-full"
+                                        defaultValue={
+                                            options.seo_keywords ?? ''
+                                        }
+                                    />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.seo_keywords}
+                                    />
+                                </div>
+                            </div>
+
                             {/* Localization section */}
                             <div className="space-y-6">
                                 <h3 className="text-base font-medium">

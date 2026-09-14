@@ -14,6 +14,8 @@ class Page extends Model
         'author_id',
         'title',
         'slug',
+        'meta_title',
+        'meta_description',
         'content',
         'status',
         'comment_status',

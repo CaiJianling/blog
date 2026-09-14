@@ -1,7 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import PageSearch from '@/components/page-search';
+import { buildSeoMeta } from '@/lib/seo';
 
 type Tool = {
     id: number;
@@ -42,6 +43,7 @@ const iconMap: Record<string, string> = {
 };
 
 export default function Index({ toolCategories }: Props) {
+    const seo = usePage().props.seo;
     const [query, setQuery] = useState('');
 
     const keyword = query.trim().toLowerCase();
@@ -51,40 +53,53 @@ export default function Index({ toolCategories }: Props) {
             ...category,
             tools: keyword
                 ? category.tools.filter(
-                    (tool) =>
-                        tool.name.toLowerCase().includes(keyword)
-                        || (tool.description ?? '').toLowerCase().includes(keyword),
-                )
+                      (tool) =>
+                          tool.name.toLowerCase().includes(keyword) ||
+                          (tool.description ?? '')
+                              .toLowerCase()
+                              .includes(keyword),
+                  )
                 : category.tools,
         }))
         .filter((category) => category.tools.length > 0);
 
-    const totalFiltered = filteredCategories.reduce((sum, category) => sum + category.tools.length, 0);
+    const totalFiltered = filteredCategories.reduce(
+        (sum, category) => sum + category.tools.length,
+        0,
+    );
 
     return (
         <>
-            <Head title="在线工具" />
+            <Head title="在线工具">
+                {buildSeoMeta({ site: seo, title: '在线工具' })}
+            </Head>
 
             <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-14">
                 <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h1 className="text-display">在线工具</h1>
-                        <p className="mt-2 text-body text-muted-foreground">
+                        <p className="text-body mt-2 text-muted-foreground">
                             实用的在线开发工具，无需安装，即开即用
                         </p>
                     </div>
-                    <PageSearch placeholder="搜索工具" buttonLabel="搜索工具" onSubmit={setQuery} />
+                    <PageSearch
+                        placeholder="搜索工具"
+                        buttonLabel="搜索工具"
+                        onSubmit={setQuery}
+                    />
                 </div>
 
                 {keyword && (
-                    <p className="mb-8 text-body text-muted-foreground">
+                    <p className="text-body mb-8 text-muted-foreground">
                         搜索“{query}”的工具，共 {totalFiltered} 个
                     </p>
                 )}
 
                 {totalFiltered === 0 && (
                     <div className="apple-card p-12 text-center text-muted-foreground">
-                        {keyword ? `没有找到与“${query}”相关的工具` : '暂无工具'}
+                        {keyword
+                            ? `没有找到与“${query}”相关的工具`
+                            : '暂无工具'}
                     </div>
                 )}
 
@@ -103,10 +118,10 @@ export default function Index({ toolCategories }: Props) {
                                             </span>
                                         </div>
                                         <div className="min-w-0">
-                                            <h3 className="text-headline group-hover:text-primary transition-colors">
+                                            <h3 className="text-headline transition-colors group-hover:text-primary">
                                                 {tool.name}
                                             </h3>
-                                            <p className="mt-1 text-footnote line-clamp-2 text-muted-foreground">
+                                            <p className="text-footnote mt-1 line-clamp-2 text-muted-foreground">
                                                 {tool.description}
                                             </p>
                                         </div>

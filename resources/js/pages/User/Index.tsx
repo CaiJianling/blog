@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LiquidSwitch } from '@/components/LiquidGlass/LiquidSwitch';
+import StatusSwitch from '@/components/status-switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,7 +38,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import {
     Table,
     TableBody,
@@ -47,9 +46,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useEffects } from '@/hooks/use-effects';
 
-type UserRole = 'subscriber' | 'contributor' | 'author' | 'editor' | 'administrator';
+type UserRole =
+    'subscriber' | 'contributor' | 'author' | 'editor' | 'administrator';
 
 interface User {
     id: number;
@@ -75,7 +74,10 @@ const ROLES: { value: UserRole; label: string }[] = [
     { value: 'administrator', label: 'userManagement.roles.administrator' },
 ];
 
-const ROLE_COLORS: Record<UserRole, 'default' | 'outline' | 'destructive' | 'secondary'> = {
+const ROLE_COLORS: Record<
+    UserRole,
+    'default' | 'outline' | 'destructive' | 'secondary'
+> = {
     subscriber: 'outline',
     contributor: 'secondary',
     author: 'default',
@@ -83,7 +85,10 @@ const ROLE_COLORS: Record<UserRole, 'default' | 'outline' | 'destructive' | 'sec
     administrator: 'destructive',
 };
 
-export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Props) {
+export default function UserIndex({
+    users: serverUsers,
+    breadcrumbs = [],
+}: Props) {
     const { t } = useTranslation();
     const { auth, errors, flash } = usePage().props as any;
     const currentUserId = auth?.user?.id;
@@ -110,7 +115,9 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
         role: 'subscriber' as UserRole,
         is_active: true,
     });
-    const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
+    const [createErrors, setCreateErrors] = useState<Record<string, string>>(
+        {},
+    );
     const [editErrors, setEditErrors] = useState<Record<string, string>>({});
     const [isCreateSubmitting, setIsCreateSubmitting] = useState(false);
     const [isEditSubmitting, setIsEditSubmitting] = useState(false);
@@ -125,32 +132,6 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
         'all' | 'active' | 'inactive'
     >('all');
     const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
-    const { effectsEnabled } = useEffects();
-
-    const StatusSwitch = ({ checked, onCheckedChange, disabled }: {
-        checked: boolean;
-        onCheckedChange: (checked: boolean) => void;
-        disabled?: boolean;
-    }) => {
-        if (effectsEnabled) {
-            return (
-                <LiquidSwitch
-                    checked={checked}
-                    onChange={onCheckedChange}
-                    size="sm"
-                    disabled={disabled}
-                />
-            );
-        }
-
-        return (
-            <Switch
-                checked={checked}
-                onCheckedChange={onCheckedChange}
-                disabled={disabled}
-            />
-        );
-    };
 
     const handleDelete = (userId: number) => {
         setDeletingUserId(userId);
@@ -300,8 +281,7 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                 (statusFilter === 'inactive' && !user.is_active);
 
             const matchesRole =
-                roleFilter === 'all' ||
-                user.role === roleFilter;
+                roleFilter === 'all' || user.role === roleFilter;
 
             return matchesSearch && matchesStatus && matchesRole;
         });
@@ -329,7 +309,7 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
 
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="relative max-w-md flex-1">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-foreground/50" />
+                        <Search className="pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2 text-foreground/50" />
                         <Input
                             type="text"
                             placeholder={t('userManagement.searchPlaceholder')}
@@ -350,11 +330,18 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                     </div>
 
                     <div className="flex gap-2">
-                        <Select value={statusFilter} onValueChange={(value) =>
-                            setStatusFilter(value as 'all' | 'active' | 'inactive')
-                        }>
+                        <Select
+                            value={statusFilter}
+                            onValueChange={(value) =>
+                                setStatusFilter(
+                                    value as 'all' | 'active' | 'inactive',
+                                )
+                            }
+                        >
                             <SelectTrigger className="w-[140px]">
-                                <SelectValue placeholder={t('userManagement.allStatus')} />
+                                <SelectValue
+                                    placeholder={t('userManagement.allStatus')}
+                                />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">
@@ -369,18 +356,26 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                             </SelectContent>
                         </Select>
 
-                        <Select value={roleFilter} onValueChange={(value) =>
-                            setRoleFilter(value as UserRole | 'all')
-                        }>
+                        <Select
+                            value={roleFilter}
+                            onValueChange={(value) =>
+                                setRoleFilter(value as UserRole | 'all')
+                            }
+                        >
                             <SelectTrigger className="w-[160px]">
-                                <SelectValue placeholder={t('userManagement.allRoles')} />
+                                <SelectValue
+                                    placeholder={t('userManagement.allRoles')}
+                                />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">
                                     {t('userManagement.allRoles')}
                                 </SelectItem>
                                 {ROLES.map((role) => (
-                                    <SelectItem key={role.value} value={role.value}>
+                                    <SelectItem
+                                        key={role.value}
+                                        value={role.value}
+                                    >
                                         {t(role.label)}
                                     </SelectItem>
                                 ))}
@@ -484,7 +479,9 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={openCreateDialog}
+                                                        onClick={
+                                                            openCreateDialog
+                                                        }
                                                     >
                                                         {t(
                                                             'userManagement.addFirstUser',
@@ -508,10 +505,14 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
                                                 <Badge
-                                                    variant={ROLE_COLORS[user.role]}
+                                                    variant={
+                                                        ROLE_COLORS[user.role]
+                                                    }
                                                     className="px-2 py-1"
                                                 >
-                                                    {t(`userManagement.roles.${user.role}`)}
+                                                    {t(
+                                                        `userManagement.roles.${user.role}`,
+                                                    )}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
@@ -520,7 +521,10 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                                     onCheckedChange={() =>
                                                         toggleStatus(user.id)
                                                     }
-                                                    disabled={user.id === currentUserId}
+                                                    disabled={
+                                                        user.id ===
+                                                        currentUserId
+                                                    }
                                                 />
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
@@ -563,8 +567,11 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                 </Card>
             </div>
 
-            <Dialog open={isCreateDialogOpen} onOpenChange={handleCreateDialogOpenChange}>
-                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-md">
+            <Dialog
+                open={isCreateDialogOpen}
+                onOpenChange={handleCreateDialogOpenChange}
+            >
+                <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>
                             {t('userManagement.createNewUser')}
@@ -573,8 +580,14 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                             {t('userManagement.addNewUser')}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
-                        <div className="space-y-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
+                    <form
+                        onSubmit={handleCreateSubmit}
+                        className="flex flex-1 flex-col overflow-hidden"
+                    >
+                        <div
+                            className="space-y-4 overflow-y-auto px-1"
+                            style={{ maxHeight: 'calc(90vh - 220px)' }}
+                        >
                             <div>
                                 <Label htmlFor="create-name">
                                     {t('userManagement.name')}
@@ -584,7 +597,10 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                     type="text"
                                     value={form.name}
                                     onChange={(e) =>
-                                        setForm({ ...form, name: e.target.value })
+                                        setForm({
+                                            ...form,
+                                            name: e.target.value,
+                                        })
                                     }
                                     required
                                 />
@@ -603,7 +619,10 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                     type="email"
                                     value={form.email}
                                     onChange={(e) =>
-                                        setForm({ ...form, email: e.target.value })
+                                        setForm({
+                                            ...form,
+                                            email: e.target.value,
+                                        })
                                     }
                                     required
                                 />
@@ -636,7 +655,10 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                 )}
                             </div>
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="create-role" className="text-right">
+                                <Label
+                                    htmlFor="create-role"
+                                    className="text-right"
+                                >
                                     {t('userManagement.role')}
                                 </Label>
                                 <div className="w-3/5">
@@ -650,11 +672,18 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                         }
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder={t('userManagement.role')} />
+                                            <SelectValue
+                                                placeholder={t(
+                                                    'userManagement.role',
+                                                )}
+                                            />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {ROLES.map((role) => (
-                                                <SelectItem key={role.value} value={role.value}>
+                                                <SelectItem
+                                                    key={role.value}
+                                                    value={role.value}
+                                                >
                                                     {t(role.label)}
                                                 </SelectItem>
                                             ))}
@@ -678,7 +707,7 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                 </Label>
                             </div>
                         </div>
-                        <DialogFooter className="flex justify-end gap-2 mt-4">
+                        <DialogFooter className="mt-4 flex justify-end gap-2">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -702,8 +731,11 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogOpenChange}>
-                <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col sm:max-w-md">
+            <Dialog
+                open={isEditDialogOpen}
+                onOpenChange={handleEditDialogOpenChange}
+            >
+                <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>
                             {t('userManagement.editUser')}
@@ -712,8 +744,14 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                             {t('userManagement.updateUserInfo')}
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
-                        <div className="space-y-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 220px)' }}>
+                    <form
+                        onSubmit={handleEditSubmit}
+                        className="flex flex-1 flex-col overflow-hidden"
+                    >
+                        <div
+                            className="space-y-4 overflow-y-auto px-1"
+                            style={{ maxHeight: 'calc(90vh - 220px)' }}
+                        >
                             <div>
                                 <Label htmlFor="edit-name">
                                     {t('userManagement.name')}
@@ -723,7 +761,10 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                     type="text"
                                     value={form.name}
                                     onChange={(e) =>
-                                        setForm({ ...form, name: e.target.value })
+                                        setForm({
+                                            ...form,
+                                            name: e.target.value,
+                                        })
                                     }
                                     required
                                 />
@@ -742,7 +783,10 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                     type="email"
                                     value={form.email}
                                     onChange={(e) =>
-                                        setForm({ ...form, email: e.target.value })
+                                        setForm({
+                                            ...form,
+                                            email: e.target.value,
+                                        })
                                     }
                                     required
                                 />
@@ -777,12 +821,17 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                 )}
                             </div>
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="edit-role" className="text-right">
+                                <Label
+                                    htmlFor="edit-role"
+                                    className="text-right"
+                                >
                                     {t('userManagement.role')}
                                 </Label>
                                 <div className="w-3/5">
                                     <Select
-                                        disabled={editingUser?.id === currentUserId}
+                                        disabled={
+                                            editingUser?.id === currentUserId
+                                        }
                                         value={form.role}
                                         onValueChange={(value) =>
                                             setForm({
@@ -792,11 +841,18 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                         }
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder={t('userManagement.role')} />
+                                            <SelectValue
+                                                placeholder={t(
+                                                    'userManagement.role',
+                                                )}
+                                            />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {ROLES.map((role) => (
-                                                <SelectItem key={role.value} value={role.value}>
+                                                <SelectItem
+                                                    key={role.value}
+                                                    value={role.value}
+                                                >
                                                     {t(role.label)}
                                                 </SelectItem>
                                             ))}
@@ -815,19 +871,30 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                                             is_active: checked as boolean,
                                         })
                                     }
-                                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="disabled:cursor-not-allowed disabled:opacity-50"
                                 />
-                                <Label htmlFor="edit-is_active" className={editingUser?.id === currentUserId ? "text-muted-foreground" : ""}>
+                                <Label
+                                    htmlFor="edit-is_active"
+                                    className={
+                                        editingUser?.id === currentUserId
+                                            ? 'text-muted-foreground'
+                                            : ''
+                                    }
+                                >
                                     {t('userManagement.active')}
                                     {editingUser?.id === currentUserId && (
                                         <span className="ml-2 text-xs text-muted-foreground">
-                                            ({t('userManagement.cannotChangeOwnStatus')})
+                                            (
+                                            {t(
+                                                'userManagement.cannotChangeOwnStatus',
+                                            )}
+                                            )
                                         </span>
                                     )}
                                 </Label>
                             </div>
                         </div>
-                        <DialogFooter className="flex justify-end gap-2 mt-4">
+                        <DialogFooter className="mt-4 flex justify-end gap-2">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -851,7 +918,10 @@ export default function UserIndex({ users: serverUsers, breadcrumbs = [] }: Prop
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <Dialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+            >
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>

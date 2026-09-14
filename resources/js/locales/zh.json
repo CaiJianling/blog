@@ -181,6 +181,10 @@
             "membership": "成员资格",
             "membershipLabel": "任何人都可以注册",
             "defaultRole": "新用户默认角色",
+            "seo": "SEO 设置",
+            "seoDescription": "站点描述",
+            "seoDescriptionDescription": "用于搜索引擎结果与社交分享展示的站点摘要，建议不超过 120 字。",
+            "seoKeywords": "站点关键词",
             "language": "站点语言",
             "timezone": "时区",
             "timezoneDescription": "选择与您在同一时区的城市或一个 UTC（协调世界时）时区偏移。",
@@ -630,7 +634,13 @@
             "tags": "标签",
             "noTags": "暂无标签",
             "slug": "永久链接",
-            "slugPlaceholder": "输入别名"
+            "slugPlaceholder": "输入别名",
+            "seo": "SEO",
+            "seoDescription": "搜索引擎优化信息",
+            "seoTitleDescription": "SEO 标题（留空则使用文章标题）",
+            "seoTitlePlaceholder": "输入 SEO 标题",
+            "seoDescriptionDescription": "SEO 描述（留空则使用摘要）",
+            "seoDescriptionPlaceholder": "输入 SEO 描述"
         },
         "manageCategories": "管理文章分类",
         "noCategories": "暂无分类",
@@ -692,7 +702,13 @@
             "open": "开启",
             "close": "关闭",
             "slug": "永久链接",
-            "slugPlaceholder": "输入别名"
+            "slugPlaceholder": "输入别名",
+            "seo": "SEO",
+            "seoDescription": "搜索引擎优化信息",
+            "seoTitleDescription": "SEO 标题（留空则使用页面标题）",
+            "seoTitlePlaceholder": "输入 SEO 标题",
+            "seoDescriptionDescription": "SEO 描述",
+            "seoDescriptionPlaceholder": "输入 SEO 描述"
         }
     },
     "media": {
@@ -873,6 +889,9 @@
     },
     "contentManagement": {
         "title": "内容管理"
+    },
+    "commentManagement": {
+        "title": "评论管理"
     },
     "userManagement": {
         "title": "用户管理",

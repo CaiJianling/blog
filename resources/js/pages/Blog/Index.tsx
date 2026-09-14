@@ -1,6 +1,14 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Eye, FileText, Link as LinkIcon, MessageSquare, Clock, User } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import {
+    Eye,
+    FileText,
+    Link as LinkIcon,
+    MessageSquare,
+    Clock,
+    User,
+} from 'lucide-react';
 import PageSearch from '@/components/page-search';
+import { buildSeoMeta } from '@/lib/seo';
 import blog from '@/routes/blog';
 
 type Article = {
@@ -52,23 +60,38 @@ type Props = {
     sidebar: Sidebar;
 };
 
-export default function Index({ articles, categories, currentCategory, currentTag, currentQuery, sidebar }: Props) {
+export default function Index({
+    articles,
+    categories,
+    currentCategory,
+    currentTag,
+    currentQuery,
+    sidebar,
+}: Props) {
+    const seo = usePage().props.seo;
+
     const doSearch = (value: string) => {
-        router.get(blog.index().url, {
-            q: value || undefined,
-            category: currentCategory || undefined,
-        }, { preserveScroll: true });
+        router.get(
+            blog.index().url,
+            {
+                q: value || undefined,
+                category: currentCategory || undefined,
+            },
+            { preserveScroll: true },
+        );
     };
 
     return (
         <>
-            <Head title="博客" />
+            <Head title="博客">
+                {buildSeoMeta({ site: seo, title: '博客' })}
+            </Head>
 
             <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-14">
                 <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h1 className="text-display">博客</h1>
-                        <p className="mt-2 text-body text-muted-foreground">
+                        <p className="text-body mt-2 text-muted-foreground">
                             技术教程、开发经验与生活随笔
                         </p>
                     </div>
@@ -81,7 +104,7 @@ export default function Index({ articles, categories, currentCategory, currentTa
                 </div>
 
                 {currentQuery && (
-                    <p className="mb-6 text-body text-muted-foreground">
+                    <p className="text-body mb-6 text-muted-foreground">
                         搜索“{currentQuery}”的文章，共 {articles.data.length} 篇
                     </p>
                 )}
@@ -102,7 +125,9 @@ export default function Index({ articles, categories, currentCategory, currentTa
                         {categories.map((cat) => (
                             <Link
                                 key={cat.slug}
-                                href={blog.index({ query: { category: cat.slug } })}
+                                href={blog.index({
+                                    query: { category: cat.slug },
+                                })}
                                 className={`apple-press rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                                     currentCategory === cat.slug
                                         ? 'bg-primary text-primary-foreground'
@@ -110,7 +135,9 @@ export default function Index({ articles, categories, currentCategory, currentTa
                                 }`}
                             >
                                 {cat.name}
-                                <span className="ml-1.5 opacity-60">{cat.count}</span>
+                                <span className="ml-1.5 opacity-60">
+                                    {cat.count}
+                                </span>
                             </Link>
                         ))}
                     </div>
@@ -129,27 +156,43 @@ export default function Index({ articles, categories, currentCategory, currentTa
                                 />
                             ) : (
                                 <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-2xl font-semibold text-primary ring-4 ring-primary/10">
-                                    {sidebar.blogger.name.charAt(0).toUpperCase()}
+                                    {sidebar.blogger.name
+                                        .charAt(0)
+                                        .toUpperCase()}
                                 </span>
                             )}
-                            <h3 className="mt-3 text-headline">{sidebar.blogger.name}</h3>
+                            <h3 className="text-headline mt-3">
+                                {sidebar.blogger.name}
+                            </h3>
                             {sidebar.blogger.intro && (
-                                <p className="mt-1.5 text-footnote leading-relaxed text-muted-foreground">
+                                <p className="text-footnote mt-1.5 leading-relaxed text-muted-foreground">
                                     {sidebar.blogger.intro}
                                 </p>
                             )}
                             <div className="mt-4 grid grid-cols-3 divide-x divide-border/40 rounded-xl bg-muted/60 py-2.5">
                                 <div>
-                                    <p className="text-sm font-semibold tabular-nums">{sidebar.stats.articles}</p>
-                                    <p className="text-[10px] text-muted-foreground">文章</p>
+                                    <p className="text-sm font-semibold tabular-nums">
+                                        {sidebar.stats.articles}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        文章
+                                    </p>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold tabular-nums">{sidebar.stats.views}</p>
-                                    <p className="text-[10px] text-muted-foreground">阅读</p>
+                                    <p className="text-sm font-semibold tabular-nums">
+                                        {sidebar.stats.views}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        阅读
+                                    </p>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold tabular-nums">{sidebar.stats.comments}</p>
-                                    <p className="text-[10px] text-muted-foreground">评论</p>
+                                    <p className="text-sm font-semibold tabular-nums">
+                                        {sidebar.stats.comments}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        评论
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -157,14 +200,15 @@ export default function Index({ articles, categories, currentCategory, currentTa
                         {/* 自定义菜单（后台维护） */}
                         {sidebar.menus.length > 0 && (
                             <div className="apple-card p-4">
-                                <h3 className="mb-3 flex items-center gap-1.5 px-1 text-callout font-medium">
+                                <h3 className="text-callout mb-3 flex items-center gap-1.5 px-1 font-medium">
                                     <LinkIcon className="h-3.5 w-3.5 text-primary" />
                                     菜单
                                 </h3>
                                 <ul className="space-y-0.5">
                                     {sidebar.menus.map((menu, index) => (
                                         <li key={index}>
-                                            {menu.url.startsWith('/') || menu.url.startsWith('http') ? (
+                                            {menu.url.startsWith('/') ||
+                                            menu.url.startsWith('http') ? (
                                                 menu.url.startsWith('http') ? (
                                                     <a
                                                         href={menu.url}
@@ -200,7 +244,7 @@ export default function Index({ articles, categories, currentCategory, currentTa
                         {/* 分类 */}
                         {categories.length > 0 && (
                             <div className="apple-card p-4">
-                                <h3 className="mb-3 flex items-center gap-1.5 px-1 text-callout font-medium">
+                                <h3 className="text-callout mb-3 flex items-center gap-1.5 px-1 font-medium">
                                     <FileText className="h-3.5 w-3.5 text-primary" />
                                     分类
                                 </h3>
@@ -212,20 +256,32 @@ export default function Index({ articles, categories, currentCategory, currentTa
                                         >
                                             <span>全部文章</span>
                                             <span className="text-footnote text-muted-foreground">
-                                                {categories.reduce((sum, cat) => sum + cat.count, 0)}
+                                                {categories.reduce(
+                                                    (sum, cat) =>
+                                                        sum + cat.count,
+                                                    0,
+                                                )}
                                             </span>
                                         </Link>
                                     </li>
                                     {categories.map((cat) => (
                                         <li key={cat.slug}>
                                             <Link
-                                                href={blog.index({ query: { category: cat.slug } })}
+                                                href={blog.index({
+                                                    query: {
+                                                        category: cat.slug,
+                                                    },
+                                                })}
                                                 className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted ${
-                                                    currentCategory === cat.slug ? 'bg-primary/10 text-primary' : ''
+                                                    currentCategory === cat.slug
+                                                        ? 'bg-primary/10 text-primary'
+                                                        : ''
                                                 }`}
                                             >
                                                 <span>{cat.name}</span>
-                                                <span className="text-footnote text-muted-foreground">{cat.count}</span>
+                                                <span className="text-footnote text-muted-foreground">
+                                                    {cat.count}
+                                                </span>
                                             </Link>
                                         </li>
                                     ))}
@@ -245,29 +301,36 @@ export default function Index({ articles, categories, currentCategory, currentTa
                                     >
                                         {article.categories.length > 0 && (
                                             <div className="mb-3 flex flex-wrap gap-2">
-                                                {article.categories.map((cat) => (
-                                                    <span
-                                                        key={cat.slug}
-                                                        className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground"
-                                                    >
-                                                        {cat.name}
-                                                    </span>
-                                                ))}
+                                                {article.categories.map(
+                                                    (cat) => (
+                                                        <span
+                                                            key={cat.slug}
+                                                            className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground"
+                                                        >
+                                                            {cat.name}
+                                                        </span>
+                                                    ),
+                                                )}
                                             </div>
                                         )}
-                                        <h2 className="text-headline leading-snug group-hover:text-primary transition-colors">
+                                        <h2 className="text-headline leading-snug transition-colors group-hover:text-primary">
                                             {article.title}
                                         </h2>
-                                        <p className="mt-2 text-footnote leading-relaxed text-muted-foreground">
+                                        <p className="text-footnote mt-2 leading-relaxed text-muted-foreground">
                                             {article.excerpt || '暂无摘要'}
                                         </p>
                                         {article.tags.length > 0 && (
                                             <div className="mt-3 flex flex-wrap gap-1.5">
-                                                {article.tags.slice(0, 3).map((tag) => (
-                                                    <span key={tag.slug} className="text-[11px] text-muted-foreground/80">
-                                                        #{tag.name}
-                                                    </span>
-                                                ))}
+                                                {article.tags
+                                                    .slice(0, 3)
+                                                    .map((tag) => (
+                                                        <span
+                                                            key={tag.slug}
+                                                            className="text-[11px] text-muted-foreground/80"
+                                                        >
+                                                            #{tag.name}
+                                                        </span>
+                                                    ))}
                                             </div>
                                         )}
                                         <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3 text-[11px] text-muted-foreground">
@@ -297,7 +360,9 @@ export default function Index({ articles, categories, currentCategory, currentTa
                             </div>
                         ) : (
                             <div className="apple-card p-12 text-center text-muted-foreground">
-                                {currentQuery ? `没有找到与“${currentQuery}”相关的文章` : '暂无文章'}
+                                {currentQuery
+                                    ? `没有找到与“${currentQuery}”相关的文章`
+                                    : '暂无文章'}
                             </div>
                         )}
 
@@ -312,14 +377,15 @@ export default function Index({ articles, categories, currentCategory, currentTa
                                             link.active
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'bg-muted text-foreground/80 hover:bg-accent'
-                                        } ${!link.url ? 'opacity-40 pointer-events-none' : ''}`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                        } ${!link.url ? 'pointer-events-none opacity-40' : ''}`}
+                                        dangerouslySetInnerHTML={{
+                                            __html: link.label,
+                                        }}
                                     />
                                 ))}
                             </div>
                         )}
                     </div>
-
                 </div>
             </div>
         </>
@@ -328,7 +394,13 @@ export default function Index({ articles, categories, currentCategory, currentTa
 
 function ExternalGlyph() {
     return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3 text-muted-foreground">
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="h-3 w-3 text-muted-foreground"
+        >
             <path d="M15 3h6v6" />
             <path d="M10 14 21 3" />
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />

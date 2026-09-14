@@ -223,6 +223,8 @@ class BlogController extends Controller
                 'title' => $article->title,
                 'content' => $article->content,
                 'excerpt' => $article->excerpt,
+                'meta_title' => $article->meta_title,
+                'meta_description' => $article->meta_description,
                 'author_name' => $article->author?->nickname ?: ($article->author?->name ?? ''),
                 'author_avatar' => $article->author?->avatarUrl() ?? '',
                 'categories' => $categories,

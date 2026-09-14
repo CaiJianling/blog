@@ -181,6 +181,10 @@
             "membership": "Membership",
             "membershipLabel": "Anyone can register",
             "defaultRole": "New User Default Role",
+            "seo": "SEO Settings",
+            "seoDescription": "Site Description",
+            "seoDescriptionDescription": "A short summary of your site shown in search results and social shares. Keep it under 120 characters.",
+            "seoKeywords": "Site Keywords",
             "language": "Site Language",
             "timezone": "Timezone",
             "timezoneDescription": "Choose a city in the same timezone as you or a UTC (Coordinated Universal Time) offset.",
@@ -630,7 +634,13 @@
             "tags": "Tags",
             "noTags": "No tags available",
             "slug": "Permalink",
-            "slugPlaceholder": "Enter slug"
+            "slugPlaceholder": "Enter slug",
+            "seo": "SEO",
+            "seoDescription": "Search engine optimization",
+            "seoTitleDescription": "SEO title (falls back to the article title)",
+            "seoTitlePlaceholder": "Enter SEO title",
+            "seoDescriptionDescription": "SEO description (falls back to the excerpt)",
+            "seoDescriptionPlaceholder": "Enter SEO description"
         },
         "manageCategories": "Manage article categories",
         "noCategories": "No categories yet",
@@ -692,7 +702,13 @@
             "open": "Open",
             "close": "Close",
             "slug": "Permalink",
-            "slugPlaceholder": "Enter slug"
+            "slugPlaceholder": "Enter slug",
+            "seo": "SEO",
+            "seoDescription": "Search engine optimization",
+            "seoTitleDescription": "SEO title (falls back to the page title)",
+            "seoTitlePlaceholder": "Enter SEO title",
+            "seoDescriptionDescription": "SEO description",
+            "seoDescriptionPlaceholder": "Enter SEO description"
         }
     },
     "media": {
@@ -873,6 +889,9 @@
     },
     "contentManagement": {
         "title": "Content Management"
+    },
+    "commentManagement": {
+        "title": "Comment Management"
     },
     "userManagement": {
         "title": "User Management",

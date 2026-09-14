@@ -15,12 +15,12 @@ import { toast } from 'sonner';
 import AdminSettingsShell from '@/components/admin-settings-shell';
 import ErrorDetailDialog from '@/components/error-detail-dialog';
 import type { AiErrorDetail } from '@/components/error-detail-dialog';
+import StatusSwitch from '@/components/status-switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
@@ -543,7 +543,7 @@ export default function AiSettings({
                                     <span className="text-xs text-muted-foreground">
                                         {t('settings.assistant.enable')}
                                     </span>
-                                    <Switch
+                                    <StatusSwitch
                                         checked={assistantEnabled}
                                         onCheckedChange={(checked) =>
                                             setAssistantEnabled(checked)

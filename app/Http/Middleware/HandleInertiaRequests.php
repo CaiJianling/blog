@@ -59,6 +59,7 @@ class HandleInertiaRequests extends Middleware
             'canRegister' => Features::enabled(Features::registration()),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'assistant' => $this->assistantProps(),
+            'seo' => $this->seoProps(),
             'footer' => [
                 'resources' => FooterSettingController::resources(),
                 'contacts' => FooterSettingController::contacts(),
@@ -95,6 +96,20 @@ class HandleInertiaRequests extends Middleware
             'name' => (string) Option::get('assistant_name', 'AI 小助手'),
             'avatarUrl' => $avatarUrl,
             'welcome' => (string) Option::get('assistant_welcome', ''),
+        ];
+    }
+
+    /**
+     * 站点级 SEO 配置，供前台各页输出 meta / OpenGraph / Twitter 标签。
+     *
+     * @return array<string, string>
+     */
+    protected function seoProps(): array
+    {
+        return [
+            'title' => (string) Option::get('site_title', config('app.name')),
+            'description' => (string) Option::get('seo_description', ''),
+            'keywords' => (string) Option::get('seo_keywords', ''),
         ];
     }
 }

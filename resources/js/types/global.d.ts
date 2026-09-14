@@ -7,14 +7,20 @@ declare module 'react' {
     }
 }
 
+export interface SiteSeo {
+    title: string;
+    description: string;
+    keywords: string;
+}
+
 declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            seo: SiteSeo;
             [key: string]: unknown;
         };
     }
 }
-
