@@ -49,10 +49,11 @@ interface Props {
     assistant: AssistantProps;
 }
 
-const API_FORMATS: Array<{ value: 'openai' | 'anthropic'; labelKey: string }> = [
-    { value: 'openai', labelKey: 'settings.ai.formatOpenai' },
-    { value: 'anthropic', labelKey: 'settings.ai.formatAnthropic' },
-];
+const API_FORMATS: Array<{ value: 'openai' | 'anthropic'; labelKey: string }> =
+    [
+        { value: 'openai', labelKey: 'settings.ai.formatOpenai' },
+        { value: 'anthropic', labelKey: 'settings.ai.formatAnthropic' },
+    ];
 
 function getCsrfToken(): { headerName: string; value: string } | null {
     const meta = document
@@ -96,15 +97,31 @@ export default function AiSettings({
     const [errorDetail, setErrorDetail] = useState<AiErrorDetail | null>(null);
 
     // AI 小助手表单状态
-    const [assistantEnabled, setAssistantEnabled] = useState(assistant.assistant_enabled);
-    const [assistantName, setAssistantName] = useState(assistant.assistant_name);
-    const [assistantWelcome, setAssistantWelcome] = useState(assistant.assistant_welcome);
-    const [assistantPrompt, setAssistantPrompt] = useState(assistant.assistant_system_prompt);
-    const [assistantMode, setAssistantMode] = useState<'standard' | 'fastgpt'>(assistant.assistant_mode);
-    const [assistantApiUrl, setAssistantApiUrl] = useState(assistant.assistant_api_url);
-    const [assistantModel, setAssistantModel] = useState(assistant.assistant_model);
+    const [assistantEnabled, setAssistantEnabled] = useState(
+        assistant.assistant_enabled,
+    );
+    const [assistantName, setAssistantName] = useState(
+        assistant.assistant_name,
+    );
+    const [assistantWelcome, setAssistantWelcome] = useState(
+        assistant.assistant_welcome,
+    );
+    const [assistantPrompt, setAssistantPrompt] = useState(
+        assistant.assistant_system_prompt,
+    );
+    const [assistantMode, setAssistantMode] = useState<'standard' | 'fastgpt'>(
+        assistant.assistant_mode,
+    );
+    const [assistantApiUrl, setAssistantApiUrl] = useState(
+        assistant.assistant_api_url,
+    );
+    const [assistantModel, setAssistantModel] = useState(
+        assistant.assistant_model,
+    );
     const [assistantApiKey, setAssistantApiKey] = useState('');
-    const [assistantAvatar, setAssistantAvatar] = useState(assistant.assistant_avatar);
+    const [assistantAvatar, setAssistantAvatar] = useState(
+        assistant.assistant_avatar,
+    );
     const [assistantSaving, setAssistantSaving] = useState(false);
     const [avatarUploading, setAvatarUploading] = useState(false);
     const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -134,13 +151,15 @@ export default function AiSettings({
             const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                const message = data?.message ?? t('settings.ai.modelsFetchFailed');
+                const message =
+                    data?.message ?? t('settings.ai.modelsFetchFailed');
 
                 toast.error(message, {
                     description: t('settings.ai.detailHint'),
                     action: {
                         label: t('settings.ai.viewDetail'),
-                        onClick: () => setErrorDetail({ message, debug: data?.debug }),
+                        onClick: () =>
+                            setErrorDetail({ message, debug: data?.debug }),
                     },
                 });
 
@@ -153,7 +172,9 @@ export default function AiSettings({
             setModelFilter('');
 
             if (list.length > 0) {
-                toast.success(t('settings.ai.modelsFetched', { count: list.length }));
+                toast.success(
+                    t('settings.ai.modelsFetched', { count: list.length }),
+                );
             } else {
                 toast.error(t('settings.ai.modelsFetchFailed'));
             }
@@ -241,7 +262,9 @@ export default function AiSettings({
                 const data = await response.json().catch(() => null);
 
                 if (!response.ok) {
-                    toast.error(data?.message ?? t('settings.assistant.uploadFailed'));
+                    toast.error(
+                        data?.message ?? t('settings.assistant.uploadFailed'),
+                    );
 
                     return;
                 }
@@ -265,25 +288,35 @@ export default function AiSettings({
             <AdminSettingsShell
                 title={t('settings.ai.heading')}
                 description={t('settings.ai.description')}
-                active="/settings/ai"
             >
                 <div className="space-y-6">
                     {/* AI 接口配置 */}
-                    <Card className="overflow-hidden py-0 gap-0">
+                    <Card className="gap-0 overflow-hidden py-0">
                         <CardContent className="!p-0">
                             <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
                                 <div className="flex items-center gap-2.5">
                                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
                                         <Bot className="h-4 w-4" />
                                     </div>
-                                    <span className="text-callout font-medium">{t('settings.ai.connection')}</span>
+                                    <span className="text-callout font-medium">
+                                        {t('settings.ai.connection')}
+                                    </span>
                                 </div>
-                                <Badge variant={ai_configured ? 'default' : 'secondary'}>
-                                    {ai_configured ? t('settings.ai.configured') : t('settings.ai.notConfigured')}
+                                <Badge
+                                    variant={
+                                        ai_configured ? 'default' : 'secondary'
+                                    }
+                                >
+                                    {ai_configured
+                                        ? t('settings.ai.configured')
+                                        : t('settings.ai.notConfigured')}
                                 </Badge>
                             </div>
 
-                            <form onSubmit={submitApi} className="space-y-5 px-6 py-5">
+                            <form
+                                onSubmit={submitApi}
+                                className="space-y-5 px-6 py-5"
+                            >
                                 <div className="space-y-1.5">
                                     <Label>{t('settings.ai.format')}</Label>
                                     <div className="grid grid-cols-2 gap-2">
@@ -291,7 +324,9 @@ export default function AiSettings({
                                             <button
                                                 key={item.value}
                                                 type="button"
-                                                onClick={() => setFormat(item.value)}
+                                                onClick={() =>
+                                                    setFormat(item.value)
+                                                }
                                                 className={cn(
                                                     'apple-press rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
                                                     format === item.value
@@ -303,29 +338,51 @@ export default function AiSettings({
                                             </button>
                                         ))}
                                     </div>
-                                    <p className="text-xs text-muted-foreground">{t('settings.ai.formatHint')}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('settings.ai.formatHint')}
+                                    </p>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="ai-api-url" className="flex items-center gap-1.5">
+                                    <Label
+                                        htmlFor="ai-api-url"
+                                        className="flex items-center gap-1.5"
+                                    >
                                         <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
                                         {t('settings.ai.apiUrl')}
                                     </Label>
                                     <Input
                                         id="ai-api-url"
                                         value={apiUrl}
-                                        onChange={(e) => setApiUrl(e.target.value)}
+                                        onChange={(e) =>
+                                            setApiUrl(e.target.value)
+                                        }
                                         placeholder={api_url_defaults[format]}
                                     />
                                     <p className="text-xs text-muted-foreground">
                                         {format === 'anthropic'
-                                            ? t('settings.ai.apiUrlHintAnthropic', { default: api_url_defaults.anthropic })
-                                            : t('settings.ai.apiUrlHintOpenai', { default: api_url_defaults.openai })}
+                                            ? t(
+                                                  'settings.ai.apiUrlHintAnthropic',
+                                                  {
+                                                      default:
+                                                          api_url_defaults.anthropic,
+                                                  },
+                                              )
+                                            : t(
+                                                  'settings.ai.apiUrlHintOpenai',
+                                                  {
+                                                      default:
+                                                          api_url_defaults.openai,
+                                                  },
+                                              )}
                                     </p>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="ai-api-key" className="flex items-center gap-1.5">
+                                    <Label
+                                        htmlFor="ai-api-key"
+                                        className="flex items-center gap-1.5"
+                                    >
                                         <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
                                         {t('settings.ai.apiKey')}
                                     </Label>
@@ -333,19 +390,33 @@ export default function AiSettings({
                                         id="ai-api-key"
                                         type="password"
                                         value={apiKey}
-                                        onChange={(e) => setApiKey(e.target.value)}
+                                        onChange={(e) =>
+                                            setApiKey(e.target.value)
+                                        }
                                         placeholder={
                                             ai_api_key_masked
-                                                ? t('settings.ai.apiKeyPlaceholderConfigured', { masked: ai_api_key_masked })
-                                                : t('settings.ai.apiKeyPlaceholder')
+                                                ? t(
+                                                      'settings.ai.apiKeyPlaceholderConfigured',
+                                                      {
+                                                          masked: ai_api_key_masked,
+                                                      },
+                                                  )
+                                                : t(
+                                                      'settings.ai.apiKeyPlaceholder',
+                                                  )
                                         }
                                         autoComplete="new-password"
                                     />
-                                    <p className="text-xs text-muted-foreground">{t('settings.ai.apiKeyHint')}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('settings.ai.apiKeyHint')}
+                                    </p>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="ai-model" className="flex items-center gap-1.5">
+                                    <Label
+                                        htmlFor="ai-model"
+                                        className="flex items-center gap-1.5"
+                                    >
                                         <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
                                         {t('settings.ai.model')}
                                     </Label>
@@ -353,7 +424,9 @@ export default function AiSettings({
                                         <Input
                                             id="ai-model"
                                             value={model}
-                                            onChange={(e) => setModel(e.target.value)}
+                                            onChange={(e) =>
+                                                setModel(e.target.value)
+                                            }
                                             placeholder="gpt-4o-mini"
                                         />
                                         <Button
@@ -362,39 +435,53 @@ export default function AiSettings({
                                             className="shrink-0"
                                             onClick={fetchModels}
                                             disabled={loadingModels}
-                                            title={t('settings.ai.fetchModelsHint')}
+                                            title={t(
+                                                'settings.ai.fetchModelsHint',
+                                            )}
                                         >
-                                            {loadingModels
-                                                ? (
-                                                    <>
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                        {t('settings.ai.fetchingModels')}
-                                                    </>
-                                                )
-                                                : (
-                                                    <>
-                                                        <RefreshCw className="h-4 w-4" />
-                                                        {t('settings.ai.fetchModels')}
-                                                    </>
-                                                )}
+                                            {loadingModels ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    {t(
+                                                        'settings.ai.fetchingModels',
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <RefreshCw className="h-4 w-4" />
+                                                    {t(
+                                                        'settings.ai.fetchModels',
+                                                    )}
+                                                </>
+                                            )}
                                         </Button>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">{t('settings.ai.modelHint')}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('settings.ai.modelHint')}
+                                    </p>
 
                                     {models.length > 0 && (
                                         <div className="rounded-xl border border-input">
                                             <div className="border-b border-border/40 p-2">
                                                 <Input
                                                     value={modelFilter}
-                                                    onChange={(e) => setModelFilter(e.target.value)}
-                                                    placeholder={t('settings.ai.filterModels')}
+                                                    onChange={(e) =>
+                                                        setModelFilter(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder={t(
+                                                        'settings.ai.filterModels',
+                                                    )}
                                                     className="h-8 text-sm"
                                                 />
                                             </div>
                                             <div className="max-h-56 overflow-y-auto p-1.5">
                                                 {filteredModels.length === 0 ? (
                                                     <p className="py-4 text-center text-xs text-muted-foreground">
-                                                        {t('settings.ai.noModelsMatch')}
+                                                        {t(
+                                                            'settings.ai.noModelsMatch',
+                                                        )}
                                                     </p>
                                                 ) : (
                                                     filteredModels.map((id) => (
@@ -404,11 +491,14 @@ export default function AiSettings({
                                                             onClick={() => {
                                                                 setModel(id);
                                                                 setModels([]);
-                                                                setModelFilter('');
+                                                                setModelFilter(
+                                                                    '',
+                                                                );
                                                             }}
                                                             className={cn(
                                                                 'block w-full truncate rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-primary/10 hover:text-primary',
-                                                                id === model && 'bg-primary/10 font-medium text-primary',
+                                                                id === model &&
+                                                                    'bg-primary/10 font-medium text-primary',
                                                             )}
                                                         >
                                                             {id}
@@ -424,9 +514,13 @@ export default function AiSettings({
                                 </div>
 
                                 <div className="flex items-center justify-between gap-3 border-t border-border/40 pt-4">
-                                    <p className="text-xs text-muted-foreground">{t('settings.ai.usageHint')}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('settings.ai.usageHint')}
+                                    </p>
                                     <Button type="submit" disabled={saving}>
-                                        {saving ? t('common.saving') : t('common.save')}
+                                        {saving
+                                            ? t('common.saving')
+                                            : t('common.save')}
                                     </Button>
                                 </div>
                             </form>
@@ -434,46 +528,32 @@ export default function AiSettings({
                     </Card>
 
                     {/* AI 小助手 */}
-                    <Card className="overflow-hidden py-0 gap-0">
+                    <Card className="gap-0 overflow-hidden py-0">
                         <CardContent className="!p-0">
                             <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
                                 <div className="flex items-center gap-2.5">
                                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
                                         <Bot className="h-4 w-4" />
                                     </div>
-                                    <span className="text-callout font-medium">{t('settings.assistant.title')}</span>
+                                    <span className="text-callout font-medium">
+                                        {t('settings.assistant.title')}
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground">{t('settings.assistant.enable')}</span>
-                                    <Switch checked={assistantEnabled} onCheckedChange={(checked) => setAssistantEnabled(checked)} />
+                                    <span className="text-xs text-muted-foreground">
+                                        {t('settings.assistant.enable')}
+                                    </span>
+                                    <Switch
+                                        checked={assistantEnabled}
+                                        onCheckedChange={(checked) =>
+                                            setAssistantEnabled(checked)
+                                        }
+                                    />
                                 </div>
                             </div>
 
                             <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    setAssistantSaving(true);
-
-                                    router.put(
-                                        '/settings/assistant',
-                                        {
-                                            assistant_enabled: assistantEnabled ? '1' : '0',
-                                            assistant_name: assistantName,
-                                            assistant_welcome: assistantWelcome,
-                                            assistant_system_prompt: assistantPrompt,
-                                            assistant_mode: assistantMode,
-                                            assistant_api_url: assistantApiUrl,
-                                            assistant_model: assistantModel,
-                                            assistant_api_key: assistantApiKey,
-                                        },
-                                        {
-                                            onFinish: () => {
-                                                setAssistantSaving(false);
-                                                setAssistantApiKey('');
-                                            },
-                                        },
-                                    );
-                                }}
+                                onSubmit={submitAssistant}
                                 className="space-y-5 px-6 py-5"
                             >
                                 <div className="space-y-1.5">
@@ -483,7 +563,11 @@ export default function AiSettings({
                                     </Label>
                                     <div className="flex items-center gap-3">
                                         {assistantAvatar ? (
-                                            <img src={assistantAvatar.url} alt={assistantName} className="h-12 w-12 rounded-full object-cover" />
+                                            <img
+                                                src={assistantAvatar.url}
+                                                alt={assistantName}
+                                                className="h-12 w-12 rounded-full object-cover"
+                                            />
                                         ) : (
                                             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
                                                 <Bot className="h-5 w-5" />
@@ -495,7 +579,8 @@ export default function AiSettings({
                                             accept="image/jpeg,image/png,image/gif,image/webp"
                                             className="hidden"
                                             onChange={(e) => {
-                                                const file = e.target.files?.[0];
+                                                const file =
+                                                    e.target.files?.[0];
 
                                                 if (file) {
                                                     uploadAvatar(file);
@@ -503,119 +588,208 @@ export default function AiSettings({
                                                 }
                                             }}
                                         />
-                                        <Button type="button" variant="outline" size="sm" disabled={avatarUploading} onClick={() => avatarInputRef.current?.click()}>
-                                            {avatarUploading ? t('common.saving') : t('settings.assistant.changeAvatar')}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={avatarUploading}
+                                            onClick={() =>
+                                                avatarInputRef.current?.click()
+                                            }
+                                        >
+                                            {avatarUploading
+                                                ? t('common.saving')
+                                                : t(
+                                                      'settings.assistant.changeAvatar',
+                                                  )}
                                         </Button>
                                         {assistantAvatar && (
-                                            <Button type="button" variant="ghost" size="sm" onClick={removeAvatar}>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={removeAvatar}
+                                            >
                                                 <Trash2 className="h-3.5 w-3.5" />
-                                                {t('settings.assistant.removeAvatar')}
+                                                {t(
+                                                    'settings.assistant.removeAvatar',
+                                                )}
                                             </Button>
                                         )}
                                     </div>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="assistant-name">{t('settings.assistant.name')}</Label>
+                                    <Label htmlFor="assistant-name">
+                                        {t('settings.assistant.name')}
+                                    </Label>
                                     <Input
                                         id="assistant-name"
                                         value={assistantName}
-                                        onChange={(e) => setAssistantName(e.target.value)}
+                                        onChange={(e) =>
+                                            setAssistantName(e.target.value)
+                                        }
                                         placeholder="AI 小助手"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="assistant-welcome">{t('settings.assistant.welcome')}</Label>
+                                    <Label htmlFor="assistant-welcome">
+                                        {t('settings.assistant.welcome')}
+                                    </Label>
                                     <Textarea
                                         id="assistant-welcome"
                                         value={assistantWelcome}
-                                        onChange={(e) => setAssistantWelcome(e.target.value)}
+                                        onChange={(e) =>
+                                            setAssistantWelcome(e.target.value)
+                                        }
                                         placeholder="你好！我是 AI 小助手…"
                                         className="min-h-[60px]"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="assistant-prompt">{t('settings.assistant.systemPrompt')}</Label>
+                                    <Label htmlFor="assistant-prompt">
+                                        {t('settings.assistant.systemPrompt')}
+                                    </Label>
                                     <Textarea
                                         id="assistant-prompt"
                                         value={assistantPrompt}
-                                        onChange={(e) => setAssistantPrompt(e.target.value)}
-                                        placeholder={t('settings.assistant.systemPromptPlaceholder')}
+                                        onChange={(e) =>
+                                            setAssistantPrompt(e.target.value)
+                                        }
+                                        placeholder={t(
+                                            'settings.assistant.systemPromptPlaceholder',
+                                        )}
                                         className="min-h-[100px]"
                                     />
                                     {assistantMode === 'fastgpt' && (
-                                        <p className="text-xs text-amber-600 dark:text-amber-400">{t('settings.assistant.promptFastgptHint')}</p>
+                                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                                            {t(
+                                                'settings.assistant.promptFastgptHint',
+                                            )}
+                                        </p>
                                     )}
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label>{t('settings.assistant.mode')}</Label>
+                                    <Label>
+                                        {t('settings.assistant.mode')}
+                                    </Label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {(['standard', 'fastgpt'] as const).map((value) => (
-                                            <button
-                                                key={value}
-                                                type="button"
-                                                onClick={() => setAssistantMode(value)}
-                                                className={cn(
-                                                    'apple-press rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
-                                                    assistantMode === value
-                                                        ? 'border-primary bg-primary/10 text-primary'
-                                                        : 'border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-                                                )}
-                                            >
-                                                {value === 'standard' ? t('settings.assistant.modeStandard') : t('settings.assistant.modeFastgpt')}
-                                            </button>
-                                        ))}
+                                        {(['standard', 'fastgpt'] as const).map(
+                                            (value) => (
+                                                <button
+                                                    key={value}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setAssistantMode(value)
+                                                    }
+                                                    className={cn(
+                                                        'apple-press rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+                                                        assistantMode === value
+                                                            ? 'border-primary bg-primary/10 text-primary'
+                                                            : 'border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+                                                    )}
+                                                >
+                                                    {value === 'standard'
+                                                        ? t(
+                                                              'settings.assistant.modeStandard',
+                                                          )
+                                                        : t(
+                                                              'settings.assistant.modeFastgpt',
+                                                          )}
+                                                </button>
+                                            ),
+                                        )}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
                                         {assistantMode === 'fastgpt'
-                                            ? t('settings.assistant.modeFastgptHint')
-                                            : t('settings.assistant.modeStandardHint')}
+                                            ? t(
+                                                  'settings.assistant.modeFastgptHint',
+                                              )
+                                            : t(
+                                                  'settings.assistant.modeStandardHint',
+                                              )}
                                     </p>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="assistant-api-url">{t('settings.assistant.apiUrl')}</Label>
+                                    <Label htmlFor="assistant-api-url">
+                                        {t('settings.assistant.apiUrl')}
+                                    </Label>
                                     <Input
                                         id="assistant-api-url"
                                         value={assistantApiUrl}
-                                        onChange={(e) => setAssistantApiUrl(e.target.value)}
-                                        placeholder={assistantMode === 'fastgpt' ? 'https://your-fastgpt.com/api/v1' : 'https://api.openai.com/v1'}
+                                        onChange={(e) =>
+                                            setAssistantApiUrl(e.target.value)
+                                        }
+                                        placeholder={
+                                            assistantMode === 'fastgpt'
+                                                ? 'https://your-fastgpt.com/api/v1'
+                                                : 'https://api.openai.com/v1'
+                                        }
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="assistant-api-key">{t('settings.assistant.apiKey')}</Label>
+                                    <Label htmlFor="assistant-api-key">
+                                        {t('settings.assistant.apiKey')}
+                                    </Label>
                                     <Input
                                         id="assistant-api-key"
                                         type="password"
                                         value={assistantApiKey}
-                                        onChange={(e) => setAssistantApiKey(e.target.value)}
+                                        onChange={(e) =>
+                                            setAssistantApiKey(e.target.value)
+                                        }
                                         placeholder={
                                             assistant.assistant_api_key_masked
-                                                ? t('settings.assistant.apiKeyPlaceholderConfigured', { masked: assistant.assistant_api_key_masked })
-                                                : t('settings.assistant.apiKeyPlaceholder')
+                                                ? t(
+                                                      'settings.assistant.apiKeyPlaceholderConfigured',
+                                                      {
+                                                          masked: assistant.assistant_api_key_masked,
+                                                      },
+                                                  )
+                                                : t(
+                                                      'settings.assistant.apiKeyPlaceholder',
+                                                  )
                                         }
                                         autoComplete="new-password"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="assistant-model">{t('settings.assistant.model')}</Label>
+                                    <Label htmlFor="assistant-model">
+                                        {t('settings.assistant.model')}
+                                    </Label>
                                     <Input
                                         id="assistant-model"
                                         value={assistantModel}
-                                        onChange={(e) => setAssistantModel(e.target.value)}
-                                        placeholder={assistantMode === 'fastgpt' ? t('settings.assistant.modelFastgptPlaceholder') : 'gpt-4o-mini'}
+                                        onChange={(e) =>
+                                            setAssistantModel(e.target.value)
+                                        }
+                                        placeholder={
+                                            assistantMode === 'fastgpt'
+                                                ? t(
+                                                      'settings.assistant.modelFastgptPlaceholder',
+                                                  )
+                                                : 'gpt-4o-mini'
+                                        }
                                     />
                                 </div>
 
                                 <div className="flex items-center justify-between gap-3 border-t border-border/40 pt-4">
-                                    <p className="text-xs text-muted-foreground">{t('settings.assistant.usageHint')}</p>
-                                    <Button type="submit" disabled={assistantSaving}>
-                                        {assistantSaving ? t('common.saving') : t('common.save')}
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('settings.assistant.usageHint')}
+                                    </p>
+                                    <Button
+                                        type="submit"
+                                        disabled={assistantSaving}
+                                    >
+                                        {assistantSaving
+                                            ? t('common.saving')
+                                            : t('common.save')}
                                     </Button>
                                 </div>
                             </form>
@@ -623,7 +797,10 @@ export default function AiSettings({
                     </Card>
                 </div>
 
-                <ErrorDetailDialog detail={errorDetail} onClose={() => setErrorDetail(null)} />
+                <ErrorDetailDialog
+                    detail={errorDetail}
+                    onClose={() => setErrorDetail(null)}
+                />
             </AdminSettingsShell>
         </>
     );

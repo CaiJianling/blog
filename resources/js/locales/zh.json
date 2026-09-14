@@ -871,6 +871,9 @@
         "typeCategory": "分类目录",
         "typeCustom": "自定义链接"
     },
+    "contentManagement": {
+        "title": "内容管理"
+    },
     "userManagement": {
         "title": "用户管理",
         "users": "用户",

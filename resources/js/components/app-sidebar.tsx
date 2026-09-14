@@ -1,5 +1,15 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Settings2, Users, Home, FileText, FileStack, Image, MessageSquare, Menu as MenuIcon, Globe, Wrench } from 'lucide-react';
+import {
+    LayoutGrid,
+    Settings2,
+    Users,
+    Home,
+    FileText,
+    FileStack,
+    Image,
+    MessageSquare,
+    FolderTree,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooterSettings } from '@/components/nav-footer-settings';
 import { NavMain } from '@/components/nav-main';
@@ -14,13 +24,13 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard, home } from '@/routes';
-import { edit as editSite } from '@/routes/site';
-import { edit as editPermalink } from '@/routes/permalink';
-import { index as smiliesIndex } from '@/routes/smilies';
-import { index as menusIndex } from '@/routes/menus';
-import { edit as editNavigation } from '@/routes/navigation';
 import { edit as editAi } from '@/routes/ai';
 import { edit as editHome } from '@/routes/home';
+import { index as menusIndex } from '@/routes/menus';
+import { edit as editNavigation } from '@/routes/navigation';
+import { edit as editPermalink } from '@/routes/permalink';
+import { edit as editSite } from '@/routes/site';
+import { index as smiliesIndex } from '@/routes/smilies';
 import { admin as toolsAdmin } from '@/routes/tools';
 import type { NavItem } from '@/types';
 
@@ -100,37 +110,35 @@ export function AppSidebar() {
     ];
 
     if (isAdmin) {
-        // 表情管理挂在评论管理下
-        const commentsItem = mainNavItems.find((item) => item.title === 'comments.title');
+        // 内容管理（导航页、工具页、菜单、表情）插在页面管理之后
+        const pagesIndex = mainNavItems.findIndex(
+            (item) => item.title === 'pages.title',
+        );
 
-        if (commentsItem) {
-            commentsItem.children = [
+        mainNavItems.splice(pagesIndex + 1, 0, {
+            title: 'contentManagement.title',
+            href: editNavigation(),
+            icon: FolderTree,
+            children: [
                 {
-                    title: 'comments.allComments',
-                    href: '/comments',
+                    title: 'settings.navigation.title',
+                    href: editNavigation(),
+                },
+                {
+                    title: 'settings.tools.title',
+                    href: toolsAdmin(),
+                },
+                {
+                    title: 'menus.title',
+                    href: menusIndex(),
                 },
                 {
                     title: 'settings.smilies.title',
                     href: smiliesIndex(),
                 },
-            ];
-        }
+            ],
+        });
 
-        mainNavItems.push({
-            title: 'menus.title',
-            href: menusIndex(),
-            icon: MenuIcon,
-        });
-        mainNavItems.push({
-            title: 'settings.navigation.title',
-            href: editNavigation(),
-            icon: Globe,
-        });
-        mainNavItems.push({
-            title: 'settings.tools.title',
-            href: toolsAdmin(),
-            icon: Wrench,
-        });
         mainNavItems.push({
             title: 'userManagement.title',
             href: '/users',

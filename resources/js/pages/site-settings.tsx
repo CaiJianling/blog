@@ -1,10 +1,10 @@
 import { Form, Head, router } from '@inertiajs/react';
+import { Image as ImageIcon, Trash2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Image as ImageIcon, Trash2, Upload } from 'lucide-react';
 import * as optionActions from '@/actions/App/Http/Controllers/OptionController';
-import Heading from '@/components/heading';
+import AdminSettingsShell from '@/components/admin-settings-shell';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,8 +18,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { edit as editSite } from '@/routes/site';
 import { cn } from '@/lib/utils';
+import { edit as editSite } from '@/routes/site';
 
 type OptionItem = { value: string; label: string };
 type IconItem = { id: number; file_name: string; url: string } | null;
@@ -86,26 +86,42 @@ export default function Site({
 
     const initialDateFormat = options.date_format ?? 'Y年n月j日';
     const initialTimeFormat = options.time_format ?? 'ag:i';
-    const isInitialDateCustom = !PRESET_DATE_FORMATS.includes(initialDateFormat);
-    const isInitialTimeCustom = !PRESET_TIME_FORMATS.includes(initialTimeFormat);
+    const isInitialDateCustom =
+        !PRESET_DATE_FORMATS.includes(initialDateFormat);
+    const isInitialTimeCustom =
+        !PRESET_TIME_FORMATS.includes(initialTimeFormat);
 
     // 「选中哪一项」与「自定义文本」分离，避免自定义值与预设冲突导致选项回弹
     const [dateChoice, setDateChoice] = useState<string>(
         isInitialDateCustom ? 'custom' : initialDateFormat,
     );
-    const [customDate, setCustomDate] = useState(isInitialDateCustom ? initialDateFormat : '');
+    const [customDate, setCustomDate] = useState(
+        isInitialDateCustom ? initialDateFormat : '',
+    );
     const [timeChoice, setTimeChoice] = useState<string>(
         isInitialTimeCustom ? 'custom' : initialTimeFormat,
     );
-    const [customTime, setCustomTime] = useState(isInitialTimeCustom ? initialTimeFormat : '');
+    const [customTime, setCustomTime] = useState(
+        isInitialTimeCustom ? initialTimeFormat : '',
+    );
     const [membership, setMembership] = useState(options.membership === '1');
-    const [defaultRole, setDefaultRole] = useState(options.default_role ?? 'subscriber');
-    const [siteLanguage, setSiteLanguage] = useState(options.site_language ?? 'zh');
-    const [timezone, setTimezone] = useState(options.timezone ?? 'Asia/Shanghai');
-    const [startOfWeek, setStartOfWeek] = useState(options.start_of_week ?? '1');
+    const [defaultRole, setDefaultRole] = useState(
+        options.default_role ?? 'subscriber',
+    );
+    const [siteLanguage, setSiteLanguage] = useState(
+        options.site_language ?? 'zh',
+    );
+    const [timezone, setTimezone] = useState(
+        options.timezone ?? 'Asia/Shanghai',
+    );
+    const [startOfWeek, setStartOfWeek] = useState(
+        options.start_of_week ?? '1',
+    );
 
-    const effectiveDateFormat = dateChoice === 'custom' ? customDate : dateChoice;
-    const effectiveTimeFormat = timeChoice === 'custom' ? customTime : timeChoice;
+    const effectiveDateFormat =
+        dateChoice === 'custom' ? customDate : dateChoice;
+    const effectiveTimeFormat =
+        timeChoice === 'custom' ? customTime : timeChoice;
     const previewNow = new Date();
 
     const getCsrfToken = (): { headerName: string; value: string } | null => {
@@ -137,17 +153,23 @@ export default function Site({
             formData.append('file', file);
 
             const xhr = new XMLHttpRequest();
-            const result = await new Promise<{ id: number; file_name: string; url: string }>((resolve, reject) => {
+            const result = await new Promise<{
+                id: number;
+                file_name: string;
+                url: string;
+            }>((resolve, reject) => {
                 xhr.open('POST', optionActions.uploadSiteIcon.url());
                 xhr.withCredentials = true;
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 xhr.setRequestHeader('Accept', 'application/json');
 
                 const csrf = getCsrfToken();
+
                 if (csrf) {
                     xhr.setRequestHeader(csrf.headerName, csrf.value);
                 } else {
                     reject(new Error('CSRF token not found.'));
+
                     return;
                 }
 
@@ -160,11 +182,21 @@ export default function Site({
                         }
                     } else {
                         let message = `Upload failed (HTTP ${xhr.status})`;
+
                         try {
                             const json = JSON.parse(xhr.responseText);
-                            if (json?.message) message = json.message;
-                            if (json?.errors?.file) message = json.errors.file.join(' ');
-                        } catch { /* ignore */ }
+
+                            if (json?.message) {
+                                message = json.message;
+                            }
+
+                            if (json?.errors?.file) {
+                                message = json.errors.file.join(' ');
+                            }
+                        } catch {
+                            /* ignore */
+                        }
+
                         reject(new Error(message));
                     }
                 };
@@ -175,7 +207,8 @@ export default function Site({
             setCurrentIcon(result);
             toast.success(t('settings.site.iconUploadSuccess'));
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
+            const message =
+                error instanceof Error ? error.message : 'Unknown error';
             toast.error(message);
         } finally {
             setUploadingIcon(false);
@@ -194,6 +227,7 @@ export default function Site({
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+
         if (file) {
             void handleIconUpload(file);
             e.target.value = '';
@@ -204,16 +238,10 @@ export default function Site({
         <>
             <Head title={t('settings.site.title')} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <h1 className="sr-only">{t('settings.site.title')}</h1>
-
-                <div className="space-y-6">
-                <Heading
-                    variant="small"
-                    title={t('settings.site.heading')}
-                    description={t('settings.site.description')}
-                />
-
+            <AdminSettingsShell
+                title={t('settings.site.heading')}
+                description={t('settings.site.description')}
+            >
                 <Form
                     {...optionActions.update.form()}
                     options={{ preserveScroll: true }}
@@ -221,21 +249,57 @@ export default function Site({
                 >
                     {({ processing, errors }) => (
                         <>
-                            <input type="hidden" name="site_icon" value={currentIcon?.id ?? ''} />
-                            <input type="hidden" name="membership" value={membership ? '1' : '0'} />
-                            <input type="hidden" name="default_role" value={defaultRole} />
-                            <input type="hidden" name="site_language" value={siteLanguage} />
-                            <input type="hidden" name="timezone" value={timezone} />
-                            <input type="hidden" name="start_of_week" value={startOfWeek} />
-                            <input type="hidden" name="date_format" value={effectiveDateFormat} />
-                            <input type="hidden" name="time_format" value={effectiveTimeFormat} />
+                            <input
+                                type="hidden"
+                                name="site_icon"
+                                value={currentIcon?.id ?? ''}
+                            />
+                            <input
+                                type="hidden"
+                                name="membership"
+                                value={membership ? '1' : '0'}
+                            />
+                            <input
+                                type="hidden"
+                                name="default_role"
+                                value={defaultRole}
+                            />
+                            <input
+                                type="hidden"
+                                name="site_language"
+                                value={siteLanguage}
+                            />
+                            <input
+                                type="hidden"
+                                name="timezone"
+                                value={timezone}
+                            />
+                            <input
+                                type="hidden"
+                                name="start_of_week"
+                                value={startOfWeek}
+                            />
+                            <input
+                                type="hidden"
+                                name="date_format"
+                                value={effectiveDateFormat}
+                            />
+                            <input
+                                type="hidden"
+                                name="time_format"
+                                value={effectiveTimeFormat}
+                            />
 
                             {/* General section */}
                             <div className="space-y-6">
-                                <h3 className="text-base font-medium">{t('settings.site.general')}</h3>
+                                <h3 className="text-base font-medium">
+                                    {t('settings.site.general')}
+                                </h3>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="site_title">{t('settings.site.siteTitle')}</Label>
+                                    <Label htmlFor="site_title">
+                                        {t('settings.site.siteTitle')}
+                                    </Label>
                                     <Input
                                         id="site_title"
                                         name="site_title"
@@ -243,22 +307,34 @@ export default function Site({
                                         defaultValue={options.site_title ?? ''}
                                         required
                                     />
-                                    <InputError className="mt-2" message={errors.site_title} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.site_title}
+                                    />
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="site_tagline">{t('settings.site.siteTagline')}</Label>
+                                    <Label htmlFor="site_tagline">
+                                        {t('settings.site.siteTagline')}
+                                    </Label>
                                     <Textarea
                                         id="site_tagline"
                                         name="site_tagline"
                                         className="mt-1 block w-full"
-                                        defaultValue={options.site_tagline ?? ''}
+                                        defaultValue={
+                                            options.site_tagline ?? ''
+                                        }
                                         rows={2}
                                     />
                                     <p className="text-sm text-muted-foreground">
-                                        {t('settings.site.siteTaglineDescription')}
+                                        {t(
+                                            'settings.site.siteTaglineDescription',
+                                        )}
                                     </p>
-                                    <InputError className="mt-2" message={errors.site_tagline} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.site_tagline}
+                                    />
                                 </div>
 
                                 {/* Site Icon */}
@@ -289,10 +365,14 @@ export default function Site({
                                                 variant="outline"
                                                 size="sm"
                                                 disabled={uploadingIcon}
-                                                onClick={() => fileInputRef.current?.click()}
+                                                onClick={() =>
+                                                    fileInputRef.current?.click()
+                                                }
                                             >
                                                 <Upload className="h-4 w-4" />
-                                                {t('settings.site.changeSiteIcon')}
+                                                {t(
+                                                    'settings.site.changeSiteIcon',
+                                                )}
                                             </Button>
                                             {currentIcon && (
                                                 <Button
@@ -302,7 +382,9 @@ export default function Site({
                                                     onClick={handleIconRemove}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                    {t('settings.site.removeSiteIcon')}
+                                                    {t(
+                                                        'settings.site.removeSiteIcon',
+                                                    )}
                                                 </Button>
                                             )}
                                         </div>
@@ -313,7 +395,9 @@ export default function Site({
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="cms_url">{t('settings.site.cmsUrl')}</Label>
+                                    <Label htmlFor="cms_url">
+                                        {t('settings.site.cmsUrl')}
+                                    </Label>
                                     <Input
                                         id="cms_url"
                                         name="cms_url"
@@ -321,11 +405,16 @@ export default function Site({
                                         defaultValue={options.cms_url ?? ''}
                                         required
                                     />
-                                    <InputError className="mt-2" message={errors.cms_url} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.cms_url}
+                                    />
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="site_url">{t('settings.site.siteUrl')}</Label>
+                                    <Label htmlFor="site_url">
+                                        {t('settings.site.siteUrl')}
+                                    </Label>
                                     <Input
                                         id="site_url"
                                         name="site_url"
@@ -336,11 +425,16 @@ export default function Site({
                                     <p className="text-sm text-muted-foreground">
                                         {t('settings.site.siteUrlDescription')}
                                     </p>
-                                    <InputError className="mt-2" message={errors.site_url} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.site_url}
+                                    />
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="admin_email">{t('settings.site.adminEmail')}</Label>
+                                    <Label htmlFor="admin_email">
+                                        {t('settings.site.adminEmail')}
+                                    </Label>
                                     <Input
                                         id="admin_email"
                                         name="admin_email"
@@ -350,85 +444,131 @@ export default function Site({
                                         required
                                     />
                                     <p className="text-sm text-muted-foreground">
-                                        {t('settings.site.adminEmailDescription')}
+                                        {t(
+                                            'settings.site.adminEmailDescription',
+                                        )}
                                     </p>
-                                    <InputError className="mt-2" message={errors.admin_email} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.admin_email}
+                                    />
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label>{t('settings.site.membership')}</Label>
+                                    <Label>
+                                        {t('settings.site.membership')}
+                                    </Label>
                                     <div className="flex items-center gap-3">
                                         <Checkbox
                                             id="membership"
                                             checked={membership}
-                                            onCheckedChange={(checked) => setMembership(checked === true)}
+                                            onCheckedChange={(checked) =>
+                                                setMembership(checked === true)
+                                            }
                                         />
-                                        <Label htmlFor="membership" className="cursor-pointer font-normal">
+                                        <Label
+                                            htmlFor="membership"
+                                            className="cursor-pointer font-normal"
+                                        >
                                             {t('settings.site.membershipLabel')}
                                         </Label>
                                     </div>
-                                    <InputError className="mt-2" message={errors.membership} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.membership}
+                                    />
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="default_role">{t('settings.site.defaultRole')}</Label>
+                                    <Label htmlFor="default_role">
+                                        {t('settings.site.defaultRole')}
+                                    </Label>
                                     <Select
                                         value={defaultRole}
                                         onValueChange={setDefaultRole}
                                     >
-                                        <SelectTrigger id="default_role" className="w-full">
+                                        <SelectTrigger
+                                            id="default_role"
+                                            className="w-full"
+                                        >
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {roles.map((role) => (
-                                                <SelectItem key={role.value} value={role.value}>
+                                                <SelectItem
+                                                    key={role.value}
+                                                    value={role.value}
+                                                >
                                                     {role.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <InputError className="mt-2" message={errors.default_role} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.default_role}
+                                    />
                                 </div>
                             </div>
 
                             {/* Localization section */}
                             <div className="space-y-6">
                                 <h3 className="text-base font-medium">
-                                    {t('settings.site.language')} / {t('settings.site.timezone')}
+                                    {t('settings.site.language')} /{' '}
+                                    {t('settings.site.timezone')}
                                 </h3>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="site_language">{t('settings.site.language')}</Label>
+                                    <Label htmlFor="site_language">
+                                        {t('settings.site.language')}
+                                    </Label>
                                     <Select
                                         value={siteLanguage}
                                         onValueChange={setSiteLanguage}
                                     >
-                                        <SelectTrigger id="site_language" className="w-full">
+                                        <SelectTrigger
+                                            id="site_language"
+                                            className="w-full"
+                                        >
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {languages.map((lang) => (
-                                                <SelectItem key={lang.value} value={lang.value}>
+                                                <SelectItem
+                                                    key={lang.value}
+                                                    value={lang.value}
+                                                >
                                                     {lang.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <InputError className="mt-2" message={errors.site_language} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.site_language}
+                                    />
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="timezone">{t('settings.site.timezone')}</Label>
+                                    <Label htmlFor="timezone">
+                                        {t('settings.site.timezone')}
+                                    </Label>
                                     <Select
                                         value={timezone}
                                         onValueChange={setTimezone}
                                     >
-                                        <SelectTrigger id="timezone" className="w-full">
+                                        <SelectTrigger
+                                            id="timezone"
+                                            className="w-full"
+                                        >
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {timezones.map((tz) => (
-                                                <SelectItem key={tz.value} value={tz.value}>
+                                                <SelectItem
+                                                    key={tz.value}
+                                                    value={tz.value}
+                                                >
                                                     {tz.label}
                                                 </SelectItem>
                                             ))}
@@ -437,39 +577,56 @@ export default function Site({
                                     <p className="text-sm text-muted-foreground">
                                         {t('settings.site.timezoneDescription')}
                                     </p>
-                                    <InputError className="mt-2" message={errors.timezone} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.timezone}
+                                    />
                                 </div>
 
                                 <div className="grid gap-2">
-                                    <Label htmlFor="start_of_week">{t('settings.site.startOfWeek')}</Label>
+                                    <Label htmlFor="start_of_week">
+                                        {t('settings.site.startOfWeek')}
+                                    </Label>
                                     <Select
                                         value={startOfWeek}
                                         onValueChange={setStartOfWeek}
                                     >
-                                        <SelectTrigger id="start_of_week" className="w-full">
+                                        <SelectTrigger
+                                            id="start_of_week"
+                                            className="w-full"
+                                        >
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {weekdays.map((day) => (
-                                                <SelectItem key={day.value} value={day.value}>
+                                                <SelectItem
+                                                    key={day.value}
+                                                    value={day.value}
+                                                >
                                                     {day.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <InputError className="mt-2" message={errors.start_of_week} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.start_of_week}
+                                    />
                                 </div>
                             </div>
 
                             {/* Date & Time Format section */}
                             <div className="space-y-6">
                                 <h3 className="text-base font-medium">
-                                    {t('settings.site.dateFormat')} / {t('settings.site.timeFormat')}
+                                    {t('settings.site.dateFormat')} /{' '}
+                                    {t('settings.site.timeFormat')}
                                 </h3>
 
                                 {/* Date Format */}
                                 <div className="grid gap-2">
-                                    <Label>{t('settings.site.dateFormat')}</Label>
+                                    <Label>
+                                        {t('settings.site.dateFormat')}
+                                    </Label>
                                     <div className="space-y-2">
                                         {dateFormats.map((fmt) => (
                                             <label
@@ -486,12 +643,26 @@ export default function Site({
                                                         type="radio"
                                                         name="date_format_preset"
                                                         value={fmt.value}
-                                                        checked={dateChoice === fmt.value}
-                                                        onChange={() => setDateChoice(fmt.value)}
+                                                        checked={
+                                                            dateChoice ===
+                                                            fmt.value
+                                                        }
+                                                        onChange={() =>
+                                                            setDateChoice(
+                                                                fmt.value,
+                                                            )
+                                                        }
                                                     />
-                                                    <span className="text-sm">{formatPhpDate(fmt.value, previewNow)}</span>
+                                                    <span className="text-sm">
+                                                        {formatPhpDate(
+                                                            fmt.value,
+                                                            previewNow,
+                                                        )}
+                                                    </span>
                                                 </div>
-                                                <code className="text-xs text-muted-foreground">{fmt.value}</code>
+                                                <code className="text-xs text-muted-foreground">
+                                                    {fmt.value}
+                                                </code>
                                             </label>
                                         ))}
                                         <label
@@ -507,22 +678,40 @@ export default function Site({
                                                     type="radio"
                                                     name="date_format_preset"
                                                     value="custom"
-                                                    checked={dateChoice === 'custom'}
+                                                    checked={
+                                                        dateChoice === 'custom'
+                                                    }
                                                     onChange={() => {
                                                         setDateChoice('custom');
+
                                                         if (!customDate) {
-                                                            setCustomDate('Y年n月j日');
+                                                            setCustomDate(
+                                                                'Y年n月j日',
+                                                            );
                                                         }
-                                                        setTimeout(() => customDateRef.current?.focus(), 0);
+
+                                                        setTimeout(
+                                                            () =>
+                                                                customDateRef.current?.focus(),
+                                                            0,
+                                                        );
                                                     }}
                                                 />
-                                                <span className="text-sm">{t('settings.site.custom')}</span>
+                                                <span className="text-sm">
+                                                    {t('settings.site.custom')}
+                                                </span>
                                             </div>
                                         </label>
                                         {dateChoice === 'custom' && (
                                             <div className="ml-6 flex items-center gap-2">
-                                                <Label htmlFor="custom_date_format" className="shrink-0 text-sm text-muted-foreground">
-                                                    {t('settings.site.customFormat')}:
+                                                <Label
+                                                    htmlFor="custom_date_format"
+                                                    className="shrink-0 text-sm text-muted-foreground"
+                                                >
+                                                    {t(
+                                                        'settings.site.customFormat',
+                                                    )}
+                                                    :
                                                 </Label>
                                                 <Input
                                                     ref={customDateRef}
@@ -530,20 +719,35 @@ export default function Site({
                                                     className="max-w-xs"
                                                     value={customDate}
                                                     placeholder="Y年n月j日"
-                                                    onChange={(e) => setCustomDate(e.target.value)}
+                                                    onChange={(e) =>
+                                                        setCustomDate(
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                 />
                                             </div>
                                         )}
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        {t('settings.site.preview')}: <strong>{formatPhpDate(effectiveDateFormat, previewNow)}</strong>
+                                        {t('settings.site.preview')}:{' '}
+                                        <strong>
+                                            {formatPhpDate(
+                                                effectiveDateFormat,
+                                                previewNow,
+                                            )}
+                                        </strong>
                                     </p>
-                                    <InputError className="mt-2" message={errors.date_format} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.date_format}
+                                    />
                                 </div>
 
                                 {/* Time Format */}
                                 <div className="grid gap-2">
-                                    <Label>{t('settings.site.timeFormat')}</Label>
+                                    <Label>
+                                        {t('settings.site.timeFormat')}
+                                    </Label>
                                     <div className="space-y-2">
                                         {timeFormats.map((fmt) => (
                                             <label
@@ -560,12 +764,26 @@ export default function Site({
                                                         type="radio"
                                                         name="time_format_preset"
                                                         value={fmt.value}
-                                                        checked={timeChoice === fmt.value}
-                                                        onChange={() => setTimeChoice(fmt.value)}
+                                                        checked={
+                                                            timeChoice ===
+                                                            fmt.value
+                                                        }
+                                                        onChange={() =>
+                                                            setTimeChoice(
+                                                                fmt.value,
+                                                            )
+                                                        }
                                                     />
-                                                    <span className="text-sm">{formatPhpDate(fmt.value, previewNow)}</span>
+                                                    <span className="text-sm">
+                                                        {formatPhpDate(
+                                                            fmt.value,
+                                                            previewNow,
+                                                        )}
+                                                    </span>
                                                 </div>
-                                                <code className="text-xs text-muted-foreground">{fmt.value}</code>
+                                                <code className="text-xs text-muted-foreground">
+                                                    {fmt.value}
+                                                </code>
                                             </label>
                                         ))}
                                         <label
@@ -581,22 +799,40 @@ export default function Site({
                                                     type="radio"
                                                     name="time_format_preset"
                                                     value="custom"
-                                                    checked={timeChoice === 'custom'}
+                                                    checked={
+                                                        timeChoice === 'custom'
+                                                    }
                                                     onChange={() => {
                                                         setTimeChoice('custom');
+
                                                         if (!customTime) {
-                                                            setCustomTime('ag:i');
+                                                            setCustomTime(
+                                                                'ag:i',
+                                                            );
                                                         }
-                                                        setTimeout(() => customTimeRef.current?.focus(), 0);
+
+                                                        setTimeout(
+                                                            () =>
+                                                                customTimeRef.current?.focus(),
+                                                            0,
+                                                        );
                                                     }}
                                                 />
-                                                <span className="text-sm">{t('settings.site.custom')}</span>
+                                                <span className="text-sm">
+                                                    {t('settings.site.custom')}
+                                                </span>
                                             </div>
                                         </label>
                                         {timeChoice === 'custom' && (
                                             <div className="ml-6 flex items-center gap-2">
-                                                <Label htmlFor="custom_time_format" className="shrink-0 text-sm text-muted-foreground">
-                                                    {t('settings.site.customFormat')}:
+                                                <Label
+                                                    htmlFor="custom_time_format"
+                                                    className="shrink-0 text-sm text-muted-foreground"
+                                                >
+                                                    {t(
+                                                        'settings.site.customFormat',
+                                                    )}
+                                                    :
                                                 </Label>
                                                 <Input
                                                     ref={customTimeRef}
@@ -604,15 +840,28 @@ export default function Site({
                                                     className="max-w-xs"
                                                     value={customTime}
                                                     placeholder="ag:i"
-                                                    onChange={(e) => setCustomTime(e.target.value)}
+                                                    onChange={(e) =>
+                                                        setCustomTime(
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                 />
                                             </div>
                                         )}
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        {t('settings.site.preview')}: <strong>{formatPhpDate(effectiveTimeFormat, previewNow)}</strong>
+                                        {t('settings.site.preview')}:{' '}
+                                        <strong>
+                                            {formatPhpDate(
+                                                effectiveTimeFormat,
+                                                previewNow,
+                                            )}
+                                        </strong>
                                     </p>
-                                    <InputError className="mt-2" message={errors.time_format} />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.time_format}
+                                    />
                                 </div>
                             </div>
 
@@ -624,8 +873,7 @@ export default function Site({
                         </>
                     )}
                 </Form>
-                </div>
-            </div>
+            </AdminSettingsShell>
         </>
     );
 }

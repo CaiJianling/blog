@@ -871,6 +871,9 @@
         "typeCategory": "Category",
         "typeCustom": "Custom link"
     },
+    "contentManagement": {
+        "title": "Content Management"
+    },
     "userManagement": {
         "title": "User Management",
         "users": "Users",

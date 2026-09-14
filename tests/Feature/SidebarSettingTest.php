@@ -17,7 +17,7 @@ test('sidebar settings page redirects to merged frontend page', function () {
     Option::set('sidebar_blogger_name', '教主');
 
     $this->actingAs($this->admin)
-        ->get(route('home.edit'))
+        ->get(route('sidebar.edit'))
         ->assertRedirect(route('home.edit'));
 
     $this->actingAs($this->admin)
@@ -40,9 +40,6 @@ test('admin can save sidebar settings with menus', function () {
                 ['name' => 'GitHub', 'url' => 'https://github.com/example'],
             ],
         ]);
-
-    dump('loc: '.$response->headers->get('Location').' status: '.$response->getStatusCode());
-    dump('saved: '.Option::get('sidebar_blogger_name'));
 
     expect(Option::get('sidebar_blogger_name'))->toBe('教主 ica')
         ->and(Option::get('sidebar_blogger_intro'))->toBe('信吾者，得永生');
@@ -86,8 +83,8 @@ test('admin can upload and remove blogger avatar', function () {
 
 test('non-admin cannot view or update sidebar settings', function () {
     $this->actingAs($this->regular)
-        ->get(route('home.edit'))
-        ->assertRedirect(route('home.edit'));
+        ->get(route('sidebar.edit'))
+        ->assertRedirect(route('dashboard'));
 
     $this->actingAs($this->regular)
         ->put(route('sidebar.update'), ['sidebar_blogger_name' => 'hack'])

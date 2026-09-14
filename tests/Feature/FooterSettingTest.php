@@ -11,7 +11,7 @@ beforeEach(function () {
 
 test('footer settings page redirects to merged frontend page', function () {
     $this->actingAs($this->admin)
-        ->get(route('home.edit'))
+        ->get(route('footer.edit'))
         ->assertRedirect(route('home.edit'));
 
     $this->actingAs($this->admin)
@@ -60,7 +60,7 @@ test('footer entries require name and url', function () {
 test('non-admin cannot view or update footer settings', function () {
     $this->actingAs($this->regular)
         ->get(route('home.edit'))
-        ->assertRedirect(route('home.edit'));
+        ->assertRedirect(route('dashboard'));
 
     $this->actingAs($this->regular)
         ->put(route('footer.update'), ['resources' => []])

@@ -169,7 +169,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // 博客侧边栏设置（博主信息、自定义菜单）
         Route::put('settings/sidebar', [SidebarSettingController::class, 'update'])->name('sidebar.update');
-        Route::get('settings/sidebar', fn () => to_route('settings/home'))->name('sidebar.edit');
+        Route::get('settings/sidebar', fn () => to_route('home.edit'))->name('sidebar.edit');
         Route::post('settings/sidebar/avatar', [SidebarSettingController::class, 'uploadAvatar'])->name('sidebar.avatar.store');
         Route::delete('settings/sidebar/avatar', [SidebarSettingController::class, 'removeAvatar'])->name('sidebar.avatar.destroy');
 
@@ -179,7 +179,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // 页脚设置（资源、联系）
         Route::put('settings/footer', [FooterSettingController::class, 'update'])->name('footer.update');
-        Route::get('settings/footer', fn () => to_route('settings/home'))->name('footer.edit');
+        Route::get('settings/footer', fn () => to_route('home.edit'))->name('footer.edit');
     });
 });
 

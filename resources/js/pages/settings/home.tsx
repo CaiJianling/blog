@@ -60,11 +60,7 @@ function getCsrfToken(): { headerName: string; value: string } | null {
     return null;
 }
 
-export default function FrontendDisplay({
-    texts,
-    sidebar,
-    footer,
-}: Props) {
+export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
     const { t } = useTranslation();
 
     // 首页文案
@@ -83,9 +79,15 @@ export default function FrontendDisplay({
     const [homeSaving, setHomeSaving] = useState(false);
 
     // 侧边栏
-    const [bloggerName, setBloggerName] = useState(sidebar.sidebar_blogger_name);
-    const [bloggerIntro, setBloggerIntro] = useState(sidebar.sidebar_blogger_intro);
-    const [bloggerAvatar, setBloggerAvatar] = useState(sidebar.sidebar_blogger_avatar);
+    const [bloggerName, setBloggerName] = useState(
+        sidebar.sidebar_blogger_name,
+    );
+    const [bloggerIntro, setBloggerIntro] = useState(
+        sidebar.sidebar_blogger_intro,
+    );
+    const [bloggerAvatar, setBloggerAvatar] = useState(
+        sidebar.sidebar_blogger_avatar,
+    );
     const [menus, setMenus] = useState(sidebar.sidebar_menus);
     const [sidebarSaving, setSidebarSaving] = useState(false);
     const [avatarUploading, setAvatarUploading] = useState(false);
@@ -99,7 +101,9 @@ export default function FrontendDisplay({
     const submitHome = (e: React.FormEvent) => {
         e.preventDefault();
         setHomeSaving(true);
-        router.put('/settings/home', homeValues, { onFinish: () => setHomeSaving(false) });
+        router.put('/settings/home', homeValues, {
+            onFinish: () => setHomeSaving(false),
+        });
     };
 
     const submitSidebar = (e: React.FormEvent) => {
@@ -111,7 +115,10 @@ export default function FrontendDisplay({
             {
                 sidebar_blogger_name: bloggerName,
                 sidebar_blogger_intro: bloggerIntro,
-                menus: menus.map((menu) => ({ name: menu.name.trim(), url: menu.url.trim() })),
+                menus: menus.map((menu) => ({
+                    name: menu.name.trim(),
+                    url: menu.url.trim(),
+                })),
             },
             { onFinish: () => setSidebarSaving(false) },
         );
@@ -124,8 +131,14 @@ export default function FrontendDisplay({
         router.put(
             '/settings/footer',
             {
-                resources: resourceList.map((item) => ({ name: item.name.trim(), url: item.url.trim() })),
-                contacts: contactList.map((item) => ({ name: item.name.trim(), url: item.url.trim() })),
+                resources: resourceList.map((item) => ({
+                    name: item.name.trim(),
+                    url: item.url.trim(),
+                })),
+                contacts: contactList.map((item) => ({
+                    name: item.name.trim(),
+                    url: item.url.trim(),
+                })),
             },
             { onFinish: () => setFooterSaving(false) },
         );
@@ -158,7 +171,9 @@ export default function FrontendDisplay({
                 const data = await response.json().catch(() => null);
 
                 if (!response.ok) {
-                    toast.error(data?.message ?? t('settings.sidebar.uploadFailed'));
+                    toast.error(
+                        data?.message ?? t('settings.sidebar.uploadFailed'),
+                    );
 
                     return;
                 }
@@ -176,7 +191,9 @@ export default function FrontendDisplay({
     };
 
     const moveItem = (
-        setter: React.Dispatch<React.SetStateAction<FooterLink[] | SidebarMenu[]>>,
+        setter: React.Dispatch<
+            React.SetStateAction<FooterLink[] | SidebarMenu[]>
+        >,
         index: number,
         direction: -1 | 1,
     ) => {
@@ -203,21 +220,37 @@ export default function FrontendDisplay({
     ) => (
         <div key={index} className="flex items-end gap-2">
             <div className={`${nameWidth} space-y-1`}>
-                <Label className="text-[11px] text-muted-foreground">{t('settings.footer.name')}</Label>
+                <Label className="text-[11px] text-muted-foreground">
+                    {t('settings.footer.name')}
+                </Label>
                 <Input
                     value={list[index].name}
                     onChange={(e) =>
-                        setter((prev) => prev.map((item, i) => (i === index ? { ...item, name: e.target.value } : item)))
+                        setter((prev) =>
+                            prev.map((item, i) =>
+                                i === index
+                                    ? { ...item, name: e.target.value }
+                                    : item,
+                            ),
+                        )
                     }
                     className="h-9"
                 />
             </div>
             <div className="flex-1 space-y-1">
-                <Label className="text-[11px] text-muted-foreground">{t('settings.footer.url')}</Label>
+                <Label className="text-[11px] text-muted-foreground">
+                    {t('settings.footer.url')}
+                </Label>
                 <Input
                     value={list[index].url}
                     onChange={(e) =>
-                        setter((prev) => prev.map((item, i) => (i === index ? { ...item, url: e.target.value } : item)))
+                        setter((prev) =>
+                            prev.map((item, i) =>
+                                i === index
+                                    ? { ...item, url: e.target.value }
+                                    : item,
+                            ),
+                        )
                     }
                     placeholder={urlPlaceholder}
                     className="h-9"
@@ -244,7 +277,9 @@ export default function FrontendDisplay({
                 </button>
                 <button
                     type="button"
-                    onClick={() => setter((prev) => prev.filter((_, i) => i !== index))}
+                    onClick={() =>
+                        setter((prev) => prev.filter((_, i) => i !== index))
+                    }
                     className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                     aria-label={t('settings.footer.delete')}
                 >
@@ -254,7 +289,11 @@ export default function FrontendDisplay({
         </div>
     );
 
-    const cardHeader = (icon: React.ReactNode, title: string, badge?: React.ReactNode) => (
+    const cardHeader = (
+        icon: React.ReactNode,
+        title: string,
+        badge?: React.ReactNode,
+    ) => (
         <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
             <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
@@ -276,102 +315,191 @@ export default function FrontendDisplay({
 
     return (
         <>
-            <Head title={t('settings.frontend.title')} />
+            <Head title={t('settings.home.title')} />
 
             <AdminSettingsShell
-                title={t('settings.frontend.heading')}
-                description={t('settings.frontend.description')}
-                active="/settings/home"
+                title={t('settings.home.heading')}
+                description={t('settings.home.description')}
                 wide
             >
                 <div className="space-y-6">
                     {/* 首页文案 */}
                     <form onSubmit={submitHome}>
-                        <Card className="overflow-hidden py-0 gap-0">
+                        <Card className="gap-0 overflow-hidden py-0">
                             {cardHeader(
                                 <Type className="h-4 w-4" />,
                                 t('settings.home.heading'),
                             )}
                             <CardContent className="space-y-4 px-6 py-5">
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="home_badge">{t('settings.home.badge')}</Label>
+                                    <Label htmlFor="home_badge">
+                                        {t('settings.home.badge')}
+                                    </Label>
                                     <Input
                                         id="home_badge"
                                         value={homeValues.home_badge}
-                                        onChange={(e) => setHomeValues({ ...homeValues, home_badge: e.target.value })}
+                                        onChange={(e) =>
+                                            setHomeValues({
+                                                ...homeValues,
+                                                home_badge: e.target.value,
+                                            })
+                                        }
                                         placeholder="博客 · 工具 · 导航 一站式"
                                         className="h-9"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="home_title">{t('settings.home.mainTitle')}</Label>
+                                    <Label htmlFor="home_title">
+                                        {t('settings.home.mainTitle')}
+                                    </Label>
                                     <Input
                                         id="home_title"
                                         value={homeValues.home_title}
-                                        onChange={(e) => setHomeValues({ ...homeValues, home_title: e.target.value })}
+                                        onChange={(e) =>
+                                            setHomeValues({
+                                                ...homeValues,
+                                                home_title: e.target.value,
+                                            })
+                                        }
                                         placeholder="探索、创造与分享"
                                         className="h-9"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="home_title_accent">{t('settings.home.accentTitle')}</Label>
+                                    <Label htmlFor="home_title_accent">
+                                        {t('settings.home.accentTitle')}
+                                    </Label>
                                     <Input
                                         id="home_title_accent"
                                         value={homeValues.home_title_accent}
-                                        onChange={(e) => setHomeValues({ ...homeValues, home_title_accent: e.target.value })}
+                                        onChange={(e) =>
+                                            setHomeValues({
+                                                ...homeValues,
+                                                home_title_accent:
+                                                    e.target.value,
+                                            })
+                                        }
                                         placeholder="技术的无限可能"
                                         className="h-9"
                                     />
-                                    <p className="text-xs text-muted-foreground">{t('settings.home.accentHint')}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('settings.home.accentHint')}
+                                    </p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="home_description">{t('settings.home.desc')}</Label>
+                                    <Label htmlFor="home_description">
+                                        {t('settings.home.desc')}
+                                    </Label>
                                     <Textarea
                                         id="home_description"
                                         value={homeValues.home_description}
-                                        onChange={(e) => setHomeValues({ ...homeValues, home_description: e.target.value })}
+                                        onChange={(e) =>
+                                            setHomeValues({
+                                                ...homeValues,
+                                                home_description:
+                                                    e.target.value,
+                                            })
+                                        }
                                         className="min-h-[70px]"
                                     />
                                 </div>
                                 <div className="space-y-4 border-t border-border/40 pt-4">
-                                    <p className="text-sm font-medium">{t('settings.home.sections')}</p>
+                                    <p className="text-sm font-medium">
+                                        {t('settings.home.sections')}
+                                    </p>
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         <div className="space-y-1.5">
-                                            <Label className="text-[11px] text-muted-foreground">{t('settings.home.latestSection')}</Label>
+                                            <Label className="text-[11px] text-muted-foreground">
+                                                {t(
+                                                    'settings.home.latestSection',
+                                                )}
+                                            </Label>
                                             <Input
-                                                value={homeValues.home_latest_title}
-                                                onChange={(e) => setHomeValues({ ...homeValues, home_latest_title: e.target.value })}
+                                                value={
+                                                    homeValues.home_latest_title
+                                                }
+                                                onChange={(e) =>
+                                                    setHomeValues({
+                                                        ...homeValues,
+                                                        home_latest_title:
+                                                            e.target.value,
+                                                    })
+                                                }
                                                 className="h-9"
                                             />
                                             <Input
-                                                value={homeValues.home_latest_desc}
-                                                onChange={(e) => setHomeValues({ ...homeValues, home_latest_desc: e.target.value })}
+                                                value={
+                                                    homeValues.home_latest_desc
+                                                }
+                                                onChange={(e) =>
+                                                    setHomeValues({
+                                                        ...homeValues,
+                                                        home_latest_desc:
+                                                            e.target.value,
+                                                    })
+                                                }
                                                 className="h-9"
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label className="text-[11px] text-muted-foreground">{t('settings.home.toolsSection')}</Label>
+                                            <Label className="text-[11px] text-muted-foreground">
+                                                {t(
+                                                    'settings.home.toolsSection',
+                                                )}
+                                            </Label>
                                             <Input
-                                                value={homeValues.home_tools_title}
-                                                onChange={(e) => setHomeValues({ ...homeValues, home_tools_title: e.target.value })}
+                                                value={
+                                                    homeValues.home_tools_title
+                                                }
+                                                onChange={(e) =>
+                                                    setHomeValues({
+                                                        ...homeValues,
+                                                        home_tools_title:
+                                                            e.target.value,
+                                                    })
+                                                }
                                                 className="h-9"
                                             />
                                             <Input
-                                                value={homeValues.home_tools_desc}
-                                                onChange={(e) => setHomeValues({ ...homeValues, home_tools_desc: e.target.value })}
+                                                value={
+                                                    homeValues.home_tools_desc
+                                                }
+                                                onChange={(e) =>
+                                                    setHomeValues({
+                                                        ...homeValues,
+                                                        home_tools_desc:
+                                                            e.target.value,
+                                                    })
+                                                }
                                                 className="h-9"
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label className="text-[11px] text-muted-foreground">{t('settings.home.navSection')}</Label>
+                                            <Label className="text-[11px] text-muted-foreground">
+                                                {t('settings.home.navSection')}
+                                            </Label>
                                             <Input
-                                                value={homeValues.home_nav_title}
-                                                onChange={(e) => setHomeValues({ ...homeValues, home_nav_title: e.target.value })}
+                                                value={
+                                                    homeValues.home_nav_title
+                                                }
+                                                onChange={(e) =>
+                                                    setHomeValues({
+                                                        ...homeValues,
+                                                        home_nav_title:
+                                                            e.target.value,
+                                                    })
+                                                }
                                                 className="h-9"
                                             />
                                             <Input
                                                 value={homeValues.home_nav_desc}
-                                                onChange={(e) => setHomeValues({ ...homeValues, home_nav_desc: e.target.value })}
+                                                onChange={(e) =>
+                                                    setHomeValues({
+                                                        ...homeValues,
+                                                        home_nav_desc:
+                                                            e.target.value,
+                                                    })
+                                                }
                                                 className="h-9"
                                             />
                                         </div>
@@ -384,7 +512,7 @@ export default function FrontendDisplay({
 
                     {/* 侧边栏 */}
                     <form onSubmit={submitSidebar}>
-                        <Card className="overflow-hidden py-0 gap-0">
+                        <Card className="gap-0 overflow-hidden py-0">
                             {cardHeader(
                                 <LayoutPanelLeft className="h-4 w-4" />,
                                 t('settings.sidebar.heading'),
@@ -397,7 +525,11 @@ export default function FrontendDisplay({
                                     </Label>
                                     <div className="flex items-center gap-3">
                                         {bloggerAvatar ? (
-                                            <img src={bloggerAvatar.url} alt={bloggerName} className="h-14 w-14 rounded-full object-cover" />
+                                            <img
+                                                src={bloggerAvatar.url}
+                                                alt={bloggerName}
+                                                className="h-14 w-14 rounded-full object-cover"
+                                            />
                                         ) : (
                                             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
                                                 <User className="h-5 w-5" />
@@ -409,7 +541,8 @@ export default function FrontendDisplay({
                                             accept="image/jpeg,image/png,image/gif,image/webp"
                                             className="hidden"
                                             onChange={(e) => {
-                                                const file = e.target.files?.[0];
+                                                const file =
+                                                    e.target.files?.[0];
 
                                                 if (file) {
                                                     uploadAvatar(file);
@@ -417,34 +550,61 @@ export default function FrontendDisplay({
                                                 }
                                             }}
                                         />
-                                        <Button type="button" variant="outline" size="sm" disabled={avatarUploading} onClick={() => avatarInputRef.current?.click()}>
-                                            {avatarUploading ? t('common.saving') : t('settings.sidebar.changeAvatar')}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={avatarUploading}
+                                            onClick={() =>
+                                                avatarInputRef.current?.click()
+                                            }
+                                        >
+                                            {avatarUploading
+                                                ? t('common.saving')
+                                                : t(
+                                                      'settings.sidebar.changeAvatar',
+                                                  )}
                                         </Button>
                                         {bloggerAvatar && (
-                                            <Button type="button" variant="ghost" size="sm" onClick={removeAvatar}>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={removeAvatar}
+                                            >
                                                 <Trash2 className="h-3.5 w-3.5" />
-                                                {t('settings.sidebar.removeAvatar')}
+                                                {t(
+                                                    'settings.sidebar.removeAvatar',
+                                                )}
                                             </Button>
                                         )}
                                     </div>
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="sidebar-name">{t('settings.sidebar.name')}</Label>
+                                    <Label htmlFor="sidebar-name">
+                                        {t('settings.sidebar.name')}
+                                    </Label>
                                     <Input
                                         id="sidebar-name"
                                         value={bloggerName}
-                                        onChange={(e) => setBloggerName(e.target.value)}
+                                        onChange={(e) =>
+                                            setBloggerName(e.target.value)
+                                        }
                                         className="h-9"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="sidebar-intro">{t('settings.sidebar.intro')}</Label>
+                                    <Label htmlFor="sidebar-intro">
+                                        {t('settings.sidebar.intro')}
+                                    </Label>
                                     <Textarea
                                         id="sidebar-intro"
                                         value={bloggerIntro}
-                                        onChange={(e) => setBloggerIntro(e.target.value)}
+                                        onChange={(e) =>
+                                            setBloggerIntro(e.target.value)
+                                        }
                                         className="min-h-[60px]"
                                     />
                                 </div>
@@ -459,7 +619,12 @@ export default function FrontendDisplay({
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setMenus((prev) => [...prev, { name: '', url: '' }])}
+                                            onClick={() =>
+                                                setMenus((prev) => [
+                                                    ...prev,
+                                                    { name: '', url: '' },
+                                                ])
+                                            }
                                             disabled={menus.length >= 20}
                                         >
                                             <Plus className="h-3.5 w-3.5" />
@@ -468,14 +633,24 @@ export default function FrontendDisplay({
                                     </div>
 
                                     {menus.length === 0 && (
-                                        <p className="py-3 text-center text-xs text-muted-foreground">{t('settings.sidebar.noMenus')}</p>
+                                        <p className="py-3 text-center text-xs text-muted-foreground">
+                                            {t('settings.sidebar.noMenus')}
+                                        </p>
                                     )}
 
                                     {menus.map((menu, index) =>
-                                        linkRow(menus, setMenus, index, 'https:// 或 /tools', 'w-28'),
+                                        linkRow(
+                                            menus,
+                                            setMenus,
+                                            index,
+                                            'https:// 或 /tools',
+                                            'w-28',
+                                        ),
                                     )}
 
-                                    <p className="text-xs text-muted-foreground">{t('settings.sidebar.menusHint')}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('settings.sidebar.menusHint')}
+                                    </p>
                                 </div>
 
                                 {saveButton(sidebarSaving)}
@@ -485,7 +660,7 @@ export default function FrontendDisplay({
 
                     {/* 页脚 */}
                     <form onSubmit={submitFooter}>
-                        <Card className="overflow-hidden py-0 gap-0">
+                        <Card className="gap-0 overflow-hidden py-0">
                             {cardHeader(
                                 <LinkIcon className="h-4 w-4" />,
                                 t('settings.footer.heading'),
@@ -501,7 +676,12 @@ export default function FrontendDisplay({
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setResourceList((prev) => [...prev, { name: '', url: '' }])}
+                                            onClick={() =>
+                                                setResourceList((prev) => [
+                                                    ...prev,
+                                                    { name: '', url: '' },
+                                                ])
+                                            }
                                             disabled={resourceList.length >= 20}
                                         >
                                             <Plus className="h-3.5 w-3.5" />
@@ -510,11 +690,18 @@ export default function FrontendDisplay({
                                     </div>
 
                                     {resourceList.length === 0 && (
-                                        <p className="py-2 text-center text-xs text-muted-foreground">{t('settings.footer.empty')}</p>
+                                        <p className="py-2 text-center text-xs text-muted-foreground">
+                                            {t('settings.footer.empty')}
+                                        </p>
                                     )}
 
                                     {resourceList.map((item, index) =>
-                                        linkRow(resourceList, setResourceList, index, 'https://'),
+                                        linkRow(
+                                            resourceList,
+                                            setResourceList,
+                                            index,
+                                            'https://',
+                                        ),
                                     )}
                                 </div>
 
@@ -528,7 +715,12 @@ export default function FrontendDisplay({
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setContactList((prev) => [...prev, { name: '', url: '' }])}
+                                            onClick={() =>
+                                                setContactList((prev) => [
+                                                    ...prev,
+                                                    { name: '', url: '' },
+                                                ])
+                                            }
                                             disabled={contactList.length >= 20}
                                         >
                                             <Plus className="h-3.5 w-3.5" />
@@ -537,11 +729,18 @@ export default function FrontendDisplay({
                                     </div>
 
                                     {contactList.length === 0 && (
-                                        <p className="py-2 text-center text-xs text-muted-foreground">{t('settings.footer.empty')}</p>
+                                        <p className="py-2 text-center text-xs text-muted-foreground">
+                                            {t('settings.footer.empty')}
+                                        </p>
                                     )}
 
                                     {contactList.map((item, index) =>
-                                        linkRow(contactList, setContactList, index, 'https:// 或 mailto:'),
+                                        linkRow(
+                                            contactList,
+                                            setContactList,
+                                            index,
+                                            'https:// 或 mailto:',
+                                        ),
                                     )}
                                 </div>
 

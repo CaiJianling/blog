@@ -2,9 +2,9 @@ import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, Eraser, Save } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AdminSettingsShell from '@/components/admin-settings-shell';
 import { BlockNoteEditor } from '@/components/blocknote-editor';
 import type { BlockNoteDocument } from '@/components/blocknote-editor';
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -19,7 +19,9 @@ interface Props {
 
 export default function NavigationIntro({ link }: Props) {
     const { t } = useTranslation();
-    const [content, setContent] = useState<BlockNoteDocument | null>(link.intro_content);
+    const [content, setContent] = useState<BlockNoteDocument | null>(
+        link.intro_content,
+    );
     const [saving, setSaving] = useState(false);
     const contentRef = useRef<BlockNoteDocument | null>(link.intro_content);
 
@@ -39,7 +41,11 @@ export default function NavigationIntro({ link }: Props) {
     };
 
     const clearIntro = () => {
-        if (!window.confirm(t('settings.navigation.clearIntroConfirm', { name: link.name }))) {
+        if (
+            !window.confirm(
+                t('settings.navigation.clearIntroConfirm', { name: link.name }),
+            )
+        ) {
             return;
         }
 
@@ -55,18 +61,24 @@ export default function NavigationIntro({ link }: Props) {
 
     return (
         <>
-            <Head title={t('settings.navigation.introTitle', { name: link.name })} />
+            <Head
+                title={t('settings.navigation.introTitle', { name: link.name })}
+            />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <AdminSettingsShell
+                title={t('settings.navigation.introHeading')}
+                description={t('settings.navigation.introDescription', {
+                    name: link.name,
+                })}
+                wide
+            >
                 <div className="space-y-5">
-                    <Heading
-                        variant="small"
-                        title={t('settings.navigation.introHeading')}
-                        description={t('settings.navigation.introDescription', { name: link.name })}
-                    />
-
                     <div className="flex flex-wrap items-center gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => router.visit('/settings/navigation')}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.visit('/settings/navigation')}
+                        >
                             <ArrowLeft className="h-4 w-4" />
                             {t('settings.navigation.backToNav')}
                         </Button>
@@ -75,7 +87,11 @@ export default function NavigationIntro({ link }: Props) {
                         </span>
                         <div className="ml-auto flex items-center gap-2">
                             {link.has_intro && (
-                                <Button variant="outline" size="sm" onClick={clearIntro}>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={clearIntro}
+                                >
                                     <Eraser className="h-4 w-4" />
                                     {t('settings.navigation.clearIntro')}
                                 </Button>
@@ -87,7 +103,9 @@ export default function NavigationIntro({ link }: Props) {
                         </div>
                     </div>
 
-                    <p className="text-xs text-muted-foreground">{t('settings.navigation.introHint')}</p>
+                    <p className="text-xs text-muted-foreground">
+                        {t('settings.navigation.introHint')}
+                    </p>
 
                     <BlockNoteEditor
                         initialContent={link.intro_content}
@@ -95,7 +113,7 @@ export default function NavigationIntro({ link }: Props) {
                         placeholder={t('settings.navigation.introPlaceholder')}
                     />
                 </div>
-            </div>
+            </AdminSettingsShell>
         </>
     );
 }

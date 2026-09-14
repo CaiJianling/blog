@@ -21,11 +21,11 @@ test('admin can view assistant settings page', function () {
         ->get(route('ai.edit'))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('settings/assistant')
-            ->where('assistant_enabled', true)
-            ->where('assistant_name', '博客助手')
-            ->where('assistant_mode', 'standard')
-            ->where('assistant_api_key_masked', ''),
+            ->component('settings/ai')
+            ->where('assistant.assistant_enabled', true)
+            ->where('assistant.assistant_name', '博客助手')
+            ->where('assistant.assistant_mode', 'standard')
+            ->where('assistant.assistant_api_key_masked', ''),
         );
 });
 
