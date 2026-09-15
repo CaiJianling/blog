@@ -64,6 +64,7 @@ class BlogController extends Controller
                 'categories' => $categories,
                 'tags' => $tags,
                 'views' => $article->views,
+                'likes' => $article->likes,
                 'comment_count' => $article->comment_count,
                 'created_at' => $article->created_at->format('Y-m-d'),
             ];

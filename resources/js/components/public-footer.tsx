@@ -1,9 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Github, Link2, Mail, Twitter } from 'lucide-react';
+import { renderMarkdown } from '@/lib/markdown';
 import { home } from '@/routes';
 import blog from '@/routes/blog';
-import tools from '@/routes/tools';
 import nav from '@/routes/nav';
+import tools from '@/routes/tools';
 
 type FooterLink = {
     name: string;
@@ -13,9 +14,17 @@ type FooterLink = {
 function contactIcon(url: string) {
     const lower = url.toLowerCase();
 
-    if (lower.includes('github')) return Github;
-    if (lower.includes('twitter') || lower.includes('x.com')) return Twitter;
-    if (lower.startsWith('mailto:')) return Mail;
+    if (lower.includes('github')) {
+        return Github;
+    }
+
+    if (lower.includes('twitter') || lower.includes('x.com')) {
+        return Twitter;
+    }
+
+    if (lower.startsWith('mailto:')) {
+        return Mail;
+    }
 
     return Link2;
 }
@@ -23,11 +32,16 @@ function contactIcon(url: string) {
 export default function PublicFooter() {
     const { name, footer } = usePage().props as unknown as {
         name?: string;
-        footer?: { resources: FooterLink[]; contacts: FooterLink[] };
+        footer?: {
+            resources: FooterLink[];
+            contacts: FooterLink[];
+            icp_markdown?: string;
+        };
     };
 
     const resources = footer?.resources ?? [];
     const contacts = footer?.contacts ?? [];
+    const icpMarkdown = footer?.icp_markdown?.trim() ?? '';
 
     return (
         <footer className="mt-20 border-t border-border/40">
@@ -36,30 +50,43 @@ export default function PublicFooter() {
                     <div className="col-span-2 md:col-span-1">
                         <Link href={home()} className="flex items-center gap-2">
                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                <span className="text-sm font-bold">{name?.charAt(0) ?? 'B'}</span>
+                                <span className="text-sm font-bold">
+                                    {name?.charAt(0) ?? 'B'}
+                                </span>
                             </div>
                             <span className="text-headline">{name}</span>
                         </Link>
-                        <p className="mt-3 text-footnote leading-relaxed">
+                        <p className="text-footnote mt-3 leading-relaxed">
                             记录技术与生活，分享实用工具，收集优质导航。
                         </p>
                     </div>
 
                     <div>
-                        <h4 className="text-footnote font-semibold text-foreground">内容</h4>
+                        <h4 className="text-footnote font-semibold text-foreground">
+                            内容
+                        </h4>
                         <ul className="mt-3 space-y-2 text-sm">
                             <li>
-                                <Link href={blog.index()} className="text-muted-foreground transition-colors hover:text-foreground">
+                                <Link
+                                    href={blog.index()}
+                                    className="text-muted-foreground transition-colors hover:text-foreground"
+                                >
                                     博客
                                 </Link>
                             </li>
                             <li>
-                                <Link href={tools.index()} className="text-muted-foreground transition-colors hover:text-foreground">
+                                <Link
+                                    href={tools.index()}
+                                    className="text-muted-foreground transition-colors hover:text-foreground"
+                                >
                                     工具
                                 </Link>
                             </li>
                             <li>
-                                <Link href={nav.index()} className="text-muted-foreground transition-colors hover:text-foreground">
+                                <Link
+                                    href={nav.index()}
+                                    className="text-muted-foreground transition-colors hover:text-foreground"
+                                >
                                     导航
                                 </Link>
                             </li>
@@ -67,14 +94,24 @@ export default function PublicFooter() {
                     </div>
 
                     <div>
-                        <h4 className="text-footnote font-semibold text-foreground">资源</h4>
+                        <h4 className="text-footnote font-semibold text-foreground">
+                            资源
+                        </h4>
                         <ul className="mt-3 space-y-2 text-sm">
                             {resources.map((item, index) => (
                                 <li key={index}>
                                     <a
                                         href={item.url}
-                                        target={item.url.startsWith('http') ? '_blank' : undefined}
-                                        rel={item.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                                        target={
+                                            item.url.startsWith('http')
+                                                ? '_blank'
+                                                : undefined
+                                        }
+                                        rel={
+                                            item.url.startsWith('http')
+                                                ? 'noopener noreferrer'
+                                                : undefined
+                                        }
                                         className="text-muted-foreground transition-colors hover:text-foreground"
                                     >
                                         {item.name}
@@ -85,7 +122,9 @@ export default function PublicFooter() {
                     </div>
 
                     <div>
-                        <h4 className="text-footnote font-semibold text-foreground">联系</h4>
+                        <h4 className="text-footnote font-semibold text-foreground">
+                            联系
+                        </h4>
                         <div className="mt-3 flex gap-3">
                             {contacts.map((item, index) => {
                                 const Icon = contactIcon(item.url);
@@ -94,8 +133,16 @@ export default function PublicFooter() {
                                     <a
                                         key={index}
                                         href={item.url}
-                                        target={item.url.startsWith('http') ? '_blank' : undefined}
-                                        rel={item.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                                        target={
+                                            item.url.startsWith('http')
+                                                ? '_blank'
+                                                : undefined
+                                        }
+                                        rel={
+                                            item.url.startsWith('http')
+                                                ? 'noopener noreferrer'
+                                                : undefined
+                                        }
                                         className="text-muted-foreground transition-colors hover:text-foreground"
                                         aria-label={item.name}
                                         title={item.name}
@@ -108,9 +155,19 @@ export default function PublicFooter() {
                     </div>
                 </div>
 
-                <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border/30 pt-6 text-footnote sm:flex-row">
+                {icpMarkdown && (
+                    <div
+                        className="text-footnote mt-10 text-center leading-relaxed text-muted-foreground"
+                        dangerouslySetInnerHTML={{
+                            __html: renderMarkdown(icpMarkdown),
+                        }}
+                    />
+                )}
+
+                <div className="text-footnote mt-8 flex flex-col items-center justify-between gap-4 border-t border-border/30 pt-6 sm:flex-row">
                     <p className="text-muted-foreground">
-                        © {new Date().getFullYear()} {name}. All rights reserved.
+                        © {new Date().getFullYear()} {name}. All rights
+                        reserved.
                     </p>
                     <p className="text-muted-foreground">
                         Built with Laravel, Inertia & React.

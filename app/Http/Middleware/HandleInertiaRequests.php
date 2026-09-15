@@ -63,6 +63,7 @@ class HandleInertiaRequests extends Middleware
             'footer' => [
                 'resources' => FooterSettingController::resources(),
                 'contacts' => FooterSettingController::contacts(),
+                'icp_markdown' => FooterSettingController::icpMarkdown(),
             ],
         ];
     }

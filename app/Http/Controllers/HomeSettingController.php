@@ -40,6 +40,7 @@ class HomeSettingController extends Controller
             'footer' => [
                 'resources' => FooterSettingController::resources(),
                 'contacts' => FooterSettingController::contacts(),
+                'icp_markdown' => FooterSettingController::icpMarkdown(),
             ],
         ]);
     }

@@ -288,6 +288,7 @@ export default function AiSettings({
             <AdminSettingsShell
                 title={t('settings.ai.heading')}
                 description={t('settings.ai.description')}
+                wide
             >
                 <div className="space-y-6">
                     {/* AI 接口配置 */}

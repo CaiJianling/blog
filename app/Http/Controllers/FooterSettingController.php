@@ -61,6 +61,14 @@ class FooterSettingController extends Controller
     }
 
     /**
+     * 解析备案信息（Markdown 源码，未配置时为空字符串）。
+     */
+    public static function icpMarkdown(): string
+    {
+        return (string) Option::get('footer_icp_markdown', '');
+    }
+
+    /**
      * 页脚设置页面。
      */
     public function edit(): Response
@@ -83,6 +91,7 @@ class FooterSettingController extends Controller
             'contacts' => ['nullable', 'array', 'max:20'],
             'contacts.*.name' => ['required', 'string', 'max:50'],
             'contacts.*.url' => ['required', 'string', 'max:500'],
+            'icp_markdown' => ['nullable', 'string', 'max:2000'],
         ], [
             'resources.max' => '资源链接最多 20 项。',
             'resources.*.name.required' => '资源名称不能为空。',
@@ -94,6 +103,7 @@ class FooterSettingController extends Controller
             'contacts.*.name.max' => '联系方式名称不能超过 50 个字符。',
             'contacts.*.url.required' => '联系方式链接不能为空。',
             'contacts.*.url.max' => '联系方式链接不能超过 500 个字符。',
+            'icp_markdown.max' => '备案信息不能超过 2000 个字符。',
         ]);
 
         Option::set('footer_resources', json_encode(
@@ -105,6 +115,8 @@ class FooterSettingController extends Controller
             array_map(fn ($item) => ['name' => trim($item['name']), 'url' => trim($item['url'])], $validated['contacts'] ?? []),
             JSON_UNESCAPED_UNICODE,
         ));
+
+        Option::set('footer_icp_markdown', $validated['icp_markdown'] ?? '');
 
         return to_route('home.edit')->with('toast', ['type' => 'success', 'message' => '页脚设置已保存。']);
     }

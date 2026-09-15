@@ -1,10 +1,12 @@
 import { Form, Head } from '@inertiajs/react';
+import { Link as LinkIcon, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as permalinkActions from '@/actions/App/Http/Controllers/PermalinkController';
 import AdminSettingsShell from '@/components/admin-settings-shell';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -57,6 +59,25 @@ export default function Permalink({
         });
     };
 
+    const cardHeader = (icon: React.ReactNode, title: string) => (
+        <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
+            <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                    {icon}
+                </div>
+                <span className="text-callout font-medium">{title}</span>
+            </div>
+        </div>
+    );
+
+    const saveButton = (saving: boolean) => (
+        <div className="flex items-center justify-end gap-3 border-t border-border/40 pt-4">
+            <Button type="submit" disabled={saving}>
+                {saving ? t('common.saving') : t('common.save')}
+            </Button>
+        </div>
+    );
+
     return (
         <>
             <Head title={t('settings.permalink.title')} />
@@ -64,11 +85,12 @@ export default function Permalink({
             <AdminSettingsShell
                 title={t('settings.permalink.heading')}
                 description={t('settings.permalink.description')}
+                wide
             >
                 <Form
                     {...permalinkActions.update.form()}
                     options={{ preserveScroll: true }}
-                    className="space-y-10"
+                    className="space-y-6"
                 >
                     {({ processing, errors }) => (
                         <>
@@ -80,175 +102,186 @@ export default function Permalink({
                             />
 
                             {/* 常用设置 */}
-                            <div className="space-y-5">
-                                <h3 className="text-base font-medium">
-                                    {t('settings.permalink.common')}
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                    选择您的站点所要使用的固定链接结构。纳入{' '}
-                                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-                                        %postname%
-                                    </code>{' '}
-                                    标签能让链接更容易理解，也能帮助您的文章在搜索引擎中有更好的排名。
-                                </p>
+                            <Card className="gap-0 overflow-hidden py-0">
+                                {cardHeader(
+                                    <LinkIcon className="h-4 w-4" />,
+                                    t('settings.permalink.common'),
+                                )}
+                                <CardContent className="space-y-5 px-6 py-5">
+                                    <p className="text-sm text-muted-foreground">
+                                        选择您的站点所要使用的固定链接结构。纳入{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            %postname%
+                                        </code>{' '}
+                                        标签能让链接更容易理解，也能帮助您的文章在搜索引擎中有更好的排名。
+                                    </p>
 
-                                <div className="space-y-1">
-                                    {presets.map((item) => (
+                                    <div className="space-y-1">
+                                        {presets.map((item) => (
+                                            <label
+                                                key={item.key}
+                                                className={cn(
+                                                    'flex cursor-pointer items-start gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/60',
+                                                    choice === item.key &&
+                                                        'bg-muted/60',
+                                                )}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="preset_choice"
+                                                    value={item.key}
+                                                    checked={
+                                                        choice === item.key
+                                                    }
+                                                    onChange={() =>
+                                                        setChoice(item.key)
+                                                    }
+                                                    className="mt-1 accent-primary"
+                                                />
+                                                <div>
+                                                    <span className="text-sm font-medium">
+                                                        {PRESET_LABELS[
+                                                            item.key
+                                                        ] ?? item.key}
+                                                    </span>
+                                                    <code className="mt-1 block rounded-md bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
+                                                        {item.sample}
+                                                    </code>
+                                                </div>
+                                            </label>
+                                        ))}
+
+                                        {/* 自定义结构 */}
                                         <label
-                                            key={item.key}
                                             className={cn(
                                                 'flex cursor-pointer items-start gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/60',
-                                                choice === item.key &&
+                                                choice === 'custom' &&
                                                     'bg-muted/60',
                                             )}
                                         >
                                             <input
                                                 type="radio"
                                                 name="preset_choice"
-                                                value={item.key}
-                                                checked={choice === item.key}
+                                                value="custom"
+                                                checked={choice === 'custom'}
                                                 onChange={() =>
-                                                    setChoice(item.key)
+                                                    setChoice('custom')
                                                 }
                                                 className="mt-1 accent-primary"
                                             />
-                                            <div>
+                                            <div className="min-w-0 flex-1">
                                                 <span className="text-sm font-medium">
-                                                    {PRESET_LABELS[item.key] ??
-                                                        item.key}
+                                                    {PRESET_LABELS.custom}
                                                 </span>
-                                                <code className="mt-1 block rounded-md bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
-                                                    {item.sample}
-                                                </code>
-                                            </div>
-                                        </label>
-                                    ))}
-
-                                    {/* 自定义结构 */}
-                                    <label
-                                        className={cn(
-                                            'flex cursor-pointer items-start gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/60',
-                                            choice === 'custom' &&
-                                                'bg-muted/60',
-                                        )}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="preset_choice"
-                                            value="custom"
-                                            checked={choice === 'custom'}
-                                            onChange={() => setChoice('custom')}
-                                            className="mt-1 accent-primary"
-                                        />
-                                        <div className="min-w-0 flex-1">
-                                            <span className="text-sm font-medium">
-                                                {PRESET_LABELS.custom}
-                                            </span>
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <span className="shrink-0 rounded-md bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
-                                                    {t(
-                                                        'settings.permalink.siteUrl',
-                                                    )}
-                                                </span>
-                                                <Input
-                                                    value={customStructure}
-                                                    onChange={(e) =>
-                                                        setCustomStructure(
-                                                            e.target.value,
-                                                        )
+                                                <div className="mt-2 flex items-center gap-2">
+                                                    <span className="shrink-0 rounded-md bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
+                                                        {t(
+                                                            'settings.permalink.siteUrl',
+                                                        )}
+                                                    </span>
+                                                    <Input
+                                                        value={customStructure}
+                                                        onChange={(e) =>
+                                                            setCustomStructure(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        onFocus={() =>
+                                                            setChoice('custom')
+                                                        }
+                                                        placeholder="/%postname%/"
+                                                        className="font-mono text-sm"
+                                                    />
+                                                </div>
+                                                {choice === 'custom' && (
+                                                    <div className="mt-3">
+                                                        <p className="mb-2 text-sm text-muted-foreground">
+                                                            {t(
+                                                                'settings.permalink.availableTags',
+                                                            )}
+                                                        </p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {tags.map((tag) => (
+                                                                <button
+                                                                    key={tag}
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        insertTag(
+                                                                            tag,
+                                                                        )
+                                                                    }
+                                                                    className="rounded-lg border border-border/70 bg-muted/50 px-2.5 py-1.5 font-mono text-xs transition-colors hover:border-primary/50 hover:bg-accent hover:text-accent-foreground"
+                                                                >
+                                                                    {tag}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <InputError
+                                                    className="mt-2"
+                                                    message={
+                                                        errors.custom_structure
                                                     }
-                                                    onFocus={() =>
-                                                        setChoice('custom')
-                                                    }
-                                                    placeholder="/%postname%/"
-                                                    className="font-mono text-sm"
                                                 />
                                             </div>
-                                            {choice === 'custom' && (
-                                                <div className="mt-3">
-                                                    <p className="mb-2 text-sm text-muted-foreground">
-                                                        {t(
-                                                            'settings.permalink.availableTags',
-                                                        )}
-                                                    </p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {tags.map((tag) => (
-                                                            <button
-                                                                key={tag}
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    insertTag(
-                                                                        tag,
-                                                                    )
-                                                                }
-                                                                className="rounded-lg border border-border/70 bg-muted/50 px-2.5 py-1.5 font-mono text-xs transition-colors hover:border-primary/50 hover:bg-accent hover:text-accent-foreground"
-                                                            >
-                                                                {tag}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                            <InputError
-                                                className="mt-2"
-                                                message={
-                                                    errors.custom_structure
-                                                }
-                                            />
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
+                                        </label>
+                                    </div>
+                                </CardContent>
+                            </Card>
 
                             {/* 可选 */}
-                            <div className="space-y-5">
-                                <h3 className="text-base font-medium">
-                                    {t('settings.permalink.optional')}
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                    {t(
-                                        'settings.permalink.optionalDescription',
-                                    )}
-                                </p>
+                            <Card className="gap-0 overflow-hidden py-0">
+                                {cardHeader(
+                                    <SlidersHorizontal className="h-4 w-4" />,
+                                    t('settings.permalink.optional'),
+                                )}
+                                <CardContent className="space-y-5 px-6 py-5">
+                                    <p className="text-sm text-muted-foreground">
+                                        {t(
+                                            'settings.permalink.optionalDescription',
+                                        )}
+                                    </p>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="category_base">
-                                        {t('settings.permalink.categoryBase')}
-                                    </Label>
-                                    <Input
-                                        id="category_base"
-                                        name="category_base"
-                                        defaultValue={categoryBase}
-                                        placeholder="category"
-                                        className="max-w-xs font-mono"
-                                    />
-                                    <InputError
-                                        className="mt-2"
-                                        message={errors.category_base}
-                                    />
-                                </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="category_base">
+                                            {t(
+                                                'settings.permalink.categoryBase',
+                                            )}
+                                        </Label>
+                                        <Input
+                                            id="category_base"
+                                            name="category_base"
+                                            defaultValue={categoryBase}
+                                            placeholder="category"
+                                            className="max-w-xs font-mono"
+                                        />
+                                        <InputError
+                                            className="mt-2"
+                                            message={errors.category_base}
+                                        />
+                                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="tag_base">
-                                        {t('settings.permalink.tagBase')}
-                                    </Label>
-                                    <Input
-                                        id="tag_base"
-                                        name="tag_base"
-                                        defaultValue={tagBase}
-                                        placeholder="tag"
-                                        className="max-w-xs font-mono"
-                                    />
-                                    <InputError
-                                        className="mt-2"
-                                        message={errors.tag_base}
-                                    />
-                                </div>
-                            </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="tag_base">
+                                            {t('settings.permalink.tagBase')}
+                                        </Label>
+                                        <Input
+                                            id="tag_base"
+                                            name="tag_base"
+                                            defaultValue={tagBase}
+                                            placeholder="tag"
+                                            className="max-w-xs font-mono"
+                                        />
+                                        <InputError
+                                            className="mt-2"
+                                            message={errors.tag_base}
+                                        />
+                                    </div>
 
-                            <Button type="submit" disabled={processing}>
-                                {t('settings.permalink.save')}
-                            </Button>
+                                    {saveButton(processing)}
+                                </CardContent>
+                            </Card>
                         </>
                     )}
                 </Form>

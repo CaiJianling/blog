@@ -55,6 +55,16 @@ test('blog index search without match shows empty list', function () {
             ->where('currentQuery', '不存在的关键词'));
 });
 
+test('blog index exposes article likes count', function () {
+    Article::where('title', 'Laravel 入门指南')->update(['likes' => 5]);
+
+    $this->get('/blog?q=Laravel')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Blog/Index')
+            ->where('articles.data.0.likes', 5));
+});
+
 test('blog index search works together with category filter', function () {
     $term = Term::factory()->create(['name' => '教程', 'slug' => 'tutorials']);
 

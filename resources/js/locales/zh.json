@@ -423,7 +423,7 @@
             "apiUrlFastgptHint": "FastGPT 地址，例如 https://your-fastgpt.com/api/v1",
             "apiKey": "API 密钥",
             "apiKeyPlaceholder": "sk-... 或 FastGPT 的 API Key",
-            "apiKeyPlaceholderConfigured": "已配置（{masked}），留空保持不变",
+            "apiKeyPlaceholderConfigured": "已配置（{{masked}}），留空保持不变",
             "model": "模型名称",
             "modelFastgptPlaceholder": "FastGPT 模式下由应用编排决定，可不填",
             "modelHint": "标准模式下为必填的模型 ID。",
@@ -435,7 +435,7 @@
         "footer": {
             "title": "页脚设置",
             "heading": "页脚设置",
-            "description": "配置博客底部「资源」与「联系」栏目的链接",
+            "description": "配置博客底部「资源」「联系」栏目链接与备案信息",
             "resources": "资源",
             "contacts": "联系",
             "add": "添加",
@@ -444,7 +444,12 @@
             "url": "链接",
             "moveUp": "上移",
             "moveDown": "下移",
-            "delete": "删除"
+            "delete": "删除",
+            "icp": "备案信息",
+            "icpHint": "支持 Markdown 语法，将显示在页面底部，留空则不显示",
+            "icpPlaceholder": "例如：[京ICP备12345678号](https://beian.miit.gov.cn/)",
+            "modeEdit": "编辑",
+            "modePreview": "预览"
         },
         "home": {
             "title": "前台显示",

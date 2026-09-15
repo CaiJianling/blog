@@ -6,6 +6,7 @@ import {
     MessageSquare,
     Clock,
     User,
+    Heart,
 } from 'lucide-react';
 import PageSearch from '@/components/page-search';
 import { buildSeoMeta } from '@/lib/seo';
@@ -22,6 +23,7 @@ type Article = {
     categories: { name: string; slug: string }[];
     tags: { name: string; slug: string }[];
     views: number;
+    likes: number;
     comment_count: number;
     created_at: string;
 };
@@ -348,6 +350,10 @@ export default function Index({
                                                 <span className="inline-flex items-center gap-1">
                                                     <Eye className="h-3 w-3" />
                                                     {article.views}
+                                                </span>
+                                                <span className="inline-flex items-center gap-1">
+                                                    <Heart className="h-3 w-3" />
+                                                    {article.likes}
                                                 </span>
                                                 <span className="inline-flex items-center gap-1">
                                                     <MessageSquare className="h-3 w-3" />

@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import {
     ArrowDown,
     ArrowUp,
+    FileText,
     Image as ImageIcon,
     LayoutPanelLeft,
     Link as LinkIcon,
@@ -21,6 +22,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { renderMarkdown } from '@/lib/markdown';
 
 type FooterLink = { name: string; url: string };
 type SidebarMenu = { name: string; url: string };
@@ -36,6 +38,7 @@ interface Props {
     footer: {
         resources: FooterLink[];
         contacts: FooterLink[];
+        icp_markdown: string;
     };
 }
 
@@ -96,6 +99,8 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
     // 页脚
     const [resourceList, setResourceList] = useState(footer.resources);
     const [contactList, setContactList] = useState(footer.contacts);
+    const [icpMarkdown, setIcpMarkdown] = useState(footer.icp_markdown);
+    const [icpMode, setIcpMode] = useState<'edit' | 'preview'>('edit');
     const [footerSaving, setFooterSaving] = useState(false);
 
     const submitHome = (e: React.FormEvent) => {
@@ -139,6 +144,7 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
                     name: item.name.trim(),
                     url: item.url.trim(),
                 })),
+                icp_markdown: icpMarkdown,
             },
             { onFinish: () => setFooterSaving(false) },
         );
@@ -741,6 +747,73 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
                                             index,
                                             'https:// 或 mailto:',
                                         ),
+                                    )}
+                                </div>
+
+                                <div className="space-y-3 border-t border-border/40 pt-4">
+                                    <div className="flex items-center justify-between">
+                                        <p className="flex items-center gap-1.5 text-sm font-medium">
+                                            <FileText className="h-3.5 w-3.5 text-primary" />
+                                            {t('settings.footer.icp')}
+                                        </p>
+                                        <div className="flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setIcpMode('edit')
+                                                }
+                                                className={`rounded-md px-2.5 py-1 text-xs transition-colors ${icpMode === 'edit' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                            >
+                                                {t('settings.footer.modeEdit')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setIcpMode('preview')
+                                                }
+                                                className={`rounded-md px-2.5 py-1 text-xs transition-colors ${icpMode === 'preview' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                            >
+                                                {t(
+                                                    'settings.footer.modePreview',
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('settings.footer.icpHint')}
+                                    </p>
+
+                                    {icpMode === 'edit' ? (
+                                        <Textarea
+                                            value={icpMarkdown}
+                                            onChange={(e) =>
+                                                setIcpMarkdown(e.target.value)
+                                            }
+                                            placeholder={t(
+                                                'settings.footer.icpPlaceholder',
+                                            )}
+                                            className="min-h-[90px] font-mono leading-relaxed"
+                                        />
+                                    ) : (
+                                        <div className="min-h-[90px] rounded-lg border border-border/40 bg-muted/20 px-4 py-3 text-sm leading-relaxed">
+                                            {icpMarkdown.trim() ? (
+                                                <div
+                                                    className="[&_a]:text-primary [&_a]:underline"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: renderMarkdown(
+                                                            icpMarkdown,
+                                                        ),
+                                                    }}
+                                                />
+                                            ) : (
+                                                <p className="text-muted-foreground">
+                                                    {t(
+                                                        'settings.footer.icpPlaceholder',
+                                                    )}
+                                                </p>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
 

@@ -1,6 +1,13 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Eye, MessageSquare, ChevronRight } from 'lucide-react';
-import HeroCanvas from '@/components/hero-canvas';
+import {
+    ArrowRight,
+    Eye,
+    Heart,
+    MessageSquare,
+    ChevronRight,
+} from 'lucide-react';
+import HeroCanvas, { heroFallbackBackground } from '@/components/hero-canvas';
+import { useAppearance } from '@/hooks/use-appearance';
 import { buildSeoMeta } from '@/lib/seo';
 import blog from '@/routes/blog';
 import nav from '@/routes/nav';
@@ -14,6 +21,7 @@ type Article = {
     excerpt: string;
     author_name: string;
     views: number;
+    likes: number;
     comment_count: number;
     created_at: string;
 };
@@ -48,6 +56,7 @@ type HomeTexts = {
 export default function Home() {
     const { name } = usePage().props;
     const seo = usePage().props.seo;
+    const { resolvedAppearance } = useAppearance();
     const { latestArticles, featuredTools, navigationCategories, texts } =
         usePage<{
             latestArticles: Article[];
@@ -64,7 +73,14 @@ export default function Home() {
 
             {/* Hero：三层粒子背景（流体底色/可扰动网格/首字母点阵）+ 深色文案 */}
             <div className="dark">
-                <section className="relative flex items-center overflow-hidden bg-[#08090c]">
+                <section
+                    className="relative flex items-center overflow-hidden"
+                    style={{
+                        backgroundColor: heroFallbackBackground(
+                            resolvedAppearance === 'dark',
+                        ),
+                    }}
+                >
                     <HeroCanvas name={name ?? 'B'} />
                     <div className="relative mx-auto w-full max-w-6xl px-5 pt-20 pb-16 md:px-8 md:pt-28 md:pb-24">
                         <div className="mx-auto max-w-3xl text-center">
@@ -146,6 +162,10 @@ export default function Home() {
                                     <span className="inline-flex items-center gap-1">
                                         <Eye className="h-3.5 w-3.5" />
                                         {article.views}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1">
+                                        <Heart className="h-3.5 w-3.5" />
+                                        {article.likes}
                                     </span>
                                     <span className="inline-flex items-center gap-1">
                                         <MessageSquare className="h-3.5 w-3.5" />

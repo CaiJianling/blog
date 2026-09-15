@@ -423,7 +423,7 @@
             "apiUrlFastgptHint": "FastGPT URL, e.g. https://your-fastgpt.com/api/v1",
             "apiKey": "API Key",
             "apiKeyPlaceholder": "sk-... or your FastGPT API key",
-            "apiKeyPlaceholderConfigured": "Configured ({masked}), leave blank to keep it",
+            "apiKeyPlaceholderConfigured": "Configured ({{masked}}), leave blank to keep it",
             "model": "Model",
             "modelFastgptPlaceholder": "Decided by the FastGPT app; can be empty",
             "modelHint": "Required model ID in standard mode.",
@@ -435,7 +435,7 @@
         "footer": {
             "title": "Footer Settings",
             "heading": "Footer Settings",
-            "description": "Configure the links of the footer \"Resources\" and \"Contact\" columns",
+            "description": "Configure the footer \"Resources\" and \"Contact\" links and the ICP filing info",
             "resources": "Resources",
             "contacts": "Contact",
             "add": "Add",
@@ -444,7 +444,12 @@
             "url": "URL",
             "moveUp": "Move up",
             "moveDown": "Move down",
-            "delete": "Delete"
+            "delete": "Delete",
+            "icp": "ICP Filing Info",
+            "icpHint": "Supports Markdown. Shown at the bottom of the page; leave empty to hide",
+            "icpPlaceholder": "e.g. [京ICP备12345678号](https://beian.miit.gov.cn/)",
+            "modeEdit": "Edit",
+            "modePreview": "Preview"
         },
         "home": {
             "title": "Frontend Display",

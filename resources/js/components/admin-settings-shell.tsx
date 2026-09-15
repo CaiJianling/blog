@@ -28,7 +28,9 @@ export default function AdminSettingsShell({
             <div
                 className={cn(
                     'min-w-0 flex-1',
-                    wide ? '' : 'mx-auto w-full max-w-2xl lg:mx-0',
+                    wide
+                        ? 'mx-auto w-full max-w-[1500px]'
+                        : 'mx-auto w-full max-w-2xl lg:mx-0',
                 )}
             >
                 {children}
