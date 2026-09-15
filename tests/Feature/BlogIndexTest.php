@@ -65,6 +65,68 @@ test('blog index exposes article likes count', function () {
             ->where('articles.data.0.likes', 5));
 });
 
+test('blog index searches content when scope is content', function () {
+    Article::create([
+        'author_id' => $this->user->id,
+        'title' => '一个不含关键词的标题',
+        'slug' => 'content-match',
+        'excerpt' => '',
+        'content' => [
+            ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => '这里提到了 Vue 的响应式原理']]],
+        ],
+        'status' => 'publish',
+    ]);
+
+    $this->get('/blog?q=Vue&scope=content')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Blog/Index')
+            ->has('articles.data', 1)
+            ->where('currentScope', 'content')
+            ->where('articles.data.0.title', '一个不含关键词的标题'));
+});
+
+test('blog index title scope ignores matches inside content', function () {
+    Article::create([
+        'author_id' => $this->user->id,
+        'title' => '一个不含关键词的标题',
+        'slug' => 'content-match-2',
+        'excerpt' => '',
+        'content' => [
+            ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => '这里提到了 Vue 的响应式原理']]],
+        ],
+        'status' => 'publish',
+    ]);
+
+    $this->get('/blog?q=Vue')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Blog/Index')
+            ->has('articles.data', 0)
+            ->where('currentScope', 'title'));
+});
+
+test('blog index title_content scope matches title or content', function () {
+    Article::create([
+        'author_id' => $this->user->id,
+        'title' => '一个不含关键词的标题',
+        'slug' => 'content-match-3',
+        'excerpt' => '',
+        'content' => [
+            ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => '这里提到了 Vue 的响应式原理']]],
+        ],
+        'status' => 'publish',
+    ]);
+
+    $this->get('/blog?q=Vue&scope=title_content')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Blog/Index')
+            ->has('articles.data', 1)
+            ->where('currentScope', 'title_content')
+            ->where('articles.data.0.title', '一个不含关键词的标题'));
+});
+
 test('blog index search works together with category filter', function () {
     $term = Term::factory()->create(['name' => '教程', 'slug' => 'tutorials']);
 

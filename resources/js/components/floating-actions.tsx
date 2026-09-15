@@ -74,7 +74,7 @@ export default function FloatingActions() {
                         <button
                             type="button"
                             onClick={scrollToComments}
-                            className="flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-popover text-muted-foreground shadow-md transition-all hover:-translate-y-0.5 hover:text-primary"
+                            className="hover-glow flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-popover text-muted-foreground shadow-md transition-all hover:text-primary"
                             aria-label="跳转到评论区"
                         >
                             <MessageSquare className="h-4 w-4" />
@@ -91,7 +91,7 @@ export default function FloatingActions() {
                         <button
                             type="button"
                             onClick={backToTop}
-                            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-popover text-muted-foreground shadow-md transition-all hover:-translate-y-0.5 hover:text-primary"
+                            className="hover-glow relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-popover text-muted-foreground shadow-md transition-all hover:text-primary"
                             aria-label="回到顶部"
                         >
                             {showRing && (

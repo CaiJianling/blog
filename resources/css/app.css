@@ -258,6 +258,34 @@
         transform: scale(0.96);
     }
 
+    /* hover 外发光（通用：卡片 / 悬浮按钮），替代上移位移，叠加在原有阴影之上 */
+    .hover-glow {
+        position: relative;
+    }
+
+    .hover-glow::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        box-shadow:
+            0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent),
+            0 10px 30px -4px color-mix(in srgb, var(--primary) 22%, transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+    }
+
+    .hover-glow:hover::after {
+        opacity: 1;
+    }
+
+    .dark .hover-glow::after {
+        box-shadow:
+            0 0 0 1px color-mix(in srgb, var(--primary) 42%, transparent),
+            0 10px 34px -2px color-mix(in srgb, var(--primary) 32%, transparent);
+    }
+
     /* Article HTML content typography (rendered from block JSON via blocknote-to-html) */
     .article-content {
         color: var(--foreground);
@@ -560,10 +588,13 @@
     }
 
     :is(.code-block, .code-block__stage) .cb-line {
-        display: block;
+        display: flex;
+        align-items: baseline;
         min-height: 1.7em;
         padding-right: 1rem;
+        padding-left: 0;
         white-space: pre;
+        transition: padding-left 0.2s ease;
     }
 
     :is(.code-block, .code-block__stage) .cb-ln {
@@ -596,6 +627,11 @@
         padding-right: 0;
         opacity: 0;
         border-right-color: transparent;
+    }
+
+    /* 隐藏行号后给代码留左缩进，避免贴到容器左缘 */
+    :is(.code-block, .code-block__stage).no-ln .cb-line {
+        padding-left: 1rem;
     }
 
     /* 折行 */
@@ -953,37 +989,86 @@
     scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
 }
 
-*::-webkit-scrollbar {
+/*
+ * 用 `:where(*)` 而非 `*`：lightningcss 会把 `*::-webkit-scrollbar` 压成裸
+ * `::-webkit-scrollbar`（在 WebKit 里只作用于文档滚动条），`:where(*)` 可存活且同样通配。
+ */
+:where(*)::-webkit-scrollbar {
     width: 10px;
     height: 10px;
 }
 
-*::-webkit-scrollbar-track {
+:where(*)::-webkit-scrollbar-track {
     background: transparent;
 }
 
-*::-webkit-scrollbar-thumb {
+:where(*)::-webkit-scrollbar-thumb {
     background: rgba(120, 113, 80, 0.28);
     border-radius: 999px;
     border: 3px solid transparent;
     background-clip: content-box;
 }
 
-*::-webkit-scrollbar-thumb:hover {
+:where(*)::-webkit-scrollbar-thumb:hover {
     background: rgba(120, 113, 80, 0.5);
     background-clip: content-box;
 }
 
-*::-webkit-scrollbar-corner {
+:where(*)::-webkit-scrollbar-corner {
     background: transparent;
 }
 
-.dark *::-webkit-scrollbar-thumb {
+.dark :where(*)::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     background-clip: content-box;
 }
 
-.dark *::-webkit-scrollbar-thumb:hover {
+.dark :where(*)::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.38);
+    background-clip: content-box;
+}
+
+/*
+ * 嵌套滚动容器的滚动条：全局 `*::-webkit-scrollbar` 会被压缩成裸 `::-webkit-scrollbar`，
+ * 在 WebKit 里只作用于文档滚动条，覆盖不到内层滚动区。因此用类选择器显式应用，
+ * 保证大纲、后台侧边栏、聊天等内滚区与页面滚动条一致（细、圆角、半透明）。
+ */
+.scroll-nice {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(120, 113, 80, 0.32) transparent;
+}
+
+.scroll-nice::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.scroll-nice::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scroll-nice::-webkit-scrollbar-thumb {
+    background: rgba(120, 113, 80, 0.28);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+.scroll-nice::-webkit-scrollbar-thumb:hover {
+    background: rgba(120, 113, 80, 0.5);
+    background-clip: content-box;
+}
+
+.dark .scroll-nice {
+    scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+}
+
+.dark .scroll-nice::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    background-clip: content-box;
+}
+
+.dark .scroll-nice::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.38);
     background-clip: content-box;
 }

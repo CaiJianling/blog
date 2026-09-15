@@ -641,7 +641,7 @@ export default function Show({
                                 </h3>
                                 <nav
                                     ref={tocNavRef}
-                                    className="max-h-[60vh] space-y-0.5 overflow-y-auto"
+                                    className="scroll-nice max-h-[60vh] space-y-0.5 overflow-y-auto"
                                 >
                                     {tocItems.map((item) => (
                                         <a
@@ -811,7 +811,7 @@ export default function Show({
                                 {prevArticle ? (
                                     <Link
                                         href={prevArticle.permalink}
-                                        className="apple-card apple-press group flex items-center gap-3 p-5 hover:-translate-y-0.5"
+                                        className="apple-card apple-press hover-glow group flex items-center gap-3 p-5"
                                     >
                                         <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-0.5" />
                                         <div className="min-w-0">
@@ -829,7 +829,7 @@ export default function Show({
                                 {nextArticle && (
                                     <Link
                                         href={nextArticle.permalink}
-                                        className="apple-card apple-press group flex items-center justify-end gap-3 p-5 text-right hover:-translate-y-0.5"
+                                        className="apple-card apple-press hover-glow group flex items-center justify-end gap-3 p-5 text-right"
                                     >
                                         <div className="min-w-0">
                                             <p className="text-footnote text-muted-foreground">
@@ -856,7 +856,7 @@ export default function Show({
                                         <Link
                                             key={r.id}
                                             href={r.permalink}
-                                            className="apple-card apple-press group p-5 hover:-translate-y-0.5"
+                                            className="apple-card apple-press hover-glow group p-5"
                                         >
                                             <h3 className="text-headline line-clamp-2 transition-colors group-hover:text-primary">
                                                 {r.title}

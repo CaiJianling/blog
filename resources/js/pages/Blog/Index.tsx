@@ -8,9 +8,15 @@ import {
     User,
     Heart,
 } from 'lucide-react';
-import PageSearch from '@/components/page-search';
+import PageSearch, { type SearchScope } from '@/components/page-search';
 import { buildSeoMeta } from '@/lib/seo';
 import blog from '@/routes/blog';
+
+const SEARCH_SCOPES: SearchScope[] = [
+    { value: 'title', label: '搜索标题', placeholder: '搜索文章标题' },
+    { value: 'content', label: '搜索文章内容', placeholder: '搜索文章内容' },
+    { value: 'title_content', label: '搜索标题和内容', placeholder: '搜索标题和内容' },
+];
 
 type Article = {
     id: number;
@@ -59,6 +65,7 @@ type Props = {
     currentCategory?: string;
     currentTag?: string;
     currentQuery?: string;
+    currentScope?: string;
     sidebar: Sidebar;
 };
 
@@ -68,15 +75,17 @@ export default function Index({
     currentCategory,
     currentTag,
     currentQuery,
+    currentScope,
     sidebar,
 }: Props) {
     const seo = usePage().props.seo;
 
-    const doSearch = (value: string) => {
+    const doSearch = (value: string, scope?: string) => {
         router.get(
             blog.index().url,
             {
                 q: value || undefined,
+                scope: scope || undefined,
                 category: currentCategory || undefined,
             },
             { preserveScroll: true },
@@ -101,6 +110,8 @@ export default function Index({
                         initial={currentQuery ?? ''}
                         placeholder="搜索文章标题"
                         buttonLabel="搜索文章"
+                        scopes={SEARCH_SCOPES}
+                        initialScope={currentScope ?? 'title'}
                         onSubmit={doSearch}
                     />
                 </div>
@@ -299,7 +310,7 @@ export default function Index({
                                     <Link
                                         key={article.id}
                                         href={article.permalink}
-                                        className="apple-card apple-press group mb-5 block break-inside-avoid p-5 transition-shadow hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.45)]"
+                                        className="apple-card apple-press hover-glow group mb-5 block break-inside-avoid p-5"
                                     >
                                         {article.categories.length > 0 && (
                                             <div className="mb-3 flex flex-wrap gap-2">

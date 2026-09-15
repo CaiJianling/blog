@@ -181,7 +181,7 @@ export default function AiAssistantWidget() {
                                 )}
                             </motion.button>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="tooltip-dark">
+                        <TooltipContent side="left" className="tooltip-dark">
                             {name}
                         </TooltipContent>
                     </Tooltip>
@@ -248,7 +248,7 @@ export default function AiAssistantWidget() {
 
                     <div className="relative flex min-h-0 flex-1">
                         {/* 消息列表 */}
-                        <div className="flex w-full flex-1 flex-col overflow-y-auto px-3 py-3">
+                        <div className="scroll-nice flex w-full flex-1 flex-col overflow-y-auto px-3 py-3">
                             {showWelcome && (
                                 <div className="flex items-start gap-2">
                                     <Avatar url={assistant.avatarUrl} name={name} />
@@ -305,7 +305,7 @@ export default function AiAssistantWidget() {
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto p-2">
+                                <div className="scroll-nice flex-1 overflow-y-auto p-2">
                                     {conversations.length === 0 && (
                                         <p className="py-8 text-center text-xs text-muted-foreground">暂无历史对话</p>
                                     )}

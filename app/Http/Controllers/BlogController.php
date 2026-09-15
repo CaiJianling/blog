@@ -12,6 +12,7 @@ use App\Models\TermTaxonomy;
 use App\Models\User;
 use App\Services\CommentService;
 use App\Services\PermalinkService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -28,13 +29,25 @@ class BlogController extends Controller
         $category = $request->query('category');
         $tag = $request->query('tag');
         $q = $request->query('q');
+        $scope = $request->query('scope');
+        $scope = in_array($scope, ['title', 'content', 'title_content'], true) ? $scope : 'title';
 
         $query = Article::where('status', 'publish')
             ->with('author')
             ->orderBy('created_at', 'desc');
 
         if ($q) {
-            $query->where('title', 'like', '%'.$q.'%');
+            $like = '%'.$q.'%';
+
+            $query->where(function (Builder $search) use ($scope, $like) {
+                if ($scope === 'content') {
+                    $search->where('content', 'like', $like);
+                } elseif ($scope === 'title_content') {
+                    $search->where('title', 'like', $like)->orWhere('content', 'like', $like);
+                } else {
+                    $search->where('title', 'like', $like);
+                }
+            });
         }
 
         if ($category) {
@@ -88,6 +101,7 @@ class BlogController extends Controller
             'currentCategory' => $category,
             'currentTag' => $tag,
             'currentQuery' => $q,
+            'currentScope' => $scope,
             'sidebar' => $this->sidebarPayload(),
         ]);
     }

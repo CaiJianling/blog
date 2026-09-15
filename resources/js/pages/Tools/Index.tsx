@@ -137,7 +137,7 @@ export default function Index({ toolCategories }: Props) {
                                         href={tool.url ?? '#'}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="apple-card apple-press group flex items-start gap-4 p-5 hover:-translate-y-0.5"
+                                        className="apple-card apple-press hover-glow group flex items-start gap-4 p-5"
                                     >
                                         {inner}
                                     </a>
@@ -145,7 +145,7 @@ export default function Index({ toolCategories }: Props) {
                                     <Link
                                         key={tool.id}
                                         href={`/tools/${tool.slug}`}
-                                        className="apple-card apple-press group flex items-start gap-4 p-5 hover:-translate-y-0.5"
+                                        className="apple-card apple-press hover-glow group flex items-start gap-4 p-5"
                                     >
                                         {inner}
                                     </Link>

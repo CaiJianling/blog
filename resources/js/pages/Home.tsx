@@ -148,7 +148,7 @@ export default function Home() {
                         <Link
                             key={article.id}
                             href={article.permalink}
-                            className="apple-card apple-press group flex flex-col p-6 hover:-translate-y-1"
+                            className="apple-card apple-press hover-glow group flex flex-col p-6"
                         >
                             <h3 className="text-headline line-clamp-2 transition-colors group-hover:text-primary">
                                 {article.title}
@@ -206,7 +206,7 @@ export default function Home() {
                         <Link
                             key={tool.slug}
                             href={tools.show({ slug: tool.slug })}
-                            className="apple-card apple-press group flex items-start gap-4 p-5 hover:-translate-y-0.5"
+                            className="apple-card apple-press hover-glow group flex items-start gap-4 p-5"
                         >
                             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
                                 <ToolIcon name={tool.icon} />

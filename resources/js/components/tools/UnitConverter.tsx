@@ -109,7 +109,7 @@ export default function UnitConverter() {
                             onClick={() => display !== null && void copyValue(i, String(display))}
                             disabled={display === null}
                             className={`apple-card apple-press relative p-4 text-left transition-colors ${
-                                display !== null ? 'hover:-translate-y-0.5 hover:shadow-md' : 'cursor-default'
+                                display !== null ? 'hover-glow' : 'cursor-default'
                             } ${copiedThis ? 'ring-2 ring-emerald-500/50' : ''}`}
                             title={display !== null ? '点击复制' : undefined}
                         >

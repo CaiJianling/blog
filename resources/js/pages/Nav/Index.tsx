@@ -99,7 +99,7 @@ export default function Index({ navigationCategories }: Props) {
                                         href={link.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="apple-card apple-press group flex items-start gap-3 p-4 hover:-translate-y-0.5"
+                                        className="apple-card apple-press hover-glow group flex items-start gap-3 p-4"
                                     >
                                         {link.icon_url ? (
                                             <img
