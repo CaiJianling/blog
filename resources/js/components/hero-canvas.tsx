@@ -138,6 +138,23 @@ export function heroFallbackBackground(dark: boolean): string {
     return stops[stops.length - 1][1];
 }
 
+/** 解析 #rrggbb 为 [r,g,b]；非法返回 null。 */
+function parseHexToRgb(hex: string): [number, number, number] | null {
+    const value = hex.trim().replace(/^#/, '');
+
+    if (value.length !== 6) {
+        return null;
+    }
+
+    const num = Number.parseInt(value, 16);
+
+    if (Number.isNaN(num)) {
+        return null;
+    }
+
+    return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
 interface HeroCanvasProps {
     /** 点阵剪影显示的应用名。 */
     name?: string;
@@ -178,6 +195,11 @@ export default function HeroCanvas({ name = '' }: HeroCanvasProps) {
         const dark = resolvedAppearance === 'dark';
         const P = dark ? DARK_PALETTE : LIGHT_PALETTE;
 
+        // 强调粒子（首字母点阵揭示 + hover 光晕）跟随当前主题主色：
+        // 初始取 hero 语境下实际生效的 --primary（外层固定 dark 包裹，与标题 from-primary 同源）。
+        let revealRGB: [number, number, number] = P.letterDotRevealRGB;
+        let glowStops: [string, string, string] = P.whaleGlowStops;
+
         let gridNodes: GridNode[] = [];
         let gridCols = 0;
         let gridRows = 0;
@@ -192,6 +214,7 @@ export default function HeroCanvas({ name = '' }: HeroCanvasProps) {
         let pointerStrength = 0;
         let whaleHovered = false;
         let lastFrameTime = 0;
+        let themeObserver: MutationObserver | null = null;
 
         function hash(seed: number): number {
             const value = Math.sin(seed * 12.9898) * 43758.5453;
@@ -617,13 +640,13 @@ export default function HeroCanvas({ name = '' }: HeroCanvasProps) {
 
                 glow.addColorStop(
                     0,
-                    `${P.whaleGlowStops[0]}${(0.13 * pointerStrength).toFixed(3)})`,
+                    `${glowStops[0]}${(0.13 * pointerStrength).toFixed(3)})`,
                 );
                 glow.addColorStop(
                     0.34,
-                    `${P.whaleGlowStops[1]}${(0.065 * pointerStrength).toFixed(3)})`,
+                    `${glowStops[1]}${(0.065 * pointerStrength).toFixed(3)})`,
                 );
-                glow.addColorStop(1, P.whaleGlowStops[2]);
+                glow.addColorStop(1, glowStops[2]);
                 whaleCtx.fillStyle = glow;
                 whaleCtx.beginPath();
                 whaleCtx.arc(mouseX, mouseY, mouseRadius, 0, Math.PI * 2);
@@ -700,7 +723,7 @@ export default function HeroCanvas({ name = '' }: HeroCanvasProps) {
                 const reveal = pointerStrength * (0.55 + 0.45 * mouseInfluence);
 
                 const [idleR, idleG, idleB] = P.letterDotIdleRGB;
-                const [revealR, revealG, revealB] = P.letterDotRevealRGB;
+                const [revealR, revealG, revealB] = revealRGB;
                 const r = Math.round(idleR + (revealR - idleR) * reveal);
                 const g = Math.round(idleG + (revealG - idleG) * reveal);
                 const b = Math.round(idleB + (revealB - idleB) * reveal);
@@ -806,10 +829,35 @@ export default function HeroCanvas({ name = '' }: HeroCanvasProps) {
             syncAnimation();
         };
 
+        const refreshThemeAccent = () => {
+            const raw = getComputedStyle(ambient).getPropertyValue('--primary').trim();
+            const rgb = parseHexToRgb(raw);
+
+            if (!rgb) {
+                return;
+            }
+
+            revealRGB = rgb;
+            glowStops = [
+                `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]},`,
+                `rgba(${Math.round(rgb[0] * 0.8)}, ${Math.round(rgb[1] * 0.8)}, ${Math.round(rgb[2] * 0.8)},`,
+                `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0)`,
+            ];
+        };
+
         // 初始化
         sampleLetter();
         sizeCanvases();
+        refreshThemeAccent();
         syncAnimation();
+
+        // 后台保存主题会改写 <style id="theme-override">（无刷新）→ 重新读取主色。
+        themeObserver = new MutationObserver(refreshThemeAccent);
+        themeObserver.observe(document.head, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+        });
 
         const heroElement = ambient.parentElement ?? ambient;
 
@@ -845,6 +893,8 @@ export default function HeroCanvas({ name = '' }: HeroCanvasProps) {
         }
 
         return () => {
+            themeObserver?.disconnect();
+
             if (frame) {
                 window.cancelAnimationFrame(frame);
             }

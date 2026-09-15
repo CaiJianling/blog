@@ -1,10 +1,12 @@
 import { usePage } from '@inertiajs/react';
 import { Bot, MessageSquarePlus, Send, Trash2, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AssistantConversation, AssistantMessage } from '@/lib/assistant-db';
 import { deleteConversation, listConversations, newConversationId, putConversation } from '@/lib/assistant-db';
 import { renderMarkdown } from '@/lib/markdown';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AssistantConfig {
     enabled: boolean;
@@ -156,27 +158,53 @@ export default function AiAssistantWidget() {
     return (
         <>
             {/* 悬浮按钮 */}
-            {!open && (
-                <button
-                    type="button"
-                    onClick={() => setOpen(true)}
-                    className="apple-press fixed right-5 bottom-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition-transform hover:scale-105"
-                    aria-label={`打开${name}`}
-                    title={name}
-                >
-                    {assistant.avatarUrl ? (
-                        <img src={assistant.avatarUrl} alt={name} className="h-14 w-14 rounded-full object-cover" />
-                    ) : (
-                        <Bot className="h-6 w-6" />
-                    )}
-                </button>
-            )}
+            <AnimatePresence>
+                {!open && (
+                    <Tooltip key="assistant-fab">
+                        <TooltipTrigger asChild>
+                            <motion.button
+                                type="button"
+                                onClick={() => setOpen(true)}
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.5 }}
+                                whileHover={{ scale: 1.06 }}
+                                whileTap={{ scale: 0.94 }}
+                                transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                                className="fixed right-5 bottom-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
+                                aria-label={`打开${name}`}
+                            >
+                                {assistant.avatarUrl ? (
+                                    <img src={assistant.avatarUrl} alt={name} className="h-14 w-14 rounded-full object-cover" />
+                                ) : (
+                                    <Bot className="h-6 w-6" />
+                                )}
+                            </motion.button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="tooltip-dark">
+                            {name}
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+            </AnimatePresence>
 
             {/* 对话面板 */}
-            {open && (
-                <div className="fixed right-4 bottom-4 z-50 flex h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]">
-                    {/* 头部 */}
-                    <div className="flex items-center gap-2.5 border-b border-border/50 px-4 py-3">
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        key="assistant-panel"
+                        initial={{ opacity: 0, scale: 0.92, y: 16 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.92, y: 16 }}
+                        transition={{ type: 'spring', stiffness: 340, damping: 30 }}
+                        style={{ transformOrigin: 'bottom right' }}
+                        className="fixed right-4 bottom-4 z-50 flex h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/50 dark:border-white/10 bg-white/70 dark:bg-zinc-900/55 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)] backdrop-blur-2xl backdrop-saturate-150"
+                    >
+                        {/* 顶部高光，营造玻璃层次（不止半透明） */}
+                        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/35 via-white/8 to-transparent" />
+
+                        {/* 头部 */}
+                        <div className="relative flex items-center gap-2.5 border-b border-border/50 px-4 py-3">
                         <Avatar url={assistant.avatarUrl} name={name} />
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold">{name}</p>
@@ -345,8 +373,9 @@ export default function AiAssistantWidget() {
                             Enter 发送 · Shift+Enter 换行 · 会话仅保存在本浏览器
                         </p>
                     </div>
-                </div>
-            )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     );
 }

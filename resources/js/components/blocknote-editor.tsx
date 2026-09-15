@@ -4,11 +4,13 @@ import '@blocknote/mantine/style.css';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { zh, en } from '@blocknote/core/locales';
+import { BlockNoteSchema, createCodeBlockSpec, defaultBlockSpecs } from '@blocknote/core';
 import type { BlockNoteEditor as BlockNoteEditorInstance, Dictionary, PartialBlock } from '@blocknote/core';
 import { useEffect } from 'react';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useLocale } from '@/hooks/use-locale';
 import type { Locale } from '@/i18n';
+import { CODE_LANGUAGES } from '@/lib/code-languages';
 
 /**
  * BlockNote 块编辑器组件。
@@ -36,6 +38,18 @@ const LOCALE_DICTIONARY: Record<Locale, Dictionary> = {
     zh,
     en,
 };
+
+// 自定义 schema：仅替换 codeBlock，为其启用语言选择器（默认 schema 的 codeBlock 无语言下拉）。
+// 其余块沿用 defaultBlockSpecs，避免整表重定义。
+const editorSchema = BlockNoteSchema.create({
+    blockSpecs: {
+        ...defaultBlockSpecs,
+        codeBlock: createCodeBlockSpec({
+            defaultLanguage: 'text',
+            supportedLanguages: CODE_LANGUAGES,
+        }),
+    },
+});
 
 function getCsrfToken(): { headerName: string; value: string } | null {
     const meta = document
@@ -106,6 +120,7 @@ export function BlockNoteEditor({
     const locale = useLocale();
 
     const editor = useCreateBlockNote({
+        schema: editorSchema,
         initialContent: initialContent && initialContent.length > 0 ? initialContent : undefined,
         placeholders: placeholder ? { default: placeholder } : undefined,
         dictionary: LOCALE_DICTIONARY[locale],
