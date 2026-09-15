@@ -21,6 +21,14 @@ import i18n, { initPromise } from './i18n';
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 initPromise.then(() => {
+    // 顶部进度条跟随主题主色：读取 <meta name="theme-color">（无主题时为内置默认蓝）
+    const progressColor =
+        (typeof document !== 'undefined'
+            ? document
+                  .querySelector('meta[name="theme-color"]')
+                  ?.getAttribute('content')
+            : null) || '#0071e3';
+
     createInertiaApp({
         title: (title) => (title ? `${title} - ${appName}` : appName),
         layout: (name) => {
@@ -41,6 +49,7 @@ initPromise.then(() => {
                 case name === 'settings/sidebar':
                 case name === 'settings/footer':
                 case name === 'settings/home':
+                case name === 'settings/theme':
                     return AppLayout;
                 case name.startsWith('settings/'):
                     return [AppLayout, SettingsLayout];
@@ -61,7 +70,7 @@ initPromise.then(() => {
         },
         // 顶部细条为 Inertia 页面加载进度（非阅读进度）
         progress: {
-            color: '#2563eb',
+            color: progressColor,
             showSpinner: false,
         },
     });

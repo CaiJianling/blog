@@ -215,6 +215,19 @@
             "save": "Save Changes",
             "saved": "Permalink settings saved."
         },
+        "theme": {
+            "title": "Theme Settings",
+            "heading": "Theme",
+            "description": "Set the site theme color. Accent, selection ring, sidebar highlight, and the first chart color follow the primary color automatically, applying to both the front and admin.",
+            "primaryColor": "Theme color",
+            "primaryColorHint": "Pick a preset or type a custom color. “Reset” uses the built-in blue (each light/dark variant keeps its own default).",
+            "presets": "Presets",
+            "custom": "Custom color",
+            "reset": "Reset",
+            "preview": "Preview",
+            "save": "Save Changes",
+            "saved": "Theme color saved."
+        },
         "smilies": {
             "title": "Smiley Management",
             "heading": "Smiley Management",

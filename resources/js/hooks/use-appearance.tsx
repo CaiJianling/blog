@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { syncThemeColorMeta } from '@/lib/theme';
 
 export type ResolvedAppearance = 'light' | 'dark';
 export type Appearance = ResolvedAppearance | 'system';
@@ -50,6 +51,9 @@ const applyTheme = (appearance: Appearance): void => {
 
     document.documentElement.classList.toggle('dark', isDark);
     document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+
+    // 让 <meta name="theme-color"> 跟随当前实际生效的主色（含亮/暗各自的默认蓝）
+    syncThemeColorMeta();
 };
 
 const subscribe = (callback: () => void) => {

@@ -31,6 +31,7 @@ import { edit as editNavigation } from '@/routes/navigation';
 import { edit as editPermalink } from '@/routes/permalink';
 import { edit as editSite } from '@/routes/site';
 import { index as smiliesIndex } from '@/routes/smilies';
+import { edit as editTheme } from '@/routes/theme';
 import { admin as toolsAdmin } from '@/routes/tools';
 import type { NavItem } from '@/types';
 
@@ -176,6 +177,10 @@ export function AppSidebar() {
                 {
                     title: 'settings.permalink.title',
                     href: editPermalink(),
+                },
+                {
+                    title: 'settings.theme.title',
+                    href: editTheme(),
                 },
             ],
         });

@@ -39,6 +39,16 @@
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
+
+        {{-- 浏览器 chrome 颜色：跟随主题主色（无主题时用内置默认蓝，JS 会随亮/暗模式再校正）--}}
+        <meta name="theme-color" content="{{ $theme_color ?: \App\Http\Controllers\ThemeSettingController::DEFAULT_COLOR }}">
+
+        @if($theme_color ?? '')
+            {{-- 站点主题色：由后台「主题设置」写入，覆盖 app.css 中由主色派生的 CSS 变量（浅色 + 深色 + 前景对比度）。
+                 id 供前端保存后无刷新更新（见 lib/theme.ts applyThemeStyle）。--}}
+            <style id="theme-override">{!! \App\Http\Controllers\ThemeSettingController::styleCss($theme_color) !!}</style>
+        @endif
+
         <x-inertia::head>
             <title>{{ config('app.name', 'Laravel') }}</title>
         </x-inertia::head>

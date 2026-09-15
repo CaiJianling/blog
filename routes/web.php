@@ -22,6 +22,7 @@ use App\Http\Controllers\PermalinkController;
 use App\Http\Controllers\SidebarSettingController;
 use App\Http\Controllers\SmileyController;
 use App\Http\Controllers\TermTaxonomyController;
+use App\Http\Controllers\ThemeSettingController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\ToolSettingController;
 use App\Http\Controllers\UserController;
@@ -119,6 +120,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('settings/permalink', [PermalinkController::class, 'edit'])->name('permalink.edit');
         Route::put('settings/permalink', [PermalinkController::class, 'update'])->name('permalink.update');
+
+        // 主题设置（站点主色）
+        Route::get('settings/theme', [ThemeSettingController::class, 'edit'])->name('theme.edit');
+        Route::put('settings/theme', [ThemeSettingController::class, 'update'])->name('theme.update');
 
         Route::get('smilies', [SmileyController::class, 'index'])->name('smilies.index');
         Route::post('smiley-groups', [SmileyController::class, 'storeGroup'])->name('smilies.groups.store');
