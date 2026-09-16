@@ -46,21 +46,21 @@ export function initializeEffects(): void {
     currentEffectsEnabled = getStoredEffectsEnabled();
 }
 
+export const updateEffectsEnabled = (enabled: boolean): void => {
+    currentEffectsEnabled = enabled;
+
+    localStorage.setItem('effectsEnabled', enabled.toString());
+    setCookie('effectsEnabled', enabled.toString());
+
+    notify();
+};
+
 export function useEffects(): UseEffectsReturn {
     const effectsEnabled: boolean = useSyncExternalStore(
         subscribe,
         () => currentEffectsEnabled,
         () => false,
     );
-
-    const updateEffectsEnabled = (enabled: boolean): void => {
-        currentEffectsEnabled = enabled;
-
-        localStorage.setItem('effectsEnabled', enabled.toString());
-        setCookie('effectsEnabled', enabled.toString());
-
-        notify();
-    };
 
     return { effectsEnabled, updateEffectsEnabled } as const;
 }

@@ -479,6 +479,16 @@
             "toolsSection": "精选工具栏目",
             "navSection": "网站导航栏目",
             "emptyFallback": "留空的字段将使用默认文案。"
+        },
+        "floating": {
+            "title": "设置",
+            "open": "打开设置",
+            "language": "语言",
+            "effects": "界面特效",
+            "enabled": "开启",
+            "disabled": "关闭",
+            "synced": "已登录，设置将同步到账号",
+            "local": "未登录，设置仅保存在本浏览器"
         }
     },
     "nav": {

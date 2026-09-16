@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { MessageSquare, Rocket } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import FloatingSettingsPanel from '@/components/floating-settings-panel';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
@@ -119,6 +120,7 @@ export default function FloatingActions() {
                 </TooltipContent>
             </Tooltip>
             )}
+            <FloatingSettingsPanel />
         </div>
     );
 }

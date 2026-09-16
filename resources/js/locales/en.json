@@ -479,6 +479,16 @@
             "toolsSection": "Featured tools section",
             "navSection": "Navigation section",
             "emptyFallback": "Blank fields fall back to the default texts."
+        },
+        "floating": {
+            "title": "Settings",
+            "open": "Open settings",
+            "language": "Language",
+            "effects": "UI Effects",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "synced": "Signed in, settings sync to your account",
+            "local": "Signed out, settings stored in this browser only"
         }
     },
     "nav": {
