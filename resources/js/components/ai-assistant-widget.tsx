@@ -1,7 +1,8 @@
 import { usePage } from '@inertiajs/react';
 import { Bot, MessageSquarePlus, Send, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Filter } from '@/components/LiquidGlass/Filter';
 import type { AssistantConversation, AssistantMessage } from '@/lib/assistant-db';
 import { deleteConversation, listConversations, newConversationId, putConversation } from '@/lib/assistant-db';
 import { renderMarkdown } from '@/lib/markdown';
@@ -37,6 +38,9 @@ export default function AiAssistantWidget() {
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [panelSize, setPanelSize] = useState({ width: 0, height: 0 });
+    const filterId = useId();
 
     const name = assistant?.name || 'AI 小助手';
     const welcome = assistant?.welcome || '你好！我是 AI 小助手，有什么可以帮你？';
@@ -57,6 +61,22 @@ export default function AiAssistantWidget() {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [current?.messages.length, sending]);
+
+    // 液态玻璃滤镜需要面板的实时尺寸来生成折射位移图
+    useEffect(() => {
+        const el = panelRef.current;
+
+        if (!el) {
+            return;
+        }
+
+        const observer = new ResizeObserver(() => {
+            setPanelSize({ width: el.offsetWidth, height: el.offsetHeight });
+        });
+        observer.observe(el);
+
+        return () => observer.disconnect();
+    }, [open]);
 
     if (!assistant?.enabled) {
         return null;
@@ -193,13 +213,36 @@ export default function AiAssistantWidget() {
                 {open && (
                     <motion.div
                         key="assistant-panel"
+                        ref={panelRef}
                         initial={{ opacity: 0, scale: 0.92, y: 16 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.92, y: 16 }}
                         transition={{ type: 'spring', stiffness: 340, damping: 30 }}
                         style={{ transformOrigin: 'bottom right' }}
-                        className="fixed right-4 bottom-4 z-50 flex h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/50 dark:border-white/10 bg-white/70 dark:bg-zinc-900/55 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)] backdrop-blur-2xl backdrop-saturate-150"
+                        className="fixed right-4 bottom-4 z-50 flex h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/50 dark:border-white/10 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
                     >
+                        {/* 液态玻璃滤镜（与音乐播放器同款 SVG 折射 + 色散实现） */}
+                        {typeof window !== 'undefined' && panelSize.width > 0 && panelSize.height > 0 && (
+                            <Filter
+                                id={filterId}
+                                blur={1}
+                                specularOpacity={0.4}
+                                specularSaturation={6}
+                                width={panelSize.width}
+                                height={panelSize.height}
+                                radius={24}
+                                bezelWidth={20}
+                                glassThickness={90}
+                                refractiveIndex={1.3}
+                            />
+                        )}
+
+                        {/* 玻璃背景层：折射滤镜 + 玻璃底色 */}
+                        <div
+                            className="pointer-events-none absolute inset-0 bg-white/60 dark:bg-[#222222]/60"
+                            style={panelSize.width > 0 && panelSize.height > 0 ? { backdropFilter: `url(#${filterId})` } : undefined}
+                        />
+
                         {/* 顶部高光，营造玻璃层次（不止半透明） */}
                         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/35 via-white/8 to-transparent" />
 
@@ -343,7 +386,7 @@ export default function AiAssistantWidget() {
                     </div>
 
                     {/* 输入区 */}
-                    <div className="border-t border-border/50 p-2.5">
+                    <div className="relative border-t border-border/50 p-2.5">
                         <div className="flex items-end gap-2">
                             <textarea
                                 ref={inputRef}
