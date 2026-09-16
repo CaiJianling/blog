@@ -2,7 +2,10 @@ import { usePage } from '@inertiajs/react';
 import { MessageSquare, Rocket } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import FloatingSettingsPanel from '@/components/floating-settings-panel';
+import GlassButtonBackground from '@/components/LiquidGlass/glass-button-background';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useEffects } from '@/hooks/use-effects';
+import { cn } from '@/lib/utils';
 
 /**
  * 前台右下角悬浮操作组：
@@ -14,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  */
 export default function FloatingActions() {
     const { assistant } = usePage().props as unknown as { assistant?: { enabled?: boolean } };
+    const { effectsEnabled } = useEffects();
 
     const [showTop, setShowTop] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -75,10 +79,14 @@ export default function FloatingActions() {
                         <button
                             type="button"
                             onClick={scrollToComments}
-                            className="hover-glow flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-popover text-muted-foreground shadow-md transition-all hover:text-primary"
+                            className={cn(
+                                'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-all hover:text-primary',
+                                !effectsEnabled && 'bg-popover',
+                            )}
                             aria-label="跳转到评论区"
                         >
-                            <MessageSquare className="h-4 w-4" />
+                            <GlassButtonBackground size={40} />
+                            <MessageSquare className="relative h-4 w-4" />
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="tooltip-dark">
@@ -92,9 +100,13 @@ export default function FloatingActions() {
                         <button
                             type="button"
                             onClick={backToTop}
-                            className="hover-glow relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-popover text-muted-foreground shadow-md transition-all hover:text-primary"
+                            className={cn(
+                                'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-all hover:text-primary',
+                                !effectsEnabled && 'bg-popover',
+                            )}
                             aria-label="回到顶部"
                         >
+                            <GlassButtonBackground size={40} />
                             {showRing && (
                                 <svg viewBox="0 0 40 40" className="pointer-events-none absolute inset-0 h-10 w-10 -rotate-90">
                                     <circle cx="20" cy="20" r={ringRadius} fill="none" stroke="currentColor" strokeWidth="2.5" className="text-border/40" />
@@ -112,7 +124,7 @@ export default function FloatingActions() {
                                     />
                                 </svg>
                             )}
-                            <Rocket className="h-4 w-4" />
+                            <Rocket className="relative h-4 w-4" />
                     </button>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="tooltip-dark">

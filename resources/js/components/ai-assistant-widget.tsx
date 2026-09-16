@@ -222,7 +222,7 @@ export default function AiAssistantWidget() {
                         exit={{ opacity: 0, scale: 0.92, y: 16 }}
                         transition={{ type: 'spring', stiffness: 340, damping: 30 }}
                         style={{ transformOrigin: 'bottom right' }}
-                        className="fixed right-4 bottom-4 z-50 flex h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/50 dark:border-white/10 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
+                        className="fixed right-4 bottom-4 z-50 flex h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-white/50 dark:border-white/10 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
                     >
                         {/* 面板玻璃背景：特效开启 = 液态玻璃（边缘折射 + 色散），关闭 = 半透明磨砂 */}
                         {typeof window !== 'undefined' && panelSize.width > 0 && panelSize.height > 0 && (
@@ -236,9 +236,6 @@ export default function AiAssistantWidget() {
                                 <div className="pointer-events-none absolute inset-0 bg-white/70 dark:bg-zinc-900/55 backdrop-blur-2xl backdrop-saturate-150" />
                             )
                         )}
-
-                        {/* 顶部高光，营造玻璃层次（不止半透明） */}
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/35 via-white/8 to-transparent" />
 
                         {/* 头部 */}
                         <div className="relative flex items-center gap-2.5 border-b border-border/50 px-4 py-3">

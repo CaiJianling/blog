@@ -1,9 +1,11 @@
 import { usePage } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Moon, Settings, Sparkles, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import GlassButtonBackground from '@/components/LiquidGlass/glass-button-background';
+import LiquidGlassPanel from '@/components/LiquidGlass/LiquidGlassPanel';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEffects, updateEffectsEnabled } from '@/hooks/use-effects';
 import { useLocale, updateLocale } from '@/hooks/use-locale';
@@ -34,13 +36,16 @@ export default function FloatingSettingsPanel() {
 
     const [open, setOpen] = useState(false);
     const [anchor, setAnchor] = useState<{ right: number; bottom: number } | null>(null);
+    const [glassSize, setGlassSize] = useState({ width: 0, height: 0 });
     const gearRef = useRef<HTMLButtonElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
+    const popoverBodyRef = useRef<HTMLDivElement>(null);
+    const filterId = useId();
     const { effectsEnabled } = useEffects();
     const locale = useLocale();
     const lastSynced = useRef<UserPreferences | null>(null);
 
-    // 弹窗脱离悬浮组的层叠上下文，打开时按齿轮按钮的实际位置计算 fixed 锚点
+    // 弹窗脱离悬浮组的层叠上下文，打开时按齿轮按钮的实际位置计算 fixed 锚点（按钮左侧）
     const toggleOpen = (): void => {
         if (open) {
             setOpen(false);
@@ -54,9 +59,27 @@ export default function FloatingSettingsPanel() {
             return;
         }
 
-        setAnchor({ right: window.innerWidth - rect.right, bottom: window.innerHeight - rect.top + 10 });
+        setAnchor({ right: window.innerWidth - rect.left + 10, bottom: window.innerHeight - rect.bottom });
         setOpen(true);
     };
+
+    // 特效开启时弹窗使用液态玻璃背景，需要实测弹窗尺寸生成位移图
+    useEffect(() => {
+        const el = popoverBodyRef.current;
+
+        if (!open || !el) {
+            setGlassSize({ width: 0, height: 0 });
+
+            return;
+        }
+
+        const observer = new ResizeObserver(() => {
+            setGlassSize({ width: el.offsetWidth, height: el.offsetHeight });
+        });
+        observer.observe(el);
+
+        return () => observer.disconnect();
+    }, [open]);
 
     // 点击弹窗与齿轮按钮之外时关闭
     useEffect(() => {
@@ -140,13 +163,23 @@ export default function FloatingSettingsPanel() {
                         <AnimatePresence>
                             {open && (
                                 <motion.div
+                                    ref={popoverBodyRef}
                                     initial={{ opacity: 0, y: 8, scale: 0.96 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                                     transition={{ type: 'spring', stiffness: 420, damping: 30 }}
                                     style={{ transformOrigin: 'bottom right' }}
-                                    className="rounded-2xl border border-border bg-popover/90 p-3 shadow-lg backdrop-blur-xl"
+                                    className={cn(
+                                        'relative overflow-hidden rounded-3xl border border-white/50 dark:border-white/10 p-3 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]',
+                                        !effectsEnabled && 'bg-popover/90 backdrop-blur-xl',
+                                    )}
                                 >
+                                    {/* 液态玻璃背景（特效开启），关闭时为磨砂底 */}
+                                    {effectsEnabled && glassSize.width > 0 && glassSize.height > 0 && (
+                                        <LiquidGlassPanel id={filterId} width={glassSize.width} height={glassSize.height} />
+                                    )}
+
+                                    <div className="relative">
                                     <div className="flex items-center justify-between">
                                         <p className="text-sm font-semibold">{t('settings.floating.title')}</p>
                                         <button
@@ -215,6 +248,7 @@ export default function FloatingSettingsPanel() {
                                     <p className="mt-3 border-t border-border/50 pt-2 text-[11px] leading-relaxed text-muted-foreground">
                                         {isAuthed ? t('settings.floating.synced') : t('settings.floating.local')}
                                     </p>
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -229,12 +263,14 @@ export default function FloatingSettingsPanel() {
                         type="button"
                         onClick={toggleOpen}
                         className={cn(
-                            'hover-glow flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-popover text-muted-foreground shadow-md transition-all hover:text-primary',
+                            'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-all hover:text-primary',
+                            !effectsEnabled && 'bg-popover',
                             open && 'text-primary',
                         )}
                         aria-label={t('settings.floating.open')}
                     >
-                        <Settings className="h-4 w-4" />
+                        <GlassButtonBackground size={40} />
+                        <Settings className="relative h-4 w-4" />
                     </button>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="tooltip-dark">
