@@ -13,6 +13,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FooterSettingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HomeSettingController;
+use App\Http\Controllers\LinksController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NavController;
 use App\Http\Controllers\NavigationSettingController;
@@ -39,6 +40,7 @@ Route::get('/tools/{slug}', [ToolController::class, 'show'])->name('tools.show')
 Route::post('/tools/hash', [ToolController::class, 'hash'])->middleware('throttle:60,1')->name('tools.hash');
 Route::get('/nav', [NavController::class, 'index'])->name('nav.index');
 Route::get('/nav/links/{link}', [NavController::class, 'show'])->name('nav.show');
+Route::get('/links', [LinksController::class, 'index'])->name('links.index');
 
 // 文章点赞（前台游客可用，按 IP 限流）
 Route::post('/articles/{article}/like', [ArticleLikeController::class, '__invoke'])
@@ -165,6 +167,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('settings/tools/items', [ToolSettingController::class, 'storeTool'])->name('tools.items.store');
         Route::put('settings/tools/items/{tool}', [ToolSettingController::class, 'updateTool'])->name('tools.items.update');
         Route::delete('settings/tools/items/{tool}', [ToolSettingController::class, 'destroyTool'])->name('tools.items.destroy');
+
+        // 友情链接管理（友链、排序、图片）
+        Route::get('settings/links', [LinksController::class, 'edit'])->name('links.admin');
+        Route::put('settings/links/reorder', [LinksController::class, 'reorder'])->name('links.reorder');
+        Route::post('settings/links', [LinksController::class, 'store'])->name('links.store');
+        Route::put('settings/links/{link}', [LinksController::class, 'update'])->name('links.update');
+        Route::delete('settings/links/{link}', [LinksController::class, 'destroy'])->name('links.destroy');
+        Route::post('settings/links/{link}/image', [LinksController::class, 'uploadImage'])->name('links.image.store');
+        Route::delete('settings/links/{link}/image', [LinksController::class, 'removeImage'])->name('links.image.destroy');
 
         // AI 小助手设置（页面合并进 settings/ai，仅保留保存与头像接口）
         Route::put('settings/assistant', [AssistantSettingController::class, 'update'])->name('assistant.update');

@@ -3,6 +3,7 @@ import { Github, Link2, Mail, Twitter } from 'lucide-react';
 import { renderMarkdown } from '@/lib/markdown';
 import { home } from '@/routes';
 import blog from '@/routes/blog';
+import links from '@/routes/links';
 import nav from '@/routes/nav';
 import tools from '@/routes/tools';
 
@@ -88,6 +89,14 @@ export default function PublicFooter() {
                                     className="text-muted-foreground transition-colors hover:text-foreground"
                                 >
                                     导航
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href={links.index()}
+                                    className="text-muted-foreground transition-colors hover:text-foreground"
+                                >
+                                    友链
                                 </Link>
                             </li>
                         </ul>

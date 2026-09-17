@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Attachment;
+use App\Models\Link;
 use App\Models\NavLink;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -92,6 +93,7 @@ class AttachmentService
         'assistant_avatar',
         'sidebar_avatar',
         'nav_link_icon',
+        'link_image',
         'user_avatar',
     ];
 
@@ -103,6 +105,7 @@ class AttachmentService
         'assistant_avatar' => 'AI 小助手头像',
         'sidebar_avatar' => '博主头像',
         'nav_link_icon' => '导航图标',
+        'link_image' => '友链图片',
         'user_avatar' => '用户头像',
     ];
 
@@ -183,6 +186,11 @@ class AttachmentService
                 $link = NavLink::find($attachment->parent_id);
 
                 return $link ? "导航图标：{$link->name}" : '导航图标';
+
+            case 'link_image':
+                $friendly = Link::find($attachment->parent_id);
+
+                return $friendly ? "友链图片：{$friendly->link_name}" : '友链图片';
 
             case 'user_avatar':
                 $user = User::find($attachment->parent_id);

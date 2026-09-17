@@ -65,7 +65,10 @@ export default function AiAssistantWidget() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [current?.messages.length, sending]);
 
-    // 液态玻璃滤镜需要面板的实时尺寸来生成折射位移图
+    // 液态玻璃滤镜需要面板的实时尺寸来生成折射位移图。
+    // 入场/离场是 transform 缩放（不改变 offsetWidth/Height），但首帧从 0→实际值
+    // 会触发一次重算；窗口缩放也会触发。此处去抖，尺寸稳定后只重算一次，
+    // 避免连续 setState 造成卡顿。
     useEffect(() => {
         const el = panelRef.current;
 
@@ -73,12 +76,26 @@ export default function AiAssistantWidget() {
             return;
         }
 
+        let timer: number | null = null;
         const observer = new ResizeObserver(() => {
-            setPanelSize({ width: el.offsetWidth, height: el.offsetHeight });
+            if (timer !== null) {
+                cancelAnimationFrame(timer);
+            }
+
+            timer = requestAnimationFrame(() => {
+                timer = null;
+                setPanelSize({ width: el.offsetWidth, height: el.offsetHeight });
+            });
         });
         observer.observe(el);
 
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+
+            if (timer !== null) {
+                cancelAnimationFrame(timer);
+            }
+        };
     }, [open]);
 
     if (!assistant?.enabled) {

@@ -51,6 +51,7 @@ initPromise.then(() => {
                 case name === 'settings/footer':
                 case name === 'settings/home':
                 case name === 'settings/theme':
+                case name === 'settings/links':
                     return AppLayout;
                 case name.startsWith('settings/'):
                     return [AppLayout, SettingsLayout];

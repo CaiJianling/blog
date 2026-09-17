@@ -471,7 +471,7 @@
 
     /* 代码块：浅色奶油底 + macOS 窗点 + 行号 + 右侧操作（隐藏行号/折行/复制/全屏） */
     .article-content .code-block {
-        margin: 1.5em 0;
+        margin: 1.1em 0;
         border-radius: var(--radius-md);
         border: 1px solid rgba(120, 113, 80, 0.18);
         background: #fbf6ea;
@@ -483,7 +483,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.55rem 0.9rem;
+        padding: 0.4rem 0.9rem;
         border-bottom: 1px solid rgba(120, 113, 80, 0.12);
     }
 
@@ -493,8 +493,8 @@
     }
 
     :is(.code-block, .code-block__stage) .dot {
-        width: 11px;
-        height: 11px;
+        width: 9px;
+        height: 9px;
         border-radius: 50%;
     }
 
@@ -586,7 +586,7 @@
     }
 
     :is(.code-block, .code-block__stage) .code-block__body {
-        padding: 0.7rem 0.4rem 0.9rem 0.4rem;
+        padding: 0.5rem 0.4rem 0.7rem 0.4rem;
         overflow-x: auto;
     }
 

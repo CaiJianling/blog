@@ -26,6 +26,7 @@ import {
 import { dashboard, home } from '@/routes';
 import { edit as editAi } from '@/routes/ai';
 import { edit as editHome } from '@/routes/home';
+import { admin as linksAdmin } from '@/routes/links';
 import { index as menusIndex } from '@/routes/menus';
 import { edit as editNavigation } from '@/routes/navigation';
 import { edit as editPermalink } from '@/routes/permalink';
@@ -130,6 +131,10 @@ export function AppSidebar() {
                 {
                     title: 'settings.navigation.title',
                     href: editNavigation(),
+                },
+                {
+                    title: 'settings.links.title',
+                    href: linksAdmin(),
                 },
                 {
                     title: 'settings.tools.title',

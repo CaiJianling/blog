@@ -3,7 +3,7 @@ import { Palette } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as themeActions from '@/actions/App/Http/Controllers/ThemeSettingController';
-import AdminSettingsShell from '@/components/admin-settings-shell';
+import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -87,10 +87,9 @@ export default function Theme({ themeColor, defaultColor, presets }: Props) {
         <>
             <Head title={t('settings.theme.title')} />
 
-            <AdminSettingsShell
-                title={t('settings.theme.heading')}
-                description={t('settings.theme.description')}
-            >
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-8">
+                <Heading variant="small" title={t('settings.theme.heading')} description={t('settings.theme.description')} />
+
                 <Form
                     {...themeActions.update.form()}
                     options={{ preserveScroll: true }}
@@ -238,7 +237,7 @@ export default function Theme({ themeColor, defaultColor, presets }: Props) {
                         </>
                     )}
                 </Form>
-            </AdminSettingsShell>
+            </div>
         </>
     );
 }

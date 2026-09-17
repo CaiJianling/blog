@@ -33,33 +33,6 @@ import { CONVEX } from './surfaceEquations';
 /** 通道比例收敛带宽度（CSS 像素） */
 const EDGE_FADE_CSS = 8;
 
-/**
- * 面板内像素到“折射场边缘线”的距离（CSS 像素，0 = 在边缘线上）。
- * 直边按行/列距离；角部按到角部弧线中心的距离
- * （与 calculateDisplacementMap2 的角部场几何一致）。
- */
-function panelEdgeDistance(x: number, y: number, width: number, height: number, radius: number): number {
-    const r = radius;
-    const cx = x < r ? r - x : x > width - r ? x - (width - r) : 0;
-    const cy = y < r ? r - y : y > height - r ? y - (height - r) : 0;
-
-    // 直边区域：到对应边的垂直距离（角部由弧线距离接管）
-    if (cx === 0 && cy === 0) {
-        return 0;
-    }
-
-    if (cx === 0) {
-        return cy;
-    }
-
-    if (cy === 0) {
-        return cx;
-    }
-
-    // 角部：到角部弧线中心的距离（负值表示在弧线外侧）
-    return r - Math.hypot(cx, cy);
-}
-
 interface ChannelMaps {
     redUrl: string;
     greenUrl: string;
@@ -72,34 +45,86 @@ interface ChannelMaps {
  * - 绿通道：边缘比例 1.0 → 内侧 0.9
  * - 蓝通道：恒 1.0（即基准图）
  * 边缘处三通道位移一致（无花边），内侧保留原始色散。
+ *
+ * 性能：仅“距边缘 EDGE_FADE_CSS 像素内”的像素与基准图不同，内部区域
+ * 恒等。故三张图共用同一 canvas，只写入边缘像素（其余保持基准），
+ * 再分别 toDataURL，避免对整幅图做三次全像素循环 + 编码。
  */
-function buildChannelMaps(base: ImageData, width: number, height: number, radius: number, dpr: number): ChannelMaps {
+function buildChannelMaps(base: ImageData, radius: number, dpr: number): ChannelMaps {
+    const width = base.width;
+    const height = base.height;
     const src = base.data;
+    const fadeCss = EDGE_FADE_CSS * dpr;
+    const r = radius * dpr;
 
-    const build = (inner: number): ImageData => {
-        const img = new ImageData(width, height);
-        const data = img.data;
+    // 到面板外缘的最近距离（设备像素），> fade 的像素恒等于基准
+    const edgeDist = (x: number, y: number): number => {
+        const cx = x < r ? r - x : x > width - r ? x - (width - r) : 0;
+        const cy = y < r ? r - y : y > height - r ? y - (height - r) : 0;
 
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const dist = panelEdgeDistance(x / dpr, y / dpr, width / dpr, height / dpr, radius);
-                const u = Math.min(1, Math.max(0, dist) / EDGE_FADE_CSS);
-                const atEdge = 1 - u * u * (3 - 2 * u);
-                const factor = inner + (1 - inner) * atEdge;
-                const off = (y * width + x) * 4;
-                data[off] = 128 + (src[off] - 128) * factor;
-                data[off + 1] = 128 + (src[off + 1] - 128) * factor;
-                data[off + 2] = src[off + 2];
-                data[off + 3] = src[off + 3];
-            }
+        if (cx === 0 && cy === 0) {
+            return 0;
         }
 
-        return img;
+        if (cx === 0) {
+            return cy;
+        }
+
+        if (cy === 0) {
+            return cx;
+        }
+
+        return r - Math.hypot(cx, cy);
+    };
+
+    // 仅收集边缘像素的索引（设备像素坐标）
+    const edgeIndices: number[] = [];
+
+    for (let py = 0; py < height; py++) {
+        for (let px = 0; px < width; px++) {
+            const dist = edgeDist(px, py);
+
+            if (dist <= fadeCss) {
+                edgeIndices.push(py * width + px);
+            }
+        }
+    }
+
+    const makeMap = (inner: number): string => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+            throw new Error('Failed to get canvas context');
+        }
+
+        ctx.putImageData(base, 0, 0);
+
+        const img = ctx.getImageData(0, 0, width, height);
+        const data = img.data;
+
+        for (const i of edgeIndices) {
+            const x = i % width;
+            const y = Math.floor(i / width);
+            const dist = edgeDist(x, y);
+            const u = Math.min(1, Math.max(0, dist) / fadeCss);
+            const atEdge = 1 - u * u * (3 - 2 * u);
+            const factor = inner + (1 - inner) * atEdge;
+            const off = i * 4;
+            data[off] = 128 + (src[off] - 128) * factor;
+            data[off + 1] = 128 + (src[off + 1] - 128) * factor;
+        }
+
+        ctx.putImageData(img, 0, 0);
+
+        return canvas.toDataURL();
     };
 
     return {
-        redUrl: imageDataToUrl(build(0.8)),
-        greenUrl: imageDataToUrl(build(0.9)),
+        redUrl: makeMap(0.8),
+        greenUrl: makeMap(0.9),
         blueUrl: imageDataToUrl(base),
     };
 }
@@ -134,7 +159,7 @@ function useDisplacementMaps(
 
         // 一张覆盖整面板的位移图：边缘为折射场，中部为中性（恒等变换）
         const base = calculateDisplacementMap2(width, height, width, height, radius, bezelWidth, maxDisp, profile, dpr);
-        const maps = buildChannelMaps(base, base.width, base.height, radius, dpr);
+        const maps = buildChannelMaps(base, radius, dpr);
 
         return { maxDisp, maps, bufferWidth: width, bufferHeight: height };
     }, [width, height, radius, bezelWidth, glassThickness, refractiveIndex, dpr]);
@@ -230,6 +255,15 @@ export default function LiquidGlassPanel({
 
             {/* 玻璃底色：与原实现一致的 60% 玻璃色调 */}
             <div className="pointer-events-none absolute inset-0 bg-white/60 dark:bg-[#222222]/60" />
+
+            {/* 边缘高光（iOS 27 液态玻璃调适）：
+              上下“内部”亮色高光——沿上/下边缘内侧的亮线，向外渐淡；
+              左右“外部”暗色高光——沿左/右边缘的暗线，向外渐淡。
+              两组均用 1px 线 + 对称 box-shadow 扩散实现，仅作用于玻璃内部。 */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-[23px] bg-white/70 dark:bg-white/25 [box-shadow:0_1px_5px_-1px_rgba(255,255,255,0.5)]" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px rounded-b-[23px] bg-white/70 dark:bg-white/25 [box-shadow:0_-1px_5px_-1px_rgba(255,255,255,0.5)]" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-px rounded-l-[23px] bg-black/25 dark:bg-black/50 [box-shadow:2px_0_5px_-2px_rgba(0,0,0,0.35)]" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-px rounded-r-[23px] bg-black/25 dark:bg-black/50 [box-shadow:-2px_0_5px_-2px_rgba(0,0,0,0.35)]" />
 
             <svg colorInterpolationFilters="sRGB" style={{ display: 'none' }}>
                 <defs>

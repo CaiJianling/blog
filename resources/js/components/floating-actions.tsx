@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { motion, useAnimationControls } from 'framer-motion';
 import { MessageSquare, Rocket } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import FloatingSettingsPanel from '@/components/floating-settings-panel';
@@ -24,6 +25,18 @@ export default function FloatingActions() {
     const [isArticle, setIsArticle] = useState(false);
     const [hasComments, setHasComments] = useState(false);
     const { url } = usePage();
+
+    // 按下缩放反馈（与小助手 FAB 的 whileTap 一致）
+    const pressComment = useAnimationControls();
+    const pressTop = useAnimationControls();
+
+    const press = (controls: ReturnType<typeof useAnimationControls>): void => {
+        void controls.start({ scale: 0.94, transition: { duration: 0.1, ease: 'easeOut' } });
+    };
+
+    const release = (controls: ReturnType<typeof useAnimationControls>): void => {
+        void controls.start({ scale: 1, transition: { type: 'spring', stiffness: 420, damping: 26 } });
+    };
 
     useEffect(() => {
         const onScroll = () => {
@@ -76,18 +89,22 @@ export default function FloatingActions() {
             {isArticle && hasComments && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button
+                        <motion.button
                             type="button"
                             onClick={scrollToComments}
+                            onPointerDown={() => press(pressComment)}
+                            onPointerUp={() => release(pressComment)}
+                            onPointerLeave={() => release(pressComment)}
+                            animate={pressComment}
                             className={cn(
-                                'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-all hover:text-primary',
+                                'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
                                 !effectsEnabled && 'bg-popover',
                             )}
                             aria-label="跳转到评论区"
                         >
                             <GlassButtonBackground size={40} />
                             <MessageSquare className="relative h-4 w-4" />
-                        </button>
+                        </motion.button>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="tooltip-dark">
                         跳转到评论区
@@ -97,11 +114,15 @@ export default function FloatingActions() {
             {showTop && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button
+                        <motion.button
                             type="button"
                             onClick={backToTop}
+                            onPointerDown={() => press(pressTop)}
+                            onPointerUp={() => release(pressTop)}
+                            onPointerLeave={() => release(pressTop)}
+                            animate={pressTop}
                             className={cn(
-                                'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-all hover:text-primary',
+                                'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
                                 !effectsEnabled && 'bg-popover',
                             )}
                             aria-label="回到顶部"
@@ -125,8 +146,8 @@ export default function FloatingActions() {
                                 </svg>
                             )}
                             <Rocket className="relative h-4 w-4" />
-                    </button>
-                </TooltipTrigger>
+                        </motion.button>
+                    </TooltipTrigger>
                 <TooltipContent side="left" className="tooltip-dark">
                     {showRing ? `阅读进度 ${Math.round(progress)}%` : '回到顶部'}
                 </TooltipContent>

@@ -329,6 +329,25 @@ return;
               boxShadow,
             }}
           />
+
+          {/* 边缘高光（iOS 27 液态玻璃调适）：上下内侧亮色高光 + 左右外侧暗色高光，均向外渐淡 */}
+          <motion.div
+            className="pointer-events-none absolute"
+            style={{
+              height: THUMB_HEIGHT,
+              width: THUMB_WIDTH,
+              left: (SLIDER_HEIGHT - THUMB_HEIGHT * THUMB_REST_SCALE) / 2 - THUMB_REST_OFFSET,
+              x: useTransform(() => xRatio.get() * TRAVEL),
+              y: "-50%",
+              top: "50%",
+              borderRadius: THUMB_RADIUS,
+              scaleX: objectScaleX,
+              scaleY: objectScaleY,
+              background: "transparent",
+              boxShadow:
+                "inset 0 1.5px 3px -1px rgba(255,255,255,0.85), inset 0 -1.5px 3px -1px rgba(255,255,255,0.85), inset 2px 0 4px -2px rgba(0,0,0,0.4), inset -2px 0 4px -2px rgba(0,0,0,0.4)",
+            }}
+          />
         </motion.div>
       </div>
     </div>

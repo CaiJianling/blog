@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
 import { Moon, Palette, Settings, Sparkles, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -50,7 +50,17 @@ export default function FloatingSettingsPanel() {
     const { effectsEnabled } = useEffects();
     const locale = useLocale();
     const themeColor = useThemeColor().themeColor;
+    const pressGear = useAnimationControls();
     const lastSynced = useRef<UserPreferences | null>(null);
+
+    // 按下缩放反馈（与小助手 FAB 的 whileTap 一致）
+    const press = (controls: ReturnType<typeof useAnimationControls>): void => {
+        void controls.start({ scale: 0.94, transition: { duration: 0.1, ease: 'easeOut' } });
+    };
+
+    const release = (controls: ReturnType<typeof useAnimationControls>): void => {
+        void controls.start({ scale: 1, transition: { type: 'spring', stiffness: 420, damping: 26 } });
+    };
 
     // 弹窗脱离悬浮组的层叠上下文，打开时按齿轮按钮的实际位置计算 fixed 锚点（按钮左侧）
     const toggleOpen = (): void => {
@@ -300,12 +310,16 @@ export default function FloatingSettingsPanel() {
 
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <button
+                    <motion.button
                         ref={gearRef}
                         type="button"
                         onClick={toggleOpen}
+                        onPointerDown={() => press(pressGear)}
+                        onPointerUp={() => release(pressGear)}
+                        onPointerLeave={() => release(pressGear)}
+                        animate={pressGear}
                         className={cn(
-                            'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-all hover:text-primary',
+                            'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
                             !effectsEnabled && 'bg-popover',
                             open && 'text-primary',
                         )}
@@ -313,7 +327,7 @@ export default function FloatingSettingsPanel() {
                     >
                         <GlassButtonBackground size={40} />
                         <Settings className="relative h-4 w-4" />
-                    </button>
+                    </motion.button>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="tooltip-dark">
                     {t('settings.floating.open')}
