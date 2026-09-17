@@ -485,6 +485,8 @@
             "open": "打开设置",
             "language": "语言",
             "effects": "界面特效",
+            "themeColor": "主题色",
+            "themeDefault": "默认（跟随站点主题）",
             "enabled": "开启",
             "disabled": "关闭",
             "synced": "已登录，设置将同步到账号",

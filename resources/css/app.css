@@ -286,6 +286,27 @@
             0 10px 34px -2px color-mix(in srgb, var(--primary) 32%, transparent);
     }
 
+    /* 液态玻璃悬浮按钮的外发光：按钮 overflow-hidden 会裁掉 hover-glow::after，
+       故在玻璃层之上单独渲染同一主题色投影，发光效果与 .hover-glow 保持一致。 */
+    .glass-btn-glow {
+        box-shadow:
+            0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent),
+            0 10px 30px -4px color-mix(in srgb, var(--primary) 22%, transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .dark .glass-btn-glow {
+        box-shadow:
+            0 0 0 1px color-mix(in srgb, var(--primary) 42%, transparent),
+            0 10px 34px -2px color-mix(in srgb, var(--primary) 32%, transparent);
+    }
+
+    button:hover > .glass-btn-glow,
+    [role="button"]:hover > .glass-btn-glow {
+        opacity: 1;
+    }
+
     /* Article HTML content typography (rendered from block JSON via blocknote-to-html) */
     .article-content {
         color: var(--foreground);

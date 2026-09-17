@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Moon, Settings, Sparkles, X } from 'lucide-react';
+import { Moon, Palette, Settings, Sparkles, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import LiquidGlassPanel from '@/components/LiquidGlass/LiquidGlassPanel';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEffects, updateEffectsEnabled } from '@/hooks/use-effects';
 import { useLocale, updateLocale } from '@/hooks/use-locale';
+import { useThemeColor, updateThemeColor } from '@/hooks/use-theme-color';
 import type { Locale } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { show as userSettingsShow, update as userSettingsUpdate } from '@/routes/user-settings';
@@ -31,8 +32,13 @@ type UserPreferences = {
  */
 export default function FloatingSettingsPanel() {
     const { t } = useTranslation();
-    const { auth } = usePage().props as unknown as { auth?: { user?: { id: number } | null } };
+    const { auth, theme } = usePage().props as unknown as {
+        auth?: { user?: { id: number } | null };
+        theme?: { defaultColor: string; presets: string[] };
+    };
     const isAuthed = !!auth?.user;
+    const defaultColor = theme?.defaultColor ?? '#0071e3';
+    const presets = theme?.presets ?? [];
 
     const [open, setOpen] = useState(false);
     const [anchor, setAnchor] = useState<{ right: number; bottom: number } | null>(null);
@@ -43,6 +49,7 @@ export default function FloatingSettingsPanel() {
     const filterId = useId();
     const { effectsEnabled } = useEffects();
     const locale = useLocale();
+    const themeColor = useThemeColor().themeColor;
     const lastSynced = useRef<UserPreferences | null>(null);
 
     // 弹窗脱离悬浮组的层叠上下文，打开时按齿轮按钮的实际位置计算 fixed 锚点（按钮左侧）
@@ -164,9 +171,9 @@ export default function FloatingSettingsPanel() {
                             {open && (
                                 <motion.div
                                     ref={popoverBodyRef}
-                                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                    initial={{ y: 8, scale: 0.96 }}
+                                    animate={{ y: 0, scale: 1 }}
+                                    exit={{ y: 8, scale: 0.96 }}
                                     transition={{ type: 'spring', stiffness: 420, damping: 30 }}
                                     style={{ transformOrigin: 'bottom right' }}
                                     className={cn(
@@ -242,6 +249,41 @@ export default function FloatingSettingsPanel() {
                                             >
                                                 {t('settings.floating.enabled')}
                                             </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3">
+                                        <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                                            <Palette className="h-3.5 w-3.5" />
+                                            {t('settings.floating.themeColor')}
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {/* 默认 = 跟随管理员后台设置的主题色 */}
+                                            <button
+                                                type="button"
+                                                onClick={() => updateThemeColor('')}
+                                                style={{ backgroundColor: defaultColor }}
+                                                title={t('settings.floating.themeDefault')}
+                                                aria-label={t('settings.floating.themeDefault')}
+                                                className={cn(
+                                                    'h-6 w-6 rounded-full border border-black/10 transition-transform hover:scale-110',
+                                                    themeColor === '' && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
+                                                )}
+                                            />
+                                            {presets.map((preset) => (
+                                                <button
+                                                    key={preset}
+                                                    type="button"
+                                                    onClick={() => updateThemeColor(preset)}
+                                                    style={{ backgroundColor: preset }}
+                                                    title={preset}
+                                                    aria-label={preset}
+                                                    className={cn(
+                                                        'h-6 w-6 rounded-full border border-black/10 transition-transform hover:scale-110',
+                                                        themeColor === preset && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
+                                                    )}
+                                                />
+                                            ))}
                                         </div>
                                     </div>
 

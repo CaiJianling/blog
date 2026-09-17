@@ -485,6 +485,8 @@
             "open": "Open settings",
             "language": "Language",
             "effects": "UI Effects",
+            "themeColor": "Theme color",
+            "themeDefault": "Default (site theme)",
             "enabled": "Enabled",
             "disabled": "Disabled",
             "synced": "Signed in, settings sync to your account",

@@ -9,7 +9,12 @@ import { defineConfig } from 'vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.tsx',
+                // 首屏主题引导：水合前应用浏览器主题色偏好（见 resources/views/app.blade.php）
+                'resources/js/theme-boot.ts',
+            ],
             refresh: true,
             fonts: [
                 bunny('Instrument Sans', {

@@ -1,14 +1,15 @@
+import type {
+  MotionValue} from "framer-motion";
 import {
   mix,
   motion,
   useMotionValue,
   useSpring,
-  useTransform,
-  MotionValue,
+  useTransform
 } from "framer-motion";
 import React, { useEffect, useRef, useId } from "react";
-import { Filter } from "./Filter";
 import { useAppearance } from "@/hooks/use-appearance";
+import { Filter } from "./Filter";
 
 type Size = "sm" | "md" | "lg" | number;
 
@@ -78,6 +79,7 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = ({
       const pd = pointerDown.get();
       const drag = xDragRatio.get();
       const chk = checked.get();
+
       return pd > 0.5 ? drag : chk;
     }
   ) as MotionValue<number>;
@@ -89,7 +91,11 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = ({
       const x = xRatio.get();
       const c = checked.get();
       const pd = pointerDown.get();
-      if (forceActive.get() || pd > 0.5) return 1;
+
+      if (forceActive.get() || pd > 0.5) {
+return 1;
+}
+
       return Math.abs(x - c) > 0.08 ? 1 : 0;
     }
   ) as MotionValue<number>;
@@ -107,11 +113,13 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = ({
     const base = objectScale.get();
     const vel = Math.abs(smoothedVelocity.get());
     const stretch = Math.min(vel / 2500, 0.3);
+
     return base * (1 - stretch);
   });
   const objectScaleX = useTransform(() => {
     const base = objectScale.get();
     const sy = objectScaleY.get();
+
     return base + (base - sy) * 1.6;
   });
 
@@ -141,13 +149,21 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = ({
   });
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (disabled) return;
+    if (disabled) {
+      return;
+    }
+
     e.stopPropagation();
     pointerDown.set(1);
     initialPointerX.set(e.clientX);
     previousPointerX.set(e.clientX);
     startDragRatio.set(xRatio.get());
     xDragRatio.set(xRatio.get());
+
+    // 拖动期间全局禁止文本选中（否则扫过正文时会把文字选中）。
+    // 注意：不在 pointerdown 上 preventDefault()，否则会破坏后续
+    // pointermove 的正常捕获，导致按住拖动失效。
+    document.body.style.userSelect = "none";
   };
 
   const handleToggle = (newChecked: number) => {
@@ -164,7 +180,9 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = ({
 
   useEffect(() => {
     const handleGlobalUpdate = (e: MouseEvent | TouchEvent) => {
-      if (pointerDown.get() < 0.5) return;
+      if (pointerDown.get() < 0.5) {
+return;
+}
 
       const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
       const displacementX = clientX - initialPointerX.get();
@@ -178,31 +196,57 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = ({
     };
 
     const handleGlobalUp = (e: MouseEvent | TouchEvent) => {
-      if (pointerDown.get() < 0.5) return;
+      if (pointerDown.get() < 0.5) {
+return;
+}
 
       const clientX = e instanceof MouseEvent ? e.clientX : e.changedTouches[0].clientX;
       const distance = Math.abs(clientX - initialPointerX.get());
 
       pointerDown.set(0);
       velocityX.set(0);
+      document.body.style.userSelect = "";
 
       if (distance > 5) {
         handleToggle(xDragRatio.get() > 0.5 ? 1 : 0);
       }
     };
 
+    // 兜底复位：pointercancel（触摸被系统打断等），避免 pointerDown 卡为 1
+    // 导致开关一直停留在激活态。正常松手仍走上方 handleGlobalUp。
+    const handleGlobalCancel = () => {
+      if (pointerDown.get() < 0.5) {
+        return;
+      }
+
+      pointerDown.set(0);
+      velocityX.set(0);
+      document.body.style.userSelect = "";
+    };
+
     window.addEventListener("mousemove", handleGlobalUpdate);
     window.addEventListener("touchmove", handleGlobalUpdate, { passive: false });
     window.addEventListener("mouseup", handleGlobalUp);
     window.addEventListener("touchend", handleGlobalUp);
+    window.addEventListener("pointercancel", handleGlobalCancel);
 
     return () => {
       window.removeEventListener("mousemove", handleGlobalUpdate);
       window.removeEventListener("touchmove", handleGlobalUpdate);
       window.removeEventListener("mouseup", handleGlobalUp);
       window.removeEventListener("touchend", handleGlobalUp);
+      window.removeEventListener("pointercancel", handleGlobalCancel);
     };
   }, [TRAVEL]);
+
+  // 组件卸载时兜底复位，防止卸载瞬间仍处于按下态
+  useEffect(() => {
+    return () => {
+      pointerDown.set(0);
+      document.body.style.userSelect = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
@@ -211,7 +255,7 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = ({
         height: SLIDER_HEIGHT * scale,
         position: "relative",
       }}
-      className={cn("touch-none", disabled && "opacity-50 cursor-not-allowed")}
+      className={cn("touch-none select-none", disabled && "opacity-50 cursor-not-allowed")}
     >
       <div
         style={{
@@ -237,8 +281,12 @@ export const LiquidSwitch: React.FC<LiquidSwitchProps> = ({
             cursor: disabled ? "not-allowed" : "pointer",
           }}
           onClick={(e) => {
-            if (disabled) return;
+            if (disabled) {
+return;
+}
+
             const distance = Math.abs(e.clientX - initialPointerX.get());
+
             if (distance < 5) {
               handleToggle(checked.get() < 0.5 ? 1 : 0);
             }

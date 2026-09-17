@@ -12,6 +12,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\FooterSettingController;
+use App\Http\Controllers\ThemeSettingController;
 use App\Models\Attachment;
 use App\Models\Option;
 use Illuminate\Filesystem\FilesystemAdapter;
@@ -60,6 +61,7 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'assistant' => $this->assistantProps(),
             'seo' => $this->seoProps(),
+            'theme' => $this->themeProps(),
             'footer' => [
                 'resources' => FooterSettingController::resources(),
                 'contacts' => FooterSettingController::contacts(),
@@ -97,6 +99,20 @@ class HandleInertiaRequests extends Middleware
             'name' => (string) Option::get('assistant_name', 'AI 小助手'),
             'avatarUrl' => $avatarUrl,
             'welcome' => (string) Option::get('assistant_welcome', ''),
+        ];
+    }
+
+    /**
+     * 主题色配置：管理员在后台设置的全局主题色（空 = 内置默认蓝）。
+     * 供前台「悬浮设置面板」展示默认色板与预设色。
+     *
+     * @return array{defaultColor: string, presets: array<int, string>}
+     */
+    protected function themeProps(): array
+    {
+        return [
+            'defaultColor' => ThemeSettingController::color() ?: ThemeSettingController::DEFAULT_COLOR,
+            'presets' => ThemeSettingController::frontPresets(),
         ];
     }
 

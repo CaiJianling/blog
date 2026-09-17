@@ -38,6 +38,22 @@ class ThemeSettingController extends Controller
     }
 
     /**
+     * 前台「悬浮设置面板」的快捷色板：比后台精简，仅列常用色。
+     *
+     * @return array<int, string>
+     */
+    public static function frontPresets(): array
+    {
+        return [
+            '#0071e3', // Blue（与内置默认一致）
+            '#9c27b0', // Purple
+            '#e91e63', // Pink
+            '#4caf50', // Green
+            '#ff9800', // Orange
+        ];
+    }
+
+    /**
      * 当前主题色。未配置时为空字符串（页面回退到内置默认蓝）。
      */
     public static function color(): string

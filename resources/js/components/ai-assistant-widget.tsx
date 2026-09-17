@@ -217,9 +217,9 @@ export default function AiAssistantWidget() {
                     <motion.div
                         key="assistant-panel"
                         ref={panelRef}
-                        initial={{ opacity: 0, scale: 0.92, y: 16 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.92, y: 16 }}
+                        initial={{ scale: 0.92, y: 16 }}
+                        animate={{ scale: 1, y: 0 }}
+                        exit={{ scale: 0.92, y: 16 }}
                         transition={{ type: 'spring', stiffness: 340, damping: 30 }}
                         style={{ transformOrigin: 'bottom right' }}
                         className="fixed right-4 bottom-4 z-50 flex h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-white/50 dark:border-white/10 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
