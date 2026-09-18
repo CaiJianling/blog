@@ -22,6 +22,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\PermalinkController;
 use App\Http\Controllers\SidebarSettingController;
 use App\Http\Controllers\SmileyController;
+use App\Http\Controllers\StatsController;
 use App\Http\Controllers\TermTaxonomyController;
 use App\Http\Controllers\ThemeSettingController;
 use App\Http\Controllers\ToolController;
@@ -30,17 +31,21 @@ use App\Http\Controllers\UserController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
-// 公开页面
-Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
-Route::get('/blog/{article:slug}', [BlogController::class, 'show'])->name('blog.show');
+// 公开页面（GET 页面走访问跟踪，供后台「站点统计」使用）
+Route::middleware('track.pageviews')->group(function () {
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+    Route::get('/blog/{article:slug}', [BlogController::class, 'show'])->name('blog.show');
+    Route::get('/tools', [ToolController::class, 'index'])->name('tools.index');
+    Route::get('/tools/{slug}', [ToolController::class, 'show'])->name('tools.show');
+    Route::get('/nav', [NavController::class, 'index'])->name('nav.index');
+    Route::get('/nav/links/{link}', [NavController::class, 'show'])->name('nav.show');
+    Route::get('/links', [LinksController::class, 'index'])->name('links.index');
+});
+
 Route::post('/comments', [CommentPublicController::class, 'store'])->name('comments.public.store');
-Route::get('/tools', [ToolController::class, 'index'])->name('tools.index');
-Route::get('/tools/{slug}', [ToolController::class, 'show'])->name('tools.show');
+Route::put('/comments/{comment}', [CommentPublicController::class, 'update'])->name('comments.public.update');
 Route::post('/tools/hash', [ToolController::class, 'hash'])->middleware('throttle:60,1')->name('tools.hash');
-Route::get('/nav', [NavController::class, 'index'])->name('nav.index');
-Route::get('/nav/links/{link}', [NavController::class, 'show'])->name('nav.show');
-Route::get('/links', [LinksController::class, 'index'])->name('links.index');
 
 // 文章点赞（前台游客可用，按 IP 限流）
 Route::post('/articles/{article}/like', [ArticleLikeController::class, '__invoke'])
@@ -101,10 +106,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{comment}/spam', [CommentController::class, 'spam'])->name('comments.spam');
         Route::put('/{comment}/trash', [CommentController::class, 'trash'])->name('comments.trash');
         Route::put('/{comment}/restore', [CommentController::class, 'restore'])->name('comments.restore');
+        Route::put('/{comment}/update', [CommentController::class, 'update'])->name('comments.update');
+        Route::put('/{comment}/approve-edit', [CommentController::class, 'approveEdit'])->name('comments.approve-edit');
+        Route::put('/{comment}/reject-edit', [CommentController::class, 'rejectEdit'])->name('comments.reject-edit');
         Route::delete('/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
     });
 
     Route::middleware([AdminMiddleware::class])->group(function () {
+        // 站点统计（访问趋势、流量来源、用户画像、访问途径）
+        Route::get('site-stats', [StatsController::class, 'index'])->name('stats.index');
+
         Route::resource('users', UserController::class)->names([
             'index' => 'users.index',
             'create' => 'users.create',
@@ -204,4 +215,5 @@ require __DIR__.'/settings.php';
 // 按固定链接结构在站点根路径解析文章，必须注册在所有具体路由之后
 Route::get('/{permalink}', [BlogController::class, 'permalink'])
     ->where('permalink', '(?!api/|build/|storage/|vendor/).*')
+    ->middleware('track.pageviews')
     ->name('blog.permalink');

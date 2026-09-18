@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import StatusSwitch from '@/components/status-switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,6 +45,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import Pagination from '@/components/pagination';
+import { cn } from '@/lib/utils';
 
 type UserRole =
     'subscriber' | 'contributor' | 'author' | 'editor' | 'administrator';
@@ -61,8 +62,16 @@ interface User {
     updated_at: string;
 }
 
+interface PaginatedUsers {
+    data: User[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+}
+
 interface Props {
-    users: User[];
+    users: PaginatedUsers;
     breadcrumbs?: Array<{ title: string; href: string }>;
 }
 
@@ -121,10 +130,10 @@ export default function UserIndex({
     const [editErrors, setEditErrors] = useState<Record<string, string>>({});
     const [isCreateSubmitting, setIsCreateSubmitting] = useState(false);
     const [isEditSubmitting, setIsEditSubmitting] = useState(false);
-    const [localUsers, setLocalUsers] = useState(serverUsers);
+    const [localUsers, setLocalUsers] = useState(serverUsers.data);
 
     useEffect(() => {
-        setLocalUsers(serverUsers);
+        setLocalUsers(serverUsers.data);
     }, [serverUsers]);
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -244,30 +253,6 @@ export default function UserIndex({
         });
     };
 
-    const toggleStatus = (userId: number) => {
-        const prevUsers = localUsers;
-        const newActive = !prevUsers.find((u) => u.id === userId)?.is_active;
-
-        // 乐观更新：立即切换 UI 状态
-        setLocalUsers((users) =>
-            users.map((u) =>
-                u.id === userId ? { ...u, is_active: newActive } : u,
-            ),
-        );
-
-        router.put(
-            `/users/${userId}/toggle-status`,
-            {},
-            {
-                preserveScroll: true,
-                onError: () => {
-                    // 请求失败：回退到之前的状态（动画自然退回）
-                    setLocalUsers(prevUsers);
-                },
-            },
-        );
-    };
-
     const filteredUsers = useMemo(() => {
         return localUsers.filter((user) => {
             const matchesSearch =
@@ -294,7 +279,7 @@ export default function UserIndex({
     return (
         <>
             <Head title={t('userManagement.title')} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex shrink-0 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">
                         {t('userManagement.title')}
@@ -404,7 +389,7 @@ export default function UserIndex({
                             <div className="text-sm text-muted-foreground">
                                 {t('userManagement.usersCount', {
                                     filtered: filteredUsers.length,
-                                    total: localUsers.length,
+                                    total: serverUsers.total,
                                 })}
                             </div>
                         </div>
@@ -516,16 +501,28 @@ export default function UserIndex({
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
-                                                <StatusSwitch
-                                                    checked={user.is_active}
-                                                    onCheckedChange={() =>
-                                                        toggleStatus(user.id)
-                                                    }
-                                                    disabled={
-                                                        user.id ===
-                                                        currentUserId
-                                                    }
-                                                />
+                                                <span
+                                                    className={cn(
+                                                        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+                                                        user.is_active
+                                                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                                            : 'bg-muted text-muted-foreground',
+                                                    )}
+                                                >
+                                                    <span
+                                                        className={cn(
+                                                            'h-1.5 w-1.5 rounded-full',
+                                                            user.is_active
+                                                                ? 'bg-emerald-500'
+                                                                : 'bg-muted-foreground/40',
+                                                        )}
+                                                    />
+                                                    {t(
+                                                        user.is_active
+                                                            ? 'userManagement.active'
+                                                            : 'userManagement.inactive',
+                                                    )}
+                                                </span>
                                             </TableCell>
                                             <TableCell className="px-4 py-3">
                                                 {new Date(
@@ -565,6 +562,17 @@ export default function UserIndex({
                         </Table>
                     </CardContent>
                 </Card>
+
+                {/* 分页 */}
+                <Pagination
+                    current={serverUsers.current_page}
+                    last={serverUsers.last_page}
+                    total={serverUsers.total}
+                    perPage={serverUsers.per_page}
+                    onPageChange={(page) => {
+                        router.visit(page === 1 ? '/users' : `/users?page=${page}`, { preserveScroll: true });
+                    }}
+                />
             </div>
 
             <Dialog

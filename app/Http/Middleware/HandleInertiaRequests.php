@@ -15,6 +15,7 @@ use App\Http\Controllers\FooterSettingController;
 use App\Http\Controllers\ThemeSettingController;
 use App\Models\Attachment;
 use App\Models\Option;
+use App\Services\MenuService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,10 @@ use Laravel\Fortify\Features;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(
+        protected MenuService $menuService,
+    ) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -67,6 +72,8 @@ class HandleInertiaRequests extends Middleware
                 'contacts' => FooterSettingController::contacts(),
                 'icp_markdown' => FooterSettingController::icpMarkdown(),
             ],
+            // 后台「菜单管理」中 slug=top 的菜单，驱动前台顶栏导航
+            'top_nav' => $this->menuService->topNav(),
         ];
     }
 

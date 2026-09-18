@@ -2,11 +2,13 @@ import { usePage } from '@inertiajs/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, MessageSquarePlus, Send, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import GlassEdgeRing from '@/components/LiquidGlass/glass-edge-ring';
 import LiquidGlassPanel from '@/components/LiquidGlass/LiquidGlassPanel';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEffects } from '@/hooks/use-effects';
 import type { AssistantConversation, AssistantMessage } from '@/lib/assistant-db';
 import { deleteConversation, listConversations, newConversationId, putConversation } from '@/lib/assistant-db';
+import { getCsrfHeaders } from '@/lib/csrf';
 import { renderMarkdown } from '@/lib/markdown';
 import { cn } from '@/lib/utils';
 
@@ -143,19 +145,14 @@ export default function AiAssistantWidget() {
         await persist(conversation);
 
         try {
-            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
-            const xsrf = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)?.[1];
             const headers: Record<string, string> = {
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
+                // CSRF：优先 XSRF-TOKEN cookie（每次响应重发、始终与当前会话同步），
+                // 避免 meta token 在会话轮换/过期后陈旧导致 419
+                ...getCsrfHeaders(),
             };
-
-            if (csrf) {
-                headers['X-CSRF-TOKEN'] = csrf;
-            } else if (xsrf) {
-                headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrf);
-            }
 
             const response = await fetch('/assistant/chat', {
                 method: 'POST',
@@ -424,6 +421,21 @@ export default function AiAssistantWidget() {
                             Enter 发送 · Shift+Enter 换行 · 会话仅保存在本浏览器
                         </p>
                     </div>
+                    </motion.div>
+                )}
+                {/* 外缘暗线环（iOS 27）：与面板同几何、同动画的外层 1px 渐淡暗线，
+                    玻璃容器 overflow-hidden 无法容纳外扩像素，故作为兄弟节点渲染 */}
+                {open && effectsEnabled && (
+                    <motion.div
+                        key="assistant-panel-edge"
+                        initial={{ scale: 0.92, y: 16 }}
+                        animate={{ scale: 1, y: 0 }}
+                        exit={{ scale: 0.92, y: 16 }}
+                        transition={{ type: 'spring', stiffness: 340, damping: 30 }}
+                        style={{ transformOrigin: 'bottom right' }}
+                        className="pointer-events-none fixed right-4 bottom-4 z-50 h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))]"
+                    >
+                        <GlassEdgeRing variant="edges" radius={24} />
                     </motion.div>
                 )}
             </AnimatePresence>

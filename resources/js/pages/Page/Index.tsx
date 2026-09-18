@@ -30,6 +30,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import Pagination from '@/components/pagination';
 import { index as pagesIndex } from '@/routes/pages';
 
 interface PageItem {
@@ -156,7 +157,7 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
     return (
         <>
             <Head title={t('pages.title')} />
-            <div className="flex h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
+            <div className="flex shrink-0 flex-col gap-5 overflow-x-auto p-6">
                 {/* Page header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col gap-1">
@@ -509,48 +510,23 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                     </CardContent>
                 </Card>
 
-                {/* Pagination */}
-                {pagePages.last_page > 1 && (
-                    <div className="flex items-center justify-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={pagePages.current_page === 1}
-                            onClick={() => {
-                                const params = new URLSearchParams();
+                {/* 分页 */}
+                <Pagination
+                    current={pagePages.current_page}
+                    last={pagePages.last_page}
+                    total={pagePages.total}
+                    perPage={pagePages.per_page}
+                    onPageChange={(page) => {
+                        const params = new URLSearchParams();
 
-                                if (currentStatus !== 'all') {
-params.set('status', currentStatus);
-}
+                        if (currentStatus !== 'all') {
+                            params.set('status', currentStatus);
+                        }
 
-                                params.set('page', String(pagePages.current_page - 1));
-                                router.visit(`/pages?${params.toString()}`, { preserveScroll: true });
-                            }}
-                        >
-                            上一页
-                        </Button>
-                        <span className="text-callout text-muted-foreground tabular-nums">
-                            {pagePages.current_page} / {pagePages.last_page}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={pagePages.current_page === pagePages.last_page}
-                            onClick={() => {
-                                const params = new URLSearchParams();
-
-                                if (currentStatus !== 'all') {
-params.set('status', currentStatus);
-}
-
-                                params.set('page', String(pagePages.current_page + 1));
-                                router.visit(`/pages?${params.toString()}`, { preserveScroll: true });
-                            }}
-                        >
-                            下一页
-                        </Button>
-                    </div>
-                )}
+                        params.set('page', String(page));
+                        router.visit(`/pages?${params.toString()}`, { preserveScroll: true });
+                    }}
+                />
             </div>
 
             {/* Force delete confirmation dialog */}

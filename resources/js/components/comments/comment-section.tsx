@@ -1,7 +1,8 @@
 import { router, usePage } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Eye, Lock, MessageCircle, Send, Smile, Reply } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Lock, MessageCircle, Pencil, Send, Smile, Reply } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -16,9 +17,18 @@ export type CommentItem = {
     author_qq: string | null;
     avatar: string;
     html: string;
+    /** 原文（未渲染），供本人编辑时回填 */
+    content: string;
+    user_id: number;
     is_private: boolean;
     is_markdown: boolean;
     is_own: boolean;
+    /** 本人评论是否有待审批的编辑修订 */
+    has_pending_edit: boolean;
+    /** 待审修订原文（本人评论，无则为 null） */
+    pending_edit: string | null;
+    /** 最近一次编辑生效时间（null = 未编辑过） */
+    edited_at: string | null;
     created_at: string;
     replies?: CommentItem[];
 };
@@ -31,7 +41,7 @@ export type SmileyGroupData = {
 
 type Captcha = { question: string; token: string } | null;
 
-type AuthUser = { id: number; name: string; nickname: string | null; email: string } | null;
+type AuthUser = { id: number; name: string; nickname: string | null; email: string; role?: string } | null;
 
 interface Props {
     articleId: number;
@@ -95,6 +105,39 @@ function CommentBody({ html }: { html: string }) {
 
 function CommentItemView({ comment, onReply }: { comment: CommentItem; onReply: (c: CommentItem) => void }) {
     const { t } = useTranslation();
+    const { auth } = usePage().props as { auth: { user: AuthUser } };
+    const user = auth.user;
+
+    const [editing, setEditing] = useState(false);
+    const [draft, setDraft] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    const startEdit = () => {
+        setDraft(comment.pending_edit ?? comment.content);
+        setEditing(true);
+    };
+
+    const saveEdit = () => {
+        if (!draft.trim() || saving) {
+            return;
+        }
+
+        setSaving(true);
+        const isAdmin = user?.role === 'administrator';
+
+        router.put(`/comments/${comment.comment_id}`, { content: draft }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(isAdmin ? t('publicComment.editSaved') : t('publicComment.editPendingSubmitted'));
+                router.reload({ only: ['comments', 'article'] });
+            },
+            onError: (errors) => {
+                const first = errors.message ?? Object.values(errors)[0];
+                toast.error(Array.isArray(first) ? first[0] : (first ?? t('publicComment.editFailed')));
+            },
+            onFinish: () => setSaving(false),
+        });
+    };
 
     return (
         <div className="flex gap-3" id={`comment-${comment.comment_id}`}>
@@ -113,17 +156,68 @@ function CommentItemView({ comment, onReply }: { comment: CommentItem; onReply: 
                             {t('publicComment.privateBadge')}
                         </span>
                     )}
+                    {comment.has_pending_edit && (
+                        <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+                            {t('publicComment.pendingEdit')}
+                        </span>
+                    )}
                     <span className="text-xs text-muted-foreground">{comment.created_at}</span>
+                    {comment.edited_at && (
+                        <span className="text-xs text-muted-foreground">
+                            {t('publicComment.edited')} · {comment.edited_at}
+                        </span>
+                    )}
                 </div>
-                <CommentBody html={comment.html} />
-                <button
-                    type="button"
-                    onClick={() => onReply(comment)}
-                    className="apple-press mt-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                    <Reply className="h-3 w-3" />
-                    {t('publicComment.reply')}
-                </button>
+
+                {editing ? (
+                    <div className="mt-2">
+                        <Textarea
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                            rows={Math.min(8, Math.max(3, draft.split('\n').length + 1))}
+                            className="resize-y text-sm"
+                            autoFocus
+                        />
+                        <div className="mt-2 flex items-center gap-2">
+                            <Button size="sm" className="h-7 rounded-full px-4 text-xs" onClick={saveEdit} disabled={saving || !draft.trim()}>
+                                {saving ? t('publicComment.editing') : t('publicComment.save')}
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 rounded-full px-3 text-xs"
+                                onClick={() => setEditing(false)}
+                                disabled={saving}
+                            >
+                                {t('publicComment.cancel')}
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <CommentBody html={comment.html} />
+                        <div className="mt-1.5 flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => onReply(comment)}
+                                className="apple-press inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                                <Reply className="h-3 w-3" />
+                                {t('publicComment.reply')}
+                            </button>
+                            {comment.is_own && (
+                                <button
+                                    type="button"
+                                    onClick={startEdit}
+                                    className="apple-press inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                                >
+                                    <Pencil className="h-3 w-3" />
+                                    {t('publicComment.edit')}
+                                </button>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -180,9 +274,11 @@ export default function CommentSection({ articleId, comments, captcha, smileyGro
                 setCaptchaAnswer('');
                 setReplyTo(null);
                 setSmileyOpen(false);
+
                 if (!user) {
                     localStorage.setItem(AUTHOR_STORAGE_KEY, JSON.stringify({ name: authorName, email: authorEmail, url: authorUrl }));
                 }
+
                 router.reload({ only: ['comments', 'captcha', 'article'] });
             },
             onError: (errors) => {

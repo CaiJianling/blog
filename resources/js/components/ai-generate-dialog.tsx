@@ -14,11 +14,24 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { getCsrfHeaders, getCsrfFallbackHeaders } from '@/lib/csrf';
 
 export type AiArticleResult = {
     title: string;
     excerpt: string;
     markdown: string;
+    /** SEO 元信息（AI 生成，可留空回退到标题/摘要） */
+    meta_title?: string;
+    meta_description?: string;
+    /** AI 建议的标签/分类名（展示用） */
+    tags?: string[];
+    categories?: string[];
+    /** 已解析/创建好的分类/标签 term_taxonomy_id（可直接选中） */
+    category_ids?: number[];
+    tag_ids?: number[];
+    /** 本次 AI 新建的分类/标签（前端需回填到选择器列表以便展示） */
+    created_categories?: Array<{ id: number; name: string }>;
+    created_tags?: Array<{ id: number; name: string }>;
 };
 
 interface AiGenerateDialogProps {
@@ -26,27 +39,6 @@ interface AiGenerateDialogProps {
     onOpenChange: (open: boolean) => void;
     /** 生成成功后回调，把结果交给编辑器填充。 */
     onApply: (result: AiArticleResult) => void;
-}
-
-function getCsrfToken(): { headerName: string; value: string } | null {
-    const meta = document
-        .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute('content');
-
-    if (meta) {
-        return { headerName: 'X-CSRF-TOKEN', value: meta };
-    }
-
-    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
-
-    if (match?.[1]) {
-        return {
-            headerName: 'X-XSRF-TOKEN',
-            value: decodeURIComponent(match[1]),
-        };
-    }
-
-    return null;
 }
 
 /**
@@ -69,27 +61,43 @@ export default function AiGenerateDialog({ open, onOpenChange, onApply }: AiGene
         setGenerating(true);
 
         try {
-            const csrf = getCsrfToken();
+            const doFetch = (csrf: Record<string, string>): Promise<Response> =>
+                fetch('/articles/ai-generate', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        ...csrf,
+                    },
+                    body: JSON.stringify({ prompt: text }),
+                });
 
-            if (!csrf) {
+            const primary = getCsrfHeaders();
+
+            if (!primary) {
                 throw new Error('CSRF token not found.');
             }
 
-            const response = await fetch('/articles/ai-generate', {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    [csrf.headerName]: csrf.value,
-                },
-                body: JSON.stringify({ prompt: text }),
-            });
+            let response = await doFetch(primary);
+
+            if (response.status === 419) {
+                // 主来源（XSRF cookie）陈旧时用备用来源（meta）重试一次；
+                // 419 发生在 CSRF 中间件层，业务逻辑尚未执行，重试安全
+                const fallback = getCsrfFallbackHeaders();
+
+                if (fallback) {
+                    response = await doFetch(fallback);
+                }
+            }
 
             const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                const message = data?.message ?? t('articles.ai.failed');
+                // 419 = CSRF 校验失败（通常是会话过期/被轮换），提示刷新页面可恢复
+                const message = response.status === 419
+                    ? t('articles.ai.csrfFailed')
+                    : data?.message ?? t('articles.ai.failed');
 
                 // toast 上提供"查看详情"入口，点开可见接口真实返回
                 toast.error(message, {

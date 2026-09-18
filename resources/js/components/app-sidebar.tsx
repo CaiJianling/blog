@@ -9,6 +9,7 @@ import {
     Image,
     MessageSquare,
     FolderTree,
+    BarChart3,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooterSettings } from '@/components/nav-footer-settings';
@@ -157,6 +158,11 @@ export function AppSidebar() {
             href: smiliesIndex(),
         });
 
+        mainNavItems.push({
+            title: 'siteStats.title',
+            href: '/site-stats',
+            icon: BarChart3,
+        });
         mainNavItems.push({
             title: 'userManagement.title',
             href: '/users',

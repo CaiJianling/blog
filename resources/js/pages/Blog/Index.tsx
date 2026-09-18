@@ -5,6 +5,7 @@ import {
     Link as LinkIcon,
     MessageSquare,
     Clock,
+    Timer,
     User,
     Heart,
 } from 'lucide-react';
@@ -15,7 +16,11 @@ import blog from '@/routes/blog';
 const SEARCH_SCOPES: SearchScope[] = [
     { value: 'title', label: '搜索标题', placeholder: '搜索文章标题' },
     { value: 'content', label: '搜索文章内容', placeholder: '搜索文章内容' },
-    { value: 'title_content', label: '搜索标题和内容', placeholder: '搜索标题和内容' },
+    {
+        value: 'title_content',
+        label: '搜索标题和内容',
+        placeholder: '搜索标题和内容',
+    },
 ];
 
 type Article = {
@@ -31,6 +36,7 @@ type Article = {
     views: number;
     likes: number;
     comment_count: number;
+    reading_time: number;
     created_at: string;
 };
 
@@ -355,6 +361,11 @@ export default function Index({
                                                 <span className="inline-flex items-center gap-1">
                                                     <Clock className="h-3 w-3" />
                                                     {article.created_at}
+                                                </span>
+                                                <span className="inline-flex items-center gap-1">
+                                                    <Timer className="h-3 w-3" />
+                                                    {article.reading_time}
+                                                    分钟
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2.5">

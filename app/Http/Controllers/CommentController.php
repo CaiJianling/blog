@@ -33,7 +33,7 @@ class CommentController extends Controller
             });
         }
 
-        $comments = $query->paginate(20)
+        $comments = $query->paginate(10)
             ->through(function ($comment) {
                 $relatedTitle = null;
                 $relatedSlug = null;
@@ -55,6 +55,9 @@ class CommentController extends Controller
                     'author_url' => $comment->author_url,
                     'ip' => $comment->ip,
                     'content' => $comment->content,
+                    'edited_content' => $comment->edited_content,
+                    'edited_at' => $comment->edited_at?->format('Y-m-d H:i'),
+                    'has_pending_edit' => $comment->hasPendingEdit(),
                     'like_num' => $comment->like_num,
                     'status' => $comment->status,
                     'status_text' => $comment->status_text,
@@ -151,6 +154,60 @@ class CommentController extends Controller
             Comment::whereIn('comment_id', $validated['ids'])
                 ->update(['status' => $statusMap[$validated['action']]]);
         }
+
+        return redirect()->back();
+    }
+
+    /**
+     * 后台编辑评论内容：管理员直接生效；非管理员写入待审修订（edited_content）。
+     */
+    public function update(Request $request, Comment $comment)
+    {
+        $validated = $request->validate([
+            'content' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $user = $request->user();
+
+        if ((string) $user?->role === 'administrator') {
+            $comment->update([
+                'content' => $validated['content'],
+                'edited_content' => null,
+                'edited_at' => now(),
+            ]);
+        } else {
+            $comment->update([
+                'edited_content' => $validated['content'],
+            ]);
+        }
+
+        return redirect()->back();
+    }
+
+    /**
+     * 通过待审修订：edited_content 替换正文并记录最后编辑时间。
+     */
+    public function approveEdit(Comment $comment)
+    {
+        if ($comment->edited_content === null) {
+            abort(404, '该评论没有待审修订。');
+        }
+
+        $comment->update([
+            'content' => $comment->edited_content,
+            'edited_content' => null,
+            'edited_at' => now(),
+        ]);
+
+        return redirect()->back();
+    }
+
+    /**
+     * 拒绝待审修订：丢弃 edited_content，正文保持不变。
+     */
+    public function rejectEdit(Comment $comment)
+    {
+        $comment->update(['edited_content' => null]);
 
         return redirect()->back();
     }

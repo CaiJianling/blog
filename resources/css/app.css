@@ -307,6 +307,28 @@
         opacity: 1;
     }
 
+    /* 深链跳转（如文章列表点评论数 → /xxx.html#comments）落点高亮：
+       目标区域短暂描边发光 + 浅色底，动画结束后由 JS 移除类名。 */
+    .anchor-flash {
+        animation: anchor-flash 1.6s ease-out;
+        border-radius: 1rem;
+    }
+
+    @keyframes anchor-flash {
+        0% {
+            box-shadow:
+                0 0 0 3px color-mix(in srgb, var(--primary) 38%, transparent),
+                0 0 28px 6px color-mix(in srgb, var(--primary) 22%, transparent);
+            background-color: color-mix(in srgb, var(--primary) 7%, transparent);
+        }
+        100% {
+            box-shadow:
+                0 0 0 3px transparent,
+                0 0 28px 6px transparent;
+            background-color: transparent;
+        }
+    }
+
     /* Article HTML content typography (rendered from block JSON via blocknote-to-html) */
     .article-content {
         color: var(--foreground);

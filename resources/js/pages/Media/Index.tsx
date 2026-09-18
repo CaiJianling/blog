@@ -51,6 +51,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import Pagination from '@/components/pagination';
 import { cn } from '@/lib/utils';
 
 interface Attachment {
@@ -186,10 +187,6 @@ params.set('date', date);
         handleFilterChange(currentType, searchTerm, date);
     };
 
-    const handlePageChange = (url: string) => {
-        router.visit(url, { preserveScroll: true });
-    };
-
     const handleDelete = () => {
         if (!deleteAttachment) {
 return;
@@ -275,7 +272,7 @@ return;
     return (
         <>
             <Head title={t('media.library')} />
-            <div className="flex h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
+            <div className="flex shrink-0 flex-col gap-5 overflow-x-auto p-6">
                 {/* Page Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col gap-1">
@@ -743,22 +740,31 @@ return;
                     </Card>
                 )}
 
-                {/* Pagination */}
-                {attachmentList.length > 0 && attachments.last_page > 1 && (
-                    <div className="flex items-center justify-center gap-2">
-                        {attachments.links.map((link, i) => (
-                            <Button
-                                key={i}
-                                variant={link.active ? 'default' : 'outline'}
-                                size="sm"
-                                disabled={!link.url}
-                                onClick={() => link.url && handlePageChange(link.url)}
-                                className="min-w-9"
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
-                        ))}
-                    </div>
-                )}
+                {/* 分页 */}
+                <Pagination
+                    current={attachments.current_page}
+                    last={attachments.last_page}
+                    total={attachments.total}
+                    perPage={attachments.per_page}
+                    onPageChange={(page) => {
+                        const params = new URLSearchParams();
+
+                        if (currentType !== 'all') {
+                            params.set('type', currentType);
+                        }
+
+                        if (currentSearch) {
+                            params.set('search', currentSearch);
+                        }
+
+                        if (currentDate) {
+                            params.set('date', currentDate);
+                        }
+
+                        params.set('page', String(page));
+                        router.visit(`/attachments?${params.toString()}`, { preserveScroll: true });
+                    }}
+                />
             </div>
 
             {/* Preview Dialog */}

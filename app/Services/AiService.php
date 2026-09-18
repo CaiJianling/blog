@@ -134,24 +134,51 @@ class AiService
     /**
      * 根据写作提示生成文章。
      *
+     * 除标题/摘要/正文外，同时生成 SEO（meta_title/meta_description）、标签与分类，
+     * 供前端在作者确认前一并填入表单。
+     *
      * @param  string  $prompt  作者给出的写作提示
-     * @return array{title: string, excerpt: string, markdown: string}
+     * @param  array{categories?: array<int, string>, tags?: array<int, string>}  $context  现有分类/标签名，供 AI 优先选用
+     * @return array{
+     *     title: string,
+     *     excerpt: string,
+     *     markdown: string,
+     *     meta_title: string,
+     *     meta_description: string,
+     *     tags: array<int, string>,
+     *     categories: array<int, string>
+     * }
      *
      * @throws \RuntimeException 配置缺失、接口失败或返回格式异常时抛出
      */
-    public function generateArticle(string $prompt): array
+    public function generateArticle(string $prompt, array $context = []): array
     {
         $systemPrompt = <<<'PROMPT'
-你是一位资深博客写作助手。请根据用户给出的写作要求创作一篇博客文章。
+你是一位资深博客写作助手。请根据用户给出的写作要求创作一篇博客文章，并为其补充 SEO 元信息、标签与分类。
 严格输出一个 JSON 对象，不要输出 JSON 以外的任何内容，也不要用 Markdown 代码块包裹。格式：
-{"title":"文章标题","excerpt":"不超过 80 字的文章摘要","markdown":"使用 Markdown 语法的文章正文"}
-正文要求：使用 Markdown 语法；包含清晰的段落与必要的二级/三级标题（##/###）；适合处使用列表；不要输出一级标题；不要包含标题与摘要的重复说明；使用与写作要求一致的语言。
+{"title":"文章标题","excerpt":"不超过 80 字的文章摘要","markdown":"使用 Markdown 语法的文章正文","meta_title":"SEO 标题","meta_description":"SEO 描述","tags":["标签1","标签2","标签3"],"categories":["分类1"]}
+字段要求：
+- 正文：使用 Markdown 语法；包含清晰的段落与必要的二级/三级标题（##/###）；适合处使用列表；不要输出一级标题；不要包含标题与摘要的重复说明；使用与写作要求一致的语言。
+- meta_title（SEO 标题）：约 20~30 字，突出主题与核心关键词，语言与正文一致。
+- meta_description（SEO 描述）：约 50~120 字，概括正文并自然包含关键词。
+- tags：3~5 个具体、相关的标签名（短词或短语，单个标签内不含逗号）；若提供了「现有标签」，请优先从中挑选最贴合的，没有合适的再自拟。
+- categories：1~3 个合适的栏目/分类名；若提供了「现有分类」，请优先从中挑选最贴合的，没有合适的再自拟。
 重要：输出必须是合法 JSON。字符串值内部禁止输出未转义的英文双引号；正文中如需引用词语，请一律使用中文引号「」。
 PROMPT;
 
+        $userMessage = "写作要求：{$prompt}";
+
+        if (($context['categories'] ?? []) !== []) {
+            $userMessage .= "\n现有分类（categories 请优先从中挑选）：".implode('、', $context['categories']);
+        }
+
+        if (($context['tags'] ?? []) !== []) {
+            $userMessage .= "\n现有标签（tags 请优先从中挑选）：".implode('、', $context['tags']);
+        }
+
         $text = $this->chatCompletion([
             ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user', 'content' => "写作要求：{$prompt}"],
+            ['role' => 'user', 'content' => $userMessage],
         ]);
 
         $data = $this->extractArticlePayload($text);
@@ -160,6 +187,8 @@ PROMPT;
         $title = trim((string) ($data['title'] ?? $data['标题'] ?? ''));
         $excerpt = trim((string) ($data['excerpt'] ?? $data['摘要'] ?? ''));
         $markdown = trim((string) ($data['markdown'] ?? $data['正文'] ?? ''));
+        $metaTitle = trim((string) ($data['meta_title'] ?? $data['seo_title'] ?? $data['seo标题'] ?? ''));
+        $metaDescription = trim((string) ($data['meta_description'] ?? $data['seo_description'] ?? $data['seo描述'] ?? ''));
 
         if ($title === '' || $markdown === '') {
             Log::warning('AiService: AI 返回内容缺少 title 或 markdown', ['raw' => mb_substr($text, 0, 1000)]);
@@ -173,7 +202,137 @@ PROMPT;
             'title' => $title,
             'excerpt' => $excerpt,
             'markdown' => $markdown,
+            'meta_title' => $metaTitle !== '' ? $metaTitle : $title,
+            'meta_description' => $metaDescription !== '' ? $metaDescription : $excerpt,
+            'tags' => $this->normalizeNameList($data, ['tags', '标签']),
+            'categories' => $this->normalizeNameList($data, ['categories', '分类', '栏目']),
         ];
+    }
+
+    /**
+     * 依据已生成的文章内容，专门补全 SEO 与归类（标签/分类）。
+     *
+     * 主生成调用有时（弱模型或 JSON 被容错解析）会漏掉这些字段，此方法用一次
+     * 聚焦的短指令（仅 4 个字段）重新提取，命中率更高，且结果贴合正文。
+     *
+     * @param  string  $title  文章标题
+     * @param  string  $excerpt  文章摘要
+     * @param  string  $markdown  文章正文（Markdown，仅取前段）
+     * @param  array{categories?: array<int, string>, tags?: array<int, string>}  $context  现有分类/标签名，供 AI 优先选用
+     * @return array{meta_title: string, meta_description: string, tags: array<int, string>, categories: array<int, string>}
+     *
+     * @throws \RuntimeException 接口失败时抛出（调用方自行决定是否兜底）
+     */
+    public function extractArticleMeta(string $title, string $excerpt, string $markdown, array $context = []): array
+    {
+        $systemPrompt = <<<'PROMPT'
+你是一位 SEO 与内容运营专家。请根据给定文章的标题、摘要与正文，补全搜索优化信息与归类。
+严格输出一个 JSON 对象，不要输出 JSON 以外的任何内容，也不要用 Markdown 代码块包裹。格式：
+{"meta_title":"SEO标题","meta_description":"SEO描述","tags":["标签1","标签2","标签3"],"categories":["分类1"]}
+要求：meta_title 约 20~30 字；meta_description 约 50~120 字；tags 给 3~5 个；categories 给 1~3 个；语言与文章一致。
+重要：输出必须是合法 JSON；字符串值内部禁止未转义的英文双引号。
+PROMPT;
+
+        $userMessage = "文章标题：{$title}\n文章摘要：{$excerpt}\n文章正文：".mb_substr($markdown, 0, 1500);
+
+        if (($context['categories'] ?? []) !== []) {
+            $userMessage .= "\n现有分类（categories 请优先从中挑选最贴合的）：".implode('、', $context['categories']);
+        }
+
+        if (($context['tags'] ?? []) !== []) {
+            $userMessage .= "\n现有标签（tags 请优先从中挑选最贴合的）：".implode('、', $context['tags']);
+        }
+
+        $text = $this->chatCompletion([
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => $userMessage],
+        ]);
+
+        $data = $this->extractMetaPayload($text);
+
+        return [
+            'meta_title' => trim((string) ($data['meta_title'] ?? $data['seo_title'] ?? '')),
+            'meta_description' => trim((string) ($data['meta_description'] ?? $data['seo_description'] ?? '')),
+            'tags' => $this->normalizeNameList($data, ['tags', '标签']),
+            'categories' => $this->normalizeNameList($data, ['categories', '分类', '栏目']),
+        ];
+    }
+
+    /**
+     * 提取聚焦式 meta 调用的 JSON 输出（去代码块/思考段，取首个 { 到末个 }，并容错尾逗号）。
+     *
+     * @return array<string, mixed>
+     */
+    protected function extractMetaPayload(string $text): array
+    {
+        $cleaned = trim((string) preg_replace('/<!--.*?-->/s', '', $text));
+        $cleaned = trim((string) preg_replace('/.*?<\/think>/is', '', $cleaned));
+
+        if (preg_match('/```(?:json)?\s*(.+?)\s*```/s', $cleaned, $matches) === 1) {
+            $cleaned = $matches[1];
+        }
+
+        $start = strpos($cleaned, '{');
+        $end = strrpos($cleaned, '}');
+
+        if ($start !== false && $end !== false && $end > $start) {
+            $candidate = substr($cleaned, $start, $end - $start + 1);
+
+            foreach ([$candidate, (string) preg_replace('/,\s*([}\]])/', '$1', $candidate)] as $json) {
+                $decoded = json_decode($json, true);
+
+                if (is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * 从 AI 输出中取出一个字符串数组字段（兼容英文/中文键名与标量），并清洗、去重、限量。
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<int, string>  $keys  候选键名（按优先级）
+     * @return array<int, string>
+     */
+    protected function normalizeNameList(array $data, array $keys): array
+    {
+        $raw = null;
+
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                $raw = $data[$key];
+
+                break;
+            }
+        }
+
+        if ($raw === null) {
+            return [];
+        }
+
+        // 兼容 AI 把列表写成逗号分隔字符串的情况
+        if (is_string($raw)) {
+            $raw = preg_split('/[,，、;；\s]+/', $raw);
+        }
+
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $names = [];
+
+        foreach ($raw as $item) {
+            $name = trim((string) $item);
+
+            if ($name !== '' && mb_strlen($name) <= 100) {
+                $names[] = $name;
+            }
+        }
+
+        return array_values(array_slice(array_unique($names), 0, 8));
     }
 
     /**

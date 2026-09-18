@@ -12,6 +12,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { initializeEffects } from '@/hooks/use-effects';
+import { initializeGlassFrost } from '@/hooks/use-glass-frost';
+import { initializePageFilter } from '@/hooks/use-page-filter';
 import { initializeThemeColor } from '@/hooks/use-theme-color';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
@@ -80,4 +82,6 @@ initPromise.then(() => {
     initializeTheme();
     initializeEffects();
     initializeThemeColor();
+    initializePageFilter();
+    initializeGlassFrost();
 });

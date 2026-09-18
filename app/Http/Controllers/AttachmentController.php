@@ -61,7 +61,7 @@ class AttachmentController extends Controller
         /** @var FilesystemAdapter $publicDisk */
         $publicDisk = Storage::disk('public');
 
-        $attachments = $query->paginate(24)
+        $attachments = $query->paginate(10)
             ->through(function ($attachment) use ($publicDisk, $isAdmin) {
                 return [
                     'id' => $attachment->id,

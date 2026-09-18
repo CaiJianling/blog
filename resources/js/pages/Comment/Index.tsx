@@ -1,6 +1,4 @@
 import { Head, router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
     MessageSquare,
     Search,
@@ -13,43 +11,22 @@ import {
     ChevronDown,
     User,
     Calendar,
-    Reply,
     Pencil,
     Zap,
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as commentActions from '@/actions/App/Http/Controllers/CommentController';
+import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Card,
     CardContent,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -59,6 +36,30 @@ import {
     DialogTitle,
     DialogClose,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Comment {
     comment_id: number;
@@ -67,6 +68,9 @@ interface Comment {
     author_url: string;
     ip: string;
     content: string;
+    edited_content: string | null;
+    edited_at: string | null;
+    has_pending_edit: boolean;
     like_num: number;
     status: string;
     status_text: string;
@@ -122,6 +126,27 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
     const [isExiting, setIsExiting] = useState(false);
     const [searchInput, setSearchInput] = useState(currentSearch);
     const [actionDialog, setActionDialog] = useState<{ open: boolean; action: string; commentIds: number[] }>({ open: false, action: '', commentIds: [] });
+    const [editDialog, setEditDialog] = useState<{ open: boolean; comment: Comment | null; draft: string }>({ open: false, comment: null, draft: '' });
+
+    const openEditDialog = (comment: Comment) => {
+        setEditDialog({ open: true, comment, draft: comment.edited_content ?? comment.content });
+    };
+
+    const closeEditDialog = () => {
+        setEditDialog({ open: false, comment: null, draft: '' });
+    };
+
+    const saveEdit = () => {
+        if (!editDialog.comment || !editDialog.draft.trim()) {
+            return;
+        }
+
+        // 管理员直接生效；非管理员进入待审修订（由控制器按角色分支）
+        router.put(commentActions.update.url({ comment: editDialog.comment.comment_id }), { content: editDialog.draft }, {
+            preserveScroll: true,
+            onSuccess: closeEditDialog,
+        });
+    };
 
     useEffect(() => {
         if (selectedIds.length > 0) {
@@ -133,17 +158,32 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
                 setShowToolbar(false);
                 setIsExiting(false);
             }, 300);
+
             return () => clearTimeout(timer);
         }
     }, [selectedIds]);
 
     const buildUrl = (status: string, objectType: string, page: number, search: string) => {
         const params = new URLSearchParams();
-        if (status !== 'all') params.set('status', status);
-        if (objectType !== 'all') params.set('object_type', objectType);
-        if (search) params.set('search', search);
-        if (page > 1) params.set('page', String(page));
+
+        if (status !== 'all') {
+params.set('status', status);
+}
+
+        if (objectType !== 'all') {
+params.set('object_type', objectType);
+}
+
+        if (search) {
+params.set('search', search);
+}
+
+        if (page > 1) {
+params.set('page', String(page));
+}
+
         const qs = params.toString();
+
         return `/comments${qs ? `?${qs}` : ''}`;
     };
 
@@ -176,17 +216,21 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
         );
     };
 
-    const handleSingleAction = (commentId: number, action: 'approve' | 'reject' | 'spam' | 'trash' | 'restore' | 'delete') => {
+    const handleSingleAction = (commentId: number, action: 'approve' | 'reject' | 'spam' | 'trash' | 'restore' | 'delete' | 'approveEdit' | 'rejectEdit') => {
         if (action === 'delete') {
             router.delete(commentActions.destroy.url({ comment: commentId }), { preserveScroll: true });
+
             return;
         }
+
         const urlMap = {
             approve: commentActions.approve.url({ comment: commentId }),
             reject: commentActions.reject.url({ comment: commentId }),
             spam: commentActions.spam.url({ comment: commentId }),
             trash: commentActions.trash.url({ comment: commentId }),
             restore: commentActions.restore.url({ comment: commentId }),
+            approveEdit: commentActions.approveEdit.url({ comment: commentId }),
+            rejectEdit: commentActions.rejectEdit.url({ comment: commentId }),
         };
         router.put(urlMap[action], {}, { preserveScroll: true });
     };
@@ -220,6 +264,7 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
         } else {
             confirmBatchAction();
         }
+
         setActionDialog({ open: false, action: '', commentIds: [] });
     };
 
@@ -230,21 +275,25 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
         trash: t('comments.moveTrash'),
         restore: t('comments.restore'),
         delete: t('comments.delete'),
+        approveEdit: t('comments.approveEdit'),
+        rejectEdit: t('comments.rejectEdit'),
     };
 
     const actionConfirmText = () => {
         const count = actionDialog.commentIds.length;
         const action = actionLabels[actionDialog.action];
+
         if (count === 1) {
             return `确定要${action}这${count}条评论吗？`;
         }
+
         return `确定要${action}选中的 ${count} 条评论吗？`;
     };
 
     return (
         <>
             <Head title={t('comments.title')} />
-            <div className="flex h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
+            <div className="flex shrink-0 flex-col gap-5 overflow-x-auto p-6">
                 {/* Page header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col gap-1">
@@ -262,6 +311,7 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
                     {STATUS_TABS.map((tab) => {
                         const isActive = currentStatus === tab.key;
                         const count = statusCounts[tab.key as keyof StatusCounts] ?? 0;
+
                         return (
                             <button
                                 key={tab.key}
@@ -423,6 +473,7 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
                                 ) : (
                                     commentList.map((comment) => {
                                         const isSelected = selectedIds.includes(comment.comment_id);
+
                                         return (
                                             <TableRow
                                                 key={comment.comment_id}
@@ -461,6 +512,11 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3.5 align-top">
                                                     <div className="max-w-md">
+                                                        {comment.has_pending_edit && (
+                                                            <Badge variant="secondary" className="mb-1.5 bg-amber-500/10 font-normal text-amber-600 dark:text-amber-400">
+                                                                {t('comments.pendingEdit')}
+                                                            </Badge>
+                                                        )}
                                                         <p className="text-body leading-relaxed text-foreground">
                                                             {comment.content}
                                                         </p>
@@ -501,6 +557,11 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
                                                     <div className="text-caption text-muted-foreground">
                                                         {comment.created_at_human}
                                                     </div>
+                                                    {comment.edited_at && (
+                                                        <div className="text-caption text-muted-foreground">
+                                                            {t('comments.editedAt')} · {comment.edited_at}
+                                                        </div>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell className="px-5 py-3.5 align-top text-right">
                                                     <div className="flex items-center justify-end gap-1">
@@ -542,21 +603,30 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end" className="w-40">
+                                                                    {comment.has_pending_edit && (
+                                                                        <>
+                                                                            <DropdownMenuItem onClick={() => openSingleDialog(comment.comment_id, 'approveEdit')} className="text-green-600 dark:text-green-400">
+                                                                                <CheckCircle className="mr-2 h-4 w-4" />
+                                                                                {t('comments.approveEdit')}
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuItem onClick={() => openSingleDialog(comment.comment_id, 'rejectEdit')}>
+                                                                                <XCircle className="mr-2 h-4 w-4" />
+                                                                                {t('comments.rejectEdit')}
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuSeparator />
+                                                                        </>
+                                                                    )}
                                                                     <DropdownMenuItem onClick={() => openSingleDialog(comment.comment_id, 'reject')}>
                                                                         <XCircle className="mr-2 h-4 w-4" />
                                                                         {t('comments.reject')}
                                                                     </DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => openSingleDialog(comment.comment_id, 'reply')}>
-                                                                        <Reply className="mr-2 h-4 w-4" />
-                                                                        {t('comments.reply')}
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => openSingleDialog(comment.comment_id, 'quickEdit')}>
-                                                                        <Zap className="mr-2 h-4 w-4" />
-                                                                        {t('comments.quickEdit')}
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onClick={() => openSingleDialog(comment.comment_id, 'edit')}>
+                                                                    <DropdownMenuItem onClick={() => openEditDialog(comment)}>
                                                                         <Pencil className="mr-2 h-4 w-4" />
                                                                         {t('comments.edit')}
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => openEditDialog(comment)}>
+                                                                        <Zap className="mr-2 h-4 w-4" />
+                                                                        {t('comments.quickEdit')}
                                                                     </DropdownMenuItem>
                                                                     <DropdownMenuSeparator />
                                                                     <DropdownMenuItem onClick={() => openSingleDialog(comment.comment_id, 'spam')} className="text-yellow-500">
@@ -581,34 +651,16 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
                     </CardContent>
                 </Card>
 
-                {/* Pagination */}
-                {pageComments.last_page > 1 && (
-                    <div className="flex items-center justify-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={pageComments.current_page === 1}
-                            onClick={() => {
-                                router.visit(buildUrl(currentStatus, currentObjectType, pageComments.current_page - 1, currentSearch), { preserveScroll: true });
-                            }}
-                        >
-                            {t('comments.prevPage')}
-                        </Button>
-                        <span className="text-callout text-muted-foreground tabular-nums">
-                            {pageComments.current_page} / {pageComments.last_page}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={pageComments.current_page === pageComments.last_page}
-                            onClick={() => {
-                                router.visit(buildUrl(currentStatus, currentObjectType, pageComments.current_page + 1, currentSearch), { preserveScroll: true });
-                            }}
-                        >
-                            {t('comments.nextPage')}
-                        </Button>
-                    </div>
-                )}
+                {/* 分页 */}
+                <Pagination
+                    current={pageComments.current_page}
+                    last={pageComments.last_page}
+                    total={pageComments.total}
+                    perPage={pageComments.per_page}
+                    onPageChange={(page) => {
+                        router.visit(buildUrl(currentStatus, currentObjectType, page, currentSearch), { preserveScroll: true });
+                    }}
+                />
             </div>
 
             {/* Action Confirmation Dialog */}
@@ -624,6 +676,29 @@ export default function CommentIndex({ comments: pageComments, statusCounts, cur
                         </DialogClose>
                         <Button onClick={confirmSingleAction} variant={actionDialog.action === 'trash' ? 'destructive' : 'default'}>
                             {actionLabels[actionDialog.action]}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* 编辑评论弹窗（编辑正文；非管理员的修改进入待审修订） */}
+            <Dialog open={editDialog.open} onOpenChange={(open) => !open && closeEditDialog()}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{t('comments.editTitle')}</DialogTitle>
+                        <DialogDescription>{t('comments.editHint')}</DialogDescription>
+                    </DialogHeader>
+                    <Textarea
+                        value={editDialog.draft}
+                        onChange={(e) => setEditDialog((prev) => ({ ...prev, draft: e.target.value }))}
+                        rows={5}
+                        className="resize-y text-sm"
+                        autoFocus
+                    />
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeEditDialog}>{t('comments.cancel')}</Button>
+                        <Button onClick={saveEdit} disabled={!editDialog.draft.trim()}>
+                            {t('comments.save')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

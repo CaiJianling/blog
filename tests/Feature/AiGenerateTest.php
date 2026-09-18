@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Option;
+use App\Models\Term;
+use App\Models\TermTaxonomy;
 use App\Models\User;
 use App\Services\AiService;
 use Illuminate\Support\Facades\Http;
@@ -301,4 +303,177 @@ test('models endpoint uses anthropic auth headers and endpoint', function () {
 
     Http::assertSent(fn ($request) => $request->header('x-api-key')[0] === 'sk-ant-test'
         && $request->header('anthropic-version')[0] === AiService::ANTHROPIC_VERSION);
+});
+
+test('returns seo meta fields and normalized tag/category names', function () {
+    Option::set('ai_api_key', 'sk-test');
+    Option::set('ai_model', 'test-model');
+
+    $content = json_encode([
+        'title' => '本地咖啡店探店指南',
+        'excerpt' => '一篇探店指南。',
+        'markdown' => "## 开头\n\n正文。",
+        'meta_title' => '本地咖啡店探店指南｜点单避坑全攻略',
+        'meta_description' => '带你系统了解本地咖啡店的点单、避坑与推荐。',
+        'tags' => ['咖啡', '探店', '攻略'],
+        'categories' => ['生活', '美食'],
+    ], JSON_UNESCAPED_UNICODE);
+
+    Http::fake([
+        '*/chat/completions' => Http::response([
+            'choices' => [['message' => ['content' => $content]]],
+        ]),
+    ]);
+
+    $this->actingAs($this->author)
+        ->postJson(route('articles.ai-generate'), ['prompt' => '写一篇探店指南'])
+        ->assertOk()
+        ->assertJsonPath('meta_title', '本地咖啡店探店指南｜点单避坑全攻略')
+        ->assertJsonPath('meta_description', '带你系统了解本地咖啡店的点单、避坑与推荐。')
+        ->assertJsonPath('tags', ['咖啡', '探店', '攻略'])
+        ->assertJsonPath('categories', ['生活', '美食'])
+        ->assertJsonPath('category_ids', fn (array $ids) => count($ids) === 2)
+        ->assertJsonPath('tag_ids', fn (array $ids) => count($ids) === 3);
+
+    // 无现有词条 → 全部新建
+    expect(TermTaxonomy::where('taxonomy', 'category')->count())->toBe(2);
+    expect(TermTaxonomy::where('taxonomy', 'tag')->count())->toBe(3);
+});
+
+test('reuses existing taxonomies and only creates the missing ones', function () {
+    Option::set('ai_api_key', 'sk-test');
+    Option::set('ai_model', 'test-model');
+
+    $existingCat = Term::create(['name' => '生活', 'slug' => 'sheng-huo']);
+    $existingCatTax = TermTaxonomy::create(['term_id' => $existingCat->term_id, 'taxonomy' => 'category', 'description' => '', 'parent' => 0]);
+    $existingTag = Term::create(['name' => '咖啡', 'slug' => 'ka-fei']);
+    $existingTagTax = TermTaxonomy::create(['term_id' => $existingTag->term_id, 'taxonomy' => 'tag', 'description' => '', 'parent' => 0]);
+
+    $content = json_encode([
+        'title' => '探店',
+        'excerpt' => '摘要',
+        'markdown' => '正文',
+        'tags' => ['咖啡', '新标签'],
+        'categories' => ['生活', '美食'],
+    ], JSON_UNESCAPED_UNICODE);
+
+    Http::fake([
+        '*/chat/completions' => Http::response([
+            'choices' => [['message' => ['content' => $content]]],
+        ]),
+    ]);
+
+    $data = $this->actingAs($this->author)
+        ->postJson(route('articles.ai-generate'), ['prompt' => '探店'])
+        ->assertOk()
+        ->json();
+
+    // 命中已有 → 复用其 id；缺失 → 新建
+    expect($data['category_ids'])->toHaveCount(2);
+    expect($data['tag_ids'])->toHaveCount(2);
+    expect($data['category_ids'])->toContain($existingCatTax->term_taxonomy_id);
+    expect($data['tag_ids'])->toContain($existingTagTax->term_taxonomy_id);
+    expect($data['created_categories'])->toHaveCount(1);
+    expect($data['created_categories'][0]['name'])->toBe('美食');
+    expect($data['created_tags'])->toHaveCount(1);
+    expect($data['created_tags'][0]['name'])->toBe('新标签');
+
+    // DB 里各 2 个（复用的 1 个 + 新建的 1 个）
+    expect(TermTaxonomy::where('taxonomy', 'category')->count())->toBe(2);
+    expect(TermTaxonomy::where('taxonomy', 'tag')->count())->toBe(2);
+});
+
+test('passes existing categories and tags to the ai as context', function () {
+    Option::set('ai_api_key', 'sk-test');
+    Option::set('ai_model', 'test-model');
+
+    $tech = Term::create(['name' => '技术', 'slug' => 'ji-zhu']);
+    TermTaxonomy::create(['term_id' => $tech->term_id, 'taxonomy' => 'category', 'description' => '', 'parent' => 0]);
+    $coffee = Term::create(['name' => '咖啡', 'slug' => 'ka-fei']);
+    TermTaxonomy::create(['term_id' => $coffee->term_id, 'taxonomy' => 'tag', 'description' => '', 'parent' => 0]);
+
+    Http::fake([
+        '*/chat/completions' => Http::response([
+            'choices' => [['message' => ['content' => json_encode(['title' => 't', 'markdown' => 'm'])]]],
+        ]),
+    ]);
+
+    $this->actingAs($this->author)
+        ->postJson(route('articles.ai-generate'), ['prompt' => '写一篇关于烘焙的文章'])
+        ->assertOk();
+
+    // 现有分类/标签名应进入 AI 的用户消息（作为选词上下文）
+    Http::assertSent(function ($request) {
+        $userMessage = $request['messages'][1]['content'] ?? '';
+
+        return str_contains($userMessage, '技术') && str_contains($userMessage, '咖啡');
+    });
+});
+
+test('main call already returns tags/categories so no fallback call is made', function () {
+    Option::set('ai_api_key', 'sk-test');
+    Option::set('ai_model', 'test-model');
+
+    $content = json_encode([
+        'title' => '秋日漫步',
+        'excerpt' => '摘要',
+        'markdown' => '正文',
+        'tags' => ['秋天', '散步'],
+        'categories' => ['生活'],
+    ], JSON_UNESCAPED_UNICODE);
+
+    Http::fake([
+        '*/chat/completions' => Http::response([
+            'choices' => [['message' => ['content' => $content]]],
+        ]),
+    ]);
+
+    $this->actingAs($this->author)
+        ->postJson(route('articles.ai-generate'), ['prompt' => '写秋天的文章'])
+        ->assertOk()
+        ->assertJsonPath('tags', ['秋天', '散步']);
+
+    // 已有标签/分类 → 只调用一次主生成，不触发补全
+    Http::assertSentCount(1);
+});
+
+test('falls back to a focused meta call when the main call omits tags and categories', function () {
+    Option::set('ai_api_key', 'sk-test');
+    Option::set('ai_model', 'test-model');
+
+    // 主生成：只有标题/摘要/正文（模拟弱模型漏掉新字段）
+    $main = json_encode([
+        'title' => '秋日漫步',
+        'excerpt' => '关于秋天的散文。',
+        'markdown' => "## 开头\n\n秋天的第一缕风。",
+    ], JSON_UNESCAPED_UNICODE);
+
+    // 补全调用：聚焦输出 SEO/标签/分类
+    $meta = json_encode([
+        'meta_title' => '秋日漫步指南：散步与散文',
+        'meta_description' => '一篇关于秋天散步与散文的暖心文章。',
+        'tags' => ['秋天', '散步', '散文'],
+        'categories' => ['生活'],
+    ], JSON_UNESCAPED_UNICODE);
+
+    Http::fake([
+        '*/chat/completions' => Http::sequence()
+            ->push(['choices' => [['message' => ['content' => $main]]]])
+            ->push(['choices' => [['message' => ['content' => $meta]]]]),
+    ]);
+
+    $data = $this->actingAs($this->author)
+        ->postJson(route('articles.ai-generate'), ['prompt' => '写秋天的文章'])
+        ->assertOk()
+        ->json();
+
+    // 补全调用把 标签/分类/SEO 填上了
+    expect($data['tags'])->toBe(['秋天', '散步', '散文']);
+    expect($data['categories'])->toBe(['生活']);
+    expect($data['meta_title'])->toBe('秋日漫步指南：散步与散文');
+    expect($data['tag_ids'])->toHaveCount(3);
+    expect($data['category_ids'])->toHaveCount(1);
+
+    // 发生了两次调用：主生成 + 补全
+    Http::assertSentCount(2);
 });

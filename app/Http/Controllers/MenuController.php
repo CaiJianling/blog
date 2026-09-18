@@ -7,9 +7,9 @@ use App\Models\NavMenu;
 use App\Models\NavMenuItem;
 use App\Models\Page;
 use App\Models\TermTaxonomy;
+use App\Services\MenuService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -21,6 +21,10 @@ class MenuController extends Controller
      * 菜单项类型白名单。
      */
     private const ITEM_TYPES = ['page', 'article', 'category', 'custom'];
+
+    public function __construct(
+        protected MenuService $menuService,
+    ) {}
 
     /**
      * 菜单管理页：菜单列表 + 当前菜单结构 + 可添加对象。
@@ -60,7 +64,7 @@ class MenuController extends Controller
             ]);
 
         $items = $menu
-            ? $this->resolveItems($menu->items)
+            ? $this->menuService->resolveItems($menu->items)
             : [];
 
         return Inertia::render('Menus/Index', [
@@ -185,72 +189,5 @@ class MenuController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => '菜单已删除。']);
 
         return to_route('menus.index');
-    }
-
-    /**
-     * 为菜单项补充对象标题与解析后的链接。
-     *
-     * @param  Collection<int, NavMenuItem>  $items
-     * @return array<int, array<string, mixed>>
-     */
-    private function resolveItems($items): array
-    {
-        $pageIds = $items->where('type', 'page')->pluck('object_id')->unique()->filter();
-        $articleIds = $items->where('type', 'article')->pluck('object_id')->unique()->filter();
-        $categoryIds = $items->where('type', 'category')->pluck('object_id')->unique()->filter();
-
-        $pages = Page::whereIn('id', $pageIds)->pluck('title', 'id');
-        $articles = Article::whereIn('id', $articleIds)->pluck('title', 'id');
-        $pageSlugs = Page::whereIn('id', $pageIds)->pluck('slug', 'id');
-        $articleSlugs = Article::whereIn('id', $articleIds)->pluck('slug', 'id');
-
-        $categories = TermTaxonomy::whereIn('term_taxonomy_id', $categoryIds)
-            ->with('term')
-            ->get()
-            ->mapWithKeys(function (TermTaxonomy $taxonomy) {
-                return [
-                    $taxonomy->term_taxonomy_id => [
-                        'title' => $taxonomy->term?->name ?? '',
-                        'slug' => $taxonomy->term?->slug ?? '',
-                    ],
-                ];
-            });
-
-        return $items->map(function (NavMenuItem $item) use ($pages, $articles, $pageSlugs, $articleSlugs, $categories) {
-            $objectLabel = '';
-            $resolvedUrl = $item->url;
-
-            switch ($item->type) {
-                case 'page':
-                    $objectLabel = $pages->get($item->object_id, '');
-                    $slug = $pageSlugs->get($item->object_id, '');
-                    $resolvedUrl = $slug ? '/'.$slug : '';
-                    break;
-                case 'article':
-                    $objectLabel = $articles->get($item->object_id, '');
-                    $slug = $articleSlugs->get($item->object_id, '');
-                    $resolvedUrl = $slug ? '/article/'.$slug : '';
-                    break;
-                case 'category':
-                    $category = $categories->get($item->object_id);
-                    $objectLabel = $category['title'] ?? '';
-                    $resolvedUrl = ! empty($category['slug']) ? '/category/'.$category['slug'] : '';
-                    break;
-            }
-
-            return [
-                'id' => $item->id,
-                'parent_id' => $item->parent_id,
-                'type' => $item->type,
-                'object_id' => $item->object_id,
-                'label' => $item->label,
-                'url' => $resolvedUrl,
-                'custom_url' => $item->type === 'custom' ? $item->url : '',
-                'css_class' => $item->css_class,
-                'target' => $item->target,
-                'object_label' => $objectLabel,
-                'display_label' => $item->label !== '' ? $item->label : $objectLabel,
-            ];
-        })->values()->all();
     }
 }

@@ -1,16 +1,9 @@
 import { Head, router } from '@inertiajs/react';
 import { FileText, Eye, MessageSquare, Calendar, Pencil, Plus, Search, Trash2, Send, CheckCircle, FileEdit, Inbox, RotateCcw } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 import * as articleActions from '@/actions/App/Http/Controllers/ArticleController';
+import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +14,14 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
     Table,
@@ -36,6 +37,7 @@ interface Article {
     id: number;
     title: string;
     author_name: string;
+    permalink: string;
     categories: string[];
     tags: string[];
     comment_count: number;
@@ -150,7 +152,10 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
     };
 
     const executeForceDelete = () => {
-        if (!forceDeleteTarget) return;
+        if (!forceDeleteTarget) {
+return;
+}
+
         router.delete(`/articles/${forceDeleteTarget.id}`, {
             preserveScroll: true,
             onFinish: () => setForceDeleteTarget(null),
@@ -160,7 +165,7 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
     return (
         <>
             <Head title={t('articles.title')} />
-            <div className="flex h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
+            <div className="flex shrink-0 flex-col gap-5 overflow-x-auto p-4 sm:gap-5 sm:p-6">
                 {/* Page header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col gap-1">
@@ -172,14 +177,14 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="relative">
+                        <div className="relative min-w-0 flex-1 sm:flex-none">
                             <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-foreground/50" />
                             <Input
                                 placeholder="搜索文章..."
-                                className="w-56 pl-9"
+                                className="w-full pl-9 sm:w-56"
                             />
                         </div>
-                        <Button onClick={() => router.visit(articleActions.create.url())}>
+                        <Button className="shrink-0" onClick={() => router.visit(articleActions.create.url())}>
                             <Plus className="h-4 w-4" />
                             {t('articles.create')}
                         </Button>
@@ -187,7 +192,7 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
                 </div>
 
                 {/* Status Filter Tabs */}
-                <div className="inline-flex w-fit items-center gap-1 overflow-x-auto rounded-2xl bg-neutral-200/60 p-1 backdrop-blur-sm dark:bg-neutral-700/60">
+                <div className="inline-flex w-full items-center gap-1 overflow-x-auto rounded-2xl bg-neutral-200/60 p-1 backdrop-blur-sm dark:bg-neutral-700/60 sm:w-fit">
                     {STATUS_TABS.map((tab) => {
                         const isActive = currentStatus === tab.key;
                         const count = statusCounts[tab.key as keyof StatusCounts] ?? 0;
@@ -196,14 +201,14 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
                             <button
                                 key={tab.key}
                                 onClick={() => handleFilterChange(tab.key)}
-                                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-callout font-medium transition-all duration-200 ${
+                                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2 sm:text-[0.9375rem] ${
                                     isActive
                                         ? 'bg-background text-foreground shadow-sm ring-1 ring-black/5 dark:ring-white/10'
                                         : 'text-muted-foreground hover:bg-neutral-100 hover:text-foreground dark:hover:bg-neutral-800'
                                 }`}
                             >
                                 {tab.label}
-                                <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-caption font-semibold tabular-nums ${
+                                <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums sm:h-5 sm:min-w-5 sm:px-1.5 sm:text-xs ${
                                     isActive
                                         ? 'bg-primary/15 text-primary'
                                         : 'bg-muted text-muted-foreground'
@@ -216,49 +221,49 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
                 </div>
 
                 {/* Overview Stats */}
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4">
                     <Card className="!p-0 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/10">
-                        <CardContent className="flex items-center justify-between p-5">
-                            <div className="flex flex-col gap-1">
-                                <div className="text-footnote font-medium uppercase tracking-wider text-secondary-label">
+                        <CardContent className="flex items-center justify-between p-2.5 sm:p-5">
+                            <div className="flex min-w-0 flex-col gap-1 sm:gap-2">
+                                <div className="text-[10px] font-medium uppercase tracking-wider text-secondary-label sm:text-footnote">
                                     全部文章
                                 </div>
-                                <div className="text-title-2 font-semibold tracking-tight">
+                                <div className="text-base font-semibold tracking-tight sm:text-title-2">
                                     {statusCounts.all}
                                 </div>
                             </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                                <FileText className="h-6 w-6" />
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary sm:h-12 sm:w-12 sm:rounded-2xl">
+                                <FileText className="h-4 w-4 sm:h-6 sm:w-6" />
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="!p-0 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 border-emerald-500/10">
-                        <CardContent className="flex items-center justify-between p-5">
-                            <div className="flex flex-col gap-1">
-                                <div className="text-footnote font-medium uppercase tracking-wider text-secondary-label">
+                        <CardContent className="flex items-center justify-between p-2.5 sm:p-5">
+                            <div className="flex min-w-0 flex-col gap-1 sm:gap-2">
+                                <div className="text-[10px] font-medium uppercase tracking-wider text-secondary-label sm:text-footnote">
                                     总浏览量
                                 </div>
-                                <div className="text-title-2 font-semibold tracking-tight">
+                                <div className="text-base font-semibold tracking-tight sm:text-title-2">
                                     {articleList.reduce((sum, a) => sum + a.views, 0)}
                                 </div>
                             </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                                <Eye className="h-6 w-6" />
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 sm:h-12 sm:w-12 sm:rounded-2xl">
+                                <Eye className="h-4 w-4 sm:h-6 sm:w-6" />
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="!p-0 bg-gradient-to-br from-blue-500/5 to-blue-500/10 border-blue-500/10">
-                        <CardContent className="flex items-center justify-between p-5">
-                            <div className="flex flex-col gap-1">
-                                <div className="text-footnote font-medium uppercase tracking-wider text-secondary-label">
+                        <CardContent className="flex items-center justify-between p-2.5 sm:p-5">
+                            <div className="flex min-w-0 flex-col gap-1 sm:gap-2">
+                                <div className="text-[10px] font-medium uppercase tracking-wider text-secondary-label sm:text-footnote">
                                     总评论
                                 </div>
-                                <div className="text-title-2 font-semibold tracking-tight">
+                                <div className="text-base font-semibold tracking-tight sm:text-title-2">
                                     {articleList.reduce((sum, a) => sum + a.comment_count, 0)}
                                 </div>
                             </div>
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-600 dark:text-blue-400">
-                                <MessageSquare className="h-6 w-6" />
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 sm:h-12 sm:w-12 sm:rounded-2xl">
+                                <MessageSquare className="h-4 w-4 sm:h-6 sm:w-6" />
                             </div>
                         </CardContent>
                     </Card>
@@ -286,16 +291,16 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
 
                     {/* Floating Batch Action Toolbar — translucent material overlay clipped to card radius */}
                     {showToolbar && (
-                        <div className={`absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-background/70 px-6 py-4 backdrop-blur-xl backdrop-saturate-150 ${isExiting ? 'animate-out fade-out slide-out-to-top-2 duration-300' : 'animate-in fade-in slide-in-from-top-2 duration-300'} dark:border-white/5 dark:bg-background/60`}>
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <div className={`sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-background/70 px-4 py-3 backdrop-blur-xl backdrop-saturate-150 sm:px-6 sm:py-4 ${isExiting ? 'animate-out fade-out slide-out-to-top-2 duration-300' : 'animate-in fade-in slide-in-from-top-2 duration-300'} dark:border-white/5 dark:bg-background/60`}>
+                            <div className="flex min-w-0 shrink items-center gap-2 sm:gap-3">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                                     <CheckCircle className="h-4.5 w-4.5" />
                                 </div>
-                                <span className="text-callout font-medium tracking-tight">
+                                <span className="truncate text-callout font-medium tracking-tight sm:whitespace-normal">
                                     已选择 <span className="text-primary tabular-nums">{selectedIds.length}</span> 篇文章
                                 </span>
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 overflow-x-auto">
                                 <Button
                                     variant="secondary"
                                     size="sm"
@@ -343,8 +348,8 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
                             </div>
                         </div>
                     )}
-                    <CardContent className="p-0">
-                        <Table>
+                    <CardContent className="p-0 pb-2 sm:pb-0">
+                        <Table className="min-w-[1000px]">
                             <TableHeader>
                                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                                     <TableHead className="h-11 w-11 pl-5 pr-0">
@@ -492,7 +497,19 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
                                                 <TableCell className="px-3 py-3.5">
                                                     <div className="flex items-center gap-1.5">
                                                         <MessageSquare className="h-4 w-4 text-tertiary-label" />
-                                                        <span className="text-callout tabular-nums">{article.comment_count}</span>
+                                                        {article.status === 'publish' && article.permalink ? (
+                                                            <a
+                                                                href={`${article.permalink}#comments`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                title={t('articles.viewComments')}
+                                                                className="text-callout tabular-nums text-primary hover:underline"
+                                                            >
+                                                                {article.comment_count}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-callout tabular-nums">{article.comment_count}</span>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3.5">
@@ -561,48 +578,23 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
                     </CardContent>
                 </Card>
 
-                {/* Pagination */}
-                {pageArticles.last_page > 1 && (
-                    <div className="flex items-center justify-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={pageArticles.current_page === 1}
-                            onClick={() => {
-                                const params = new URLSearchParams();
+                {/* 分页 */}
+                <Pagination
+                    current={pageArticles.current_page}
+                    last={pageArticles.last_page}
+                    total={pageArticles.total}
+                    perPage={pageArticles.per_page}
+                    onPageChange={(page) => {
+                        const params = new URLSearchParams();
 
-                                if (currentStatus !== 'all') {
-params.set('status', currentStatus);
-}
+                        if (currentStatus !== 'all') {
+                            params.set('status', currentStatus);
+                        }
 
-                                params.set('page', String(pageArticles.current_page - 1));
-                                router.visit(`/articles?${params.toString()}`, { preserveScroll: true });
-                            }}
-                        >
-                            上一页
-                        </Button>
-                        <span className="text-callout text-secondary-label tabular-nums">
-                            {pageArticles.current_page} / {pageArticles.last_page}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={pageArticles.current_page === pageArticles.last_page}
-                            onClick={() => {
-                                const params = new URLSearchParams();
-
-                                if (currentStatus !== 'all') {
-params.set('status', currentStatus);
-}
-
-                                params.set('page', String(pageArticles.current_page + 1));
-                                router.visit(`/articles?${params.toString()}`, { preserveScroll: true });
-                            }}
-                        >
-                            下一页
-                        </Button>
-                    </div>
-                )}
+                        params.set('page', String(page));
+                        router.visit(`/articles?${params.toString()}`, { preserveScroll: true });
+                    }}
+                />
             </div>
 
             {/* Force delete confirmation dialog */}

@@ -27,6 +27,8 @@ class Comment extends Model
         'author_url',
         'ip',
         'content',
+        'edited_content',
+        'edited_at',
         'like_num',
         'status',
         'parent_id',
@@ -44,7 +46,16 @@ class Comment extends Model
         'notify_mail' => 'boolean',
         'is_markdown' => 'boolean',
         'created_at' => 'datetime',
+        'edited_at' => 'datetime',
     ];
+
+    /**
+     * 是否有等待审批的编辑修订。
+     */
+    public function hasPendingEdit(): bool
+    {
+        return $this->edited_content !== null;
+    }
 
     public function user(): BelongsTo
     {

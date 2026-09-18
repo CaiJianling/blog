@@ -10,6 +10,7 @@ import {
 import React, { useEffect, useRef, useId } from "react";
 import { useAppearance } from "@/hooks/use-appearance";
 import { Filter } from "./Filter";
+import GlassEdgeRing from "./glass-edge-ring";
 
 type Size = "sm" | "md" | "lg" | number;
 
@@ -330,7 +331,8 @@ return;
             }}
           />
 
-          {/* 边缘高光（iOS 27 液态玻璃调适）：上下内侧亮色高光 + 左右外侧暗色高光，均向外渐淡 */}
+          {/* 边缘高光（iOS 27 液态玻璃调适）：上下内部亮色高光 + 左右外缘 1px 暗线
+              （两边最暗、向两端渐淡；本层无 overflow-hidden，子元素可外扩 1px） */}
           <motion.div
             className="pointer-events-none absolute"
             style={{
@@ -345,9 +347,11 @@ return;
               scaleY: objectScaleY,
               background: "transparent",
               boxShadow:
-                "inset 0 1.5px 3px -1px rgba(255,255,255,0.85), inset 0 -1.5px 3px -1px rgba(255,255,255,0.85), inset 2px 0 4px -2px rgba(0,0,0,0.4), inset -2px 0 4px -2px rgba(0,0,0,0.4)",
+                "inset 0 1.5px 3px -1px rgba(255,255,255,0.85), inset 0 -1.5px 3px -1px rgba(255,255,255,0.85)",
             }}
-          />
+          >
+            <GlassEdgeRing variant="circle" />
+          </motion.div>
         </motion.div>
       </div>
     </div>

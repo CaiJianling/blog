@@ -140,4 +140,43 @@ class CommentPublicController extends Controller
 
         return back();
     }
+
+    /**
+     * 登录用户编辑本人评论。
+     *
+     * 管理员直接生效；非管理员写入 edited_content 进入待审批，
+     * 原内容保持可见，由后台「评论管理」审批后才替换。
+     */
+    public function update(Request $request, Comment $comment)
+    {
+        $user = $request->user();
+
+        if ($user === null || (int) $comment->user_id !== (int) $user->id) {
+            abort(403, '只能编辑自己发布的评论。');
+        }
+
+        if ($comment->status === 'trash') {
+            throw ValidationException::withMessages([
+                'message' => '回收站中的评论不能编辑。',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'content' => ['required', 'string', 'max:5000'],
+        ]);
+
+        if ((string) $user->role === 'administrator') {
+            $comment->update([
+                'content' => $validated['content'],
+                'edited_content' => null,
+                'edited_at' => now(),
+            ]);
+        } else {
+            $comment->update([
+                'edited_content' => $validated['content'],
+            ]);
+        }
+
+        return back();
+    }
 }

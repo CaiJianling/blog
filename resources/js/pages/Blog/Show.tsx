@@ -9,6 +9,7 @@ import {
     Home,
     ListTree,
     Heart,
+    Timer,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +39,7 @@ type Article = {
     tags: { name: string; slug: string }[];
     views: number;
     comment_count: number;
+    reading_time: number;
     created_at: string;
     permalink: string;
     comment_status: string;
@@ -349,8 +351,7 @@ export default function Show({
             return;
         }
 
-        const offset =
-            itemRect.top - navRect.top + nav.scrollTop - 8;
+        const offset = itemRect.top - navRect.top + nav.scrollTop - 8;
         const maxScroll = nav.scrollHeight - nav.clientHeight;
 
         nav.scrollTo({
@@ -358,6 +359,99 @@ export default function Show({
             behavior: 'smooth',
         });
     }, [activeHeading]);
+
+    // 冷加载（整页/新标签打开，如后台文章列表跳到 #comments）时浏览器在 hydration 前
+    // 找不到锚点；锚点元素又可能在挂载后一段时间才出现。用「定时器首查 +
+    // MutationObserver 监听插入」定位（不能只依赖 rAF：后台标签页里 rAF 会被节流）。
+    // 定位时让跳过去的区域整体可见：能装下视口就垂直居中，装不下/小目标则顶部
+    // 对齐（留 72px 让出导航栏），并触发一次落点高亮动画。
+    useEffect(() => {
+        if (!location.hash) {
+            return;
+        }
+
+        const id = location.hash.slice(1);
+        let done = false;
+        let settleTimer = 0;
+        let clearTimer = 0;
+
+        const scrollToAnchor = () => {
+            if (done) {
+                return;
+            }
+
+            const el = document.getElementById(id);
+
+            if (!el) {
+                return;
+            }
+
+            // 稍等布局稳定（字体/图片引起的高度变化）再定位
+            settleTimer = window.setTimeout(() => {
+                const target = document.getElementById(id);
+
+                if (!target) {
+                    return;
+                }
+
+                done = true;
+
+                // 清掉 URL hash，阻止浏览器后续对锚点的原生重新对齐
+                // （原生对齐对高于视口的元素会贴底，把标题顶出屏外）
+                history.replaceState(
+                    null,
+                    '',
+                    location.pathname + location.search,
+                );
+
+                const rect = target.getBoundingClientRect();
+                const sectionDocTop = rect.top + window.scrollY;
+                const sectionHeight = rect.height;
+
+                // 评论区能整体装进视口时垂直居中（完整可见，无需再滚）；
+                // 装不下（或标题锚点等小目标）时顶部对齐到导航栏下方
+                const navHeight = 56;
+                const usable = window.innerHeight - navHeight;
+
+                const topOffset =
+                    id === 'comments' && sectionHeight <= usable
+                        ? navHeight + Math.round((usable - sectionHeight) / 2)
+                        : 72;
+
+                window.scrollTo({
+                    top: Math.max(0, sectionDocTop - topOffset),
+                });
+
+                // 落点高亮：触发一次短暂描边发光动画，结束后移除类名
+                target.classList.remove('anchor-flash');
+                void target.offsetWidth; // 强制重排，保证动画可重复触发
+                target.classList.add('anchor-flash');
+
+                const clear = () => target.classList.remove('anchor-flash');
+
+                target.addEventListener('animationend', clear, { once: true });
+                clearTimer = window.setTimeout(clear, 1800);
+            }, 300);
+        };
+
+        const observer = new MutationObserver(scrollToAnchor);
+
+        observer.observe(document.body, { childList: true, subtree: true });
+        const firstTimer = window.setTimeout(scrollToAnchor, 100);
+        const bailTimer = window.setTimeout(
+            () => observer.disconnect(),
+            10_000,
+        );
+
+        return () => {
+            done = true;
+            observer.disconnect();
+            clearTimeout(settleTimer);
+            clearTimeout(clearTimer);
+            clearTimeout(firstTimer);
+            clearTimeout(bailTimer);
+        };
+    }, []);
 
     // 代码块交互：行号/折行开关、复制、全屏（对 dangerouslySetInnerHTML 渲染出的 .code-block 做后置绑定）。
     useEffect(() => {
@@ -371,9 +465,9 @@ export default function Show({
         };
 
         const openFullscreen = (block: HTMLElement) => {
-            const bodyClone = block.querySelector(
-                '.code-block__body',
-            )?.cloneNode(true) as HTMLElement | null;
+            const bodyClone = block
+                .querySelector('.code-block__body')
+                ?.cloneNode(true) as HTMLElement | null;
 
             if (!bodyClone) {
                 return;
@@ -396,13 +490,14 @@ export default function Show({
 
             const sourceButtons = Array.from(
                 block.querySelectorAll<HTMLElement>('.code-block__btn'),
-            ).filter(
-                (b) => b.getAttribute('data-code-action') !== 'fs',
-            );
+            ).filter((b) => b.getAttribute('data-code-action') !== 'fs');
 
             for (const source of sourceButtons) {
                 const clone = source.cloneNode(true) as HTMLElement;
-                clone.setAttribute('aria-pressed', source.getAttribute('aria-pressed') ?? '');
+                clone.setAttribute(
+                    'aria-pressed',
+                    source.getAttribute('aria-pressed') ?? '',
+                );
                 actions.appendChild(clone);
             }
 
@@ -439,7 +534,9 @@ export default function Show({
                     closeOverlay = null;
                 };
 
-                overlay.addEventListener('animationend', finish, { once: true });
+                overlay.addEventListener('animationend', finish, {
+                    once: true,
+                });
                 window.setTimeout(finish, 260);
             };
 
@@ -468,6 +565,7 @@ export default function Show({
                         void copyToClipboard(rawCodeOf(stage)).then((ok) => {
                             if (!ok) {
                                 toast.error('复制失败，请手动选择文本复制');
+
                                 return;
                             }
 
@@ -500,8 +598,7 @@ export default function Show({
         const rawCodeOf = (block: HTMLElement): string =>
             Array.from(block.querySelectorAll('.cb-line'))
                 .map(
-                    (line) =>
-                        line.querySelector('.cb-text')?.textContent ?? '',
+                    (line) => line.querySelector('.cb-text')?.textContent ?? '',
                 )
                 .join('\n');
 
@@ -548,6 +645,7 @@ export default function Show({
                     void copyToClipboard(rawCodeOf(block)).then((ok) => {
                         if (!ok) {
                             toast.error('复制失败，请手动选择文本复制');
+
                             return;
                         }
 
@@ -571,6 +669,7 @@ export default function Show({
         if (container) {
             container.addEventListener('click', handleClick);
         }
+
         document.addEventListener('keydown', onKeydown);
 
         return () => {
@@ -716,6 +815,12 @@ export default function Show({
                                     <span className="inline-flex items-center gap-1.5">
                                         <Clock className="h-3.5 w-3.5" />
                                         {article.created_at}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <Timer className="h-3.5 w-3.5" />
+                                        {t('articlePage.readTime', {
+                                            count: article.reading_time,
+                                        })}
                                     </span>
                                     <span className="inline-flex items-center gap-1.5">
                                         <Eye className="h-3.5 w-3.5" />

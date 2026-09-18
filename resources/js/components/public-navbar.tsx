@@ -1,59 +1,293 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Moon, Sun, Monitor, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import {
+    ChevronDown,
+    ExternalLink,
+    Menu,
+    Moon,
+    Monitor,
+    Sun,
+    X,
+} from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import LiquidGlassPanel from '@/components/LiquidGlass/LiquidGlassPanel';
 import { useAppearance } from '@/hooks/use-appearance';
+import { useEffects } from '@/hooks/use-effects';
 import { cn } from '@/lib/utils';
 import { home, dashboard, login, register } from '@/routes';
 import blog from '@/routes/blog';
 import links from '@/routes/links';
 import nav from '@/routes/nav';
 import tools from '@/routes/tools';
+import type { RouteDefinition } from '@/wayfinder';
+
+/**
+ * 后台「菜单管理」（slug=top）解析出的导航节点；
+ * 为空时回退到内置默认导航。
+ * url 可以是后端菜单给出的字符串路径，也可以是默认导航的 Wayfinder 路由对象。
+ */
+type Href = string | RouteDefinition<'get'>;
+
+type NavNode = {
+    label: string;
+    url: Href;
+    target: string;
+    children: NavNode[];
+};
+
+type PageProps = {
+    auth: { user?: unknown };
+    name?: string;
+    canRegister?: boolean;
+    top_nav?: NavNode[];
+};
+
+const urlOf = (url: Href): string => (typeof url === 'string' ? url : url.url);
+
+const isExternalUrl = (url: Href): boolean => {
+    const value = urlOf(url);
+
+    return /^https?:\/\//i.test(value) || value.startsWith('//');
+};
 
 export default function PublicNavbar() {
     const { t } = useTranslation();
-    const { auth, name, canRegister } = usePage().props as { auth: { user?: unknown }; name?: string; canRegister?: boolean };
+    const { auth, name, canRegister, top_nav } = usePage().props as PageProps;
     const { appearance, updateAppearance } = useAppearance();
+    const { effectsEnabled } = useEffects();
     const [mobileOpen, setMobileOpen] = useState(false);
+    // 移动端二级菜单展开状态（clientId 用 label 索引即可）
+    const [mobileExpanded, setMobileExpanded] = useState<Set<string>>(
+        new Set(),
+    );
 
-    const navItems = [
-        { title: t('publicNav.home'), href: home() },
-        { title: t('publicNav.blog'), href: blog.index() },
-        { title: t('publicNav.tools'), href: tools.index() },
-        { title: t('publicNav.nav'), href: nav.index() },
-        { title: t('publicNav.links'), href: links.index() },
+    const glassId = useId();
+    const barRef = useRef<HTMLDivElement>(null);
+    const [barSize, setBarSize] = useState({ width: 0, height: 0 });
+
+    // 特效开启时顶栏背景为液态玻璃（磨砂度由「液态玻璃」滑块全局控制）；
+    // 需要实测尺寸生成位移图。立即测量一次，ResizeObserver 管后续，定时器兜底。
+    useEffect(() => {
+        const el = barRef.current;
+
+        if (!effectsEnabled || !el) {
+            setBarSize({ width: 0, height: 0 });
+
+            return;
+        }
+
+        const update = () => {
+            setBarSize({ width: el.offsetWidth, height: el.offsetHeight });
+        };
+
+        update();
+
+        const observer = new ResizeObserver(update);
+
+        observer.observe(el);
+        const fallback1 = window.setTimeout(update, 50);
+        const fallback2 = window.setTimeout(update, 300);
+
+        return () => {
+            observer.disconnect();
+            window.clearTimeout(fallback1);
+            window.clearTimeout(fallback2);
+        };
+    }, [effectsEnabled]);
+
+    // 默认导航（后台未维护 top 菜单或其项全部无效时回退）
+    const defaultItems: NavNode[] = [
+        { label: t('publicNav.home'), url: home(), target: '', children: [] },
+        {
+            label: t('publicNav.blog'),
+            url: blog.index(),
+            target: '',
+            children: [],
+        },
+        {
+            label: t('publicNav.tools'),
+            url: tools.index(),
+            target: '',
+            children: [],
+        },
+        {
+            label: t('publicNav.nav'),
+            url: nav.index(),
+            target: '',
+            children: [],
+        },
+        {
+            label: t('publicNav.links'),
+            url: links.index(),
+            target: '',
+            children: [],
+        },
     ];
 
+    const items = (top_nav?.length ? top_nav : defaultItems).filter(
+        (item) => urlOf(item.url) !== '' || item.children.length > 0,
+    );
+
+    const toggleMobileExpand = (label: string) => {
+        setMobileExpanded((prev) => {
+            const next = new Set(prev);
+
+            if (next.has(label)) {
+                next.delete(label);
+            } else {
+                next.add(label);
+            }
+
+            return next;
+        });
+    };
+
     const cycleAppearance = () => {
-        const next = appearance === 'light' ? 'dark' : appearance === 'dark' ? 'system' : 'light';
+        const next =
+            appearance === 'light'
+                ? 'dark'
+                : appearance === 'dark'
+                  ? 'system'
+                  : 'light';
         updateAppearance(next);
     };
 
-    const ThemeIcon = appearance === 'light' ? Sun : appearance === 'dark' ? Moon : Monitor;
+    const ThemeIcon =
+        appearance === 'light' ? Sun : appearance === 'dark' ? Moon : Monitor;
+
+    /** 单条导航链接：站内走 Inertia 预取跳转，外链走原生 a */
+    const renderLink = (
+        item: NavNode,
+        extraClass?: string,
+        onClick?: () => void,
+    ) => {
+        const className = cn(
+            'apple-press rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground',
+            extraClass,
+        );
+
+        if (isExternalUrl(item.url) || item.target === '_blank') {
+            return (
+                <a
+                    href={urlOf(item.url)}
+                    target={item.target === '_blank' ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    onClick={onClick}
+                    className={className}
+                >
+                    {item.label}
+                    {isExternalUrl(item.url) && (
+                        <ExternalLink className="ml-1 inline h-3 w-3 opacity-60" />
+                    )}
+                </a>
+            );
+        }
+
+        return (
+            <Link
+                href={item.url}
+                prefetch
+                onClick={onClick}
+                className={className}
+            >
+                {item.label}
+            </Link>
+        );
+    };
 
     return (
         <header className="sticky top-0 z-50">
-            <div className="material-thin border-b-0">
-                <div className="mx-auto flex h-14 max-w-6xl items-center px-5 md:px-8">
+            <div
+                ref={barRef}
+                className={cn(
+                    'relative overflow-hidden',
+                    // 特效开启 = 液态玻璃背景（由 LiquidGlassPanel 承载）；
+                    // 关闭时回退到原有毛玻璃 material-thin
+                    !effectsEnabled && 'material-thin border-b-0',
+                )}
+            >
+                {effectsEnabled && barSize.width > 0 && barSize.height > 0 && (
+                    <LiquidGlassPanel
+                        id={glassId}
+                        width={barSize.width}
+                        height={barSize.height}
+                        radius={12}
+                        bezelWidth={10}
+                    />
+                )}
+
+                <div className="relative mx-auto flex h-14 max-w-6xl items-center px-5 md:px-8">
                     {/* Logo */}
-                    <Link href={home()} className="apple-press flex items-center gap-2 rounded-xl px-1.5 py-1">
+                    <Link
+                        href={home()}
+                        className="apple-press flex items-center gap-2 rounded-xl px-1.5 py-1"
+                    >
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                            <span className="text-sm font-bold">{name?.charAt(0) ?? 'B'}</span>
+                            <span className="text-sm font-bold">
+                                {name?.charAt(0) ?? 'B'}
+                            </span>
                         </div>
-                        <span className="text-headline hidden sm:block">{name}</span>
+                        <span className="text-headline hidden sm:block">
+                            {name}
+                        </span>
                     </Link>
 
                     {/* Desktop Nav */}
                     <nav className="ml-8 hidden items-center gap-1 md:flex">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.title}
-                                href={item.href}
-                                className="apple-press rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
-                            >
-                                {item.title}
-                            </Link>
-                        ))}
+                        {items.map((item) =>
+                            item.children.length > 0 ? (
+                                <div
+                                    key={item.label}
+                                    className="group relative"
+                                >
+                                    {urlOf(item.url) !== '' ? (
+                                        isExternalUrl(item.url) ? (
+                                            <a
+                                                href={urlOf(item.url)}
+                                                target={item.target === '_blank' ? '_blank' : undefined}
+                                                rel="noopener noreferrer"
+                                                className="apple-press inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+                                            >
+                                                {item.label}
+                                                <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:rotate-180" />
+                                            </a>
+                                        ) : (
+                                            <Link
+                                                href={item.url}
+                                                prefetch
+                                                className="apple-press inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+                                            >
+                                                {item.label}
+                                                <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:rotate-180" />
+                                            </Link>
+                                        )
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-foreground/80">
+                                            {item.label}
+                                            <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:rotate-180" />
+                                        </span>
+                                    )}
+                                    {/* 悬停下拉 */}
+                                    <div className="invisible absolute top-full left-0 z-50 pt-1 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100">
+                                        <div className="apple-card min-w-44 p-1.5">
+                                            {item.children.map((child) => (
+                                                <div
+                                                    key={child.label}
+                                                    className="px-1 py-0.5"
+                                                >
+                                                    {renderLink(
+                                                        child,
+                                                        'block rounded-lg px-3 py-2 hover:bg-muted hover:text-foreground',
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div key={item.label}>{renderLink(item)}</div>
+                            ),
+                        )}
                     </nav>
 
                     <div className="ml-auto flex items-center gap-1">
@@ -101,7 +335,11 @@ export default function PublicNavbar() {
                             className="apple-press ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-foreground/70 hover:bg-muted hover:text-foreground md:hidden"
                             aria-label={t('publicNav.menu')}
                         >
-                            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                            {mobileOpen ? (
+                                <X className="h-5 w-5" />
+                            ) : (
+                                <Menu className="h-5 w-5" />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -111,17 +349,90 @@ export default function PublicNavbar() {
             {mobileOpen && (
                 <div className="material-thick border-t border-border/50 md:hidden">
                     <nav className="mx-auto flex max-w-6xl flex-col px-5 py-3">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.title}
-                                href={item.href}
-                                onClick={() => setMobileOpen(false)}
-                                className={cn(
-                                    'apple-press rounded-xl px-4 py-3 text-base font-medium text-foreground/80 hover:bg-muted',
+                        {items.map((item) => (
+                            <div key={item.label}>
+                                {item.children.length > 0 ? (
+                                    <>
+                                        <div className="flex items-center justify-between">
+                                            {urlOf(item.url) !== '' ? (
+                                                isExternalUrl(item.url) ? (
+                                                    <a
+                                                        href={urlOf(item.url)}
+                                                        target={
+                                                            item.target ===
+                                                            '_blank'
+                                                                ? '_blank'
+                                                                : undefined
+                                                        }
+                                                        rel="noopener noreferrer"
+                                                        onClick={() =>
+                                                            setMobileOpen(false)
+                                                        }
+                                                        className="apple-press my-1 block flex-1 rounded-xl px-4 py-3 text-base font-medium text-foreground/80 hover:bg-muted"
+                                                    >
+                                                        {item.label}
+                                                    </a>
+                                                ) : (
+                                                    <Link
+                                                        href={item.url}
+                                                        onClick={() =>
+                                                            setMobileOpen(false)
+                                                        }
+                                                        className="apple-press my-1 block flex-1 rounded-xl px-4 py-3 text-base font-medium text-foreground/80 hover:bg-muted"
+                                                    >
+                                                        {item.label}
+                                                    </Link>
+                                                )
+                                            ) : (
+                                                <span className="my-1 block flex-1 px-4 py-3 text-base font-medium text-foreground/80">
+                                                    {item.label}
+                                                </span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    toggleMobileExpand(
+                                                        item.label,
+                                                    )
+                                                }
+                                                className="apple-press rounded-lg p-2 text-foreground/60 hover:bg-muted"
+                                                aria-label="toggle"
+                                            >
+                                                <ChevronDown
+                                                    className={cn(
+                                                        'h-4 w-4 transition-transform',
+                                                        !mobileExpanded.has(
+                                                            item.label,
+                                                        ) && '-rotate-90',
+                                                    )}
+                                                />
+                                            </button>
+                                        </div>
+                                        {mobileExpanded.has(item.label) &&
+                                            item.children.map((child) => (
+                                                <div
+                                                    key={child.label}
+                                                    className="pl-4"
+                                                >
+                                                    {renderLink(
+                                                        child,
+                                                        'block px-4 py-2.5 text-sm text-foreground/70 hover:bg-muted',
+                                                        () =>
+                                                            setMobileOpen(
+                                                                false,
+                                                            ),
+                                                    )}
+                                                </div>
+                                            ))}
+                                    </>
+                                ) : (
+                                    renderLink(
+                                        item,
+                                        'block px-4 py-3 text-base text-foreground/80 hover:bg-muted',
+                                        () => setMobileOpen(false),
+                                    )
                                 )}
-                            >
-                                {item.title}
-                            </Link>
+                            </div>
                         ))}
                         {!auth.user && (
                             <div className="mt-2 flex flex-col gap-2 border-t border-border/40 pt-3">

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { glassFrostToPanel, useGlassFrost } from '@/hooks/use-glass-frost';
 import { calculateDisplacementMap, calculateDisplacementMap2 } from './displacementMap';
 import { CONVEX } from './surfaceEquations';
 
@@ -214,8 +215,7 @@ export default function LiquidGlassPanel({
     bezelWidth = 20,
     glassThickness = 90,
     refractiveIndex = 1.3,
-    // 比最初 1px 稍强的磨砂
-    baseBlur = 2,
+    frost,
 }: {
     /** 滤镜 id */
     id: string;
@@ -227,10 +227,14 @@ export default function LiquidGlassPanel({
     bezelWidth?: number;
     glassThickness?: number;
     refractiveIndex?: number;
-    /** 模糊半径 */
-    baseBlur?: number;
+    /** 明确指定磨砂度（0-100）；不传则跟随全局「液态玻璃」设置 */
+    frost?: number;
 }) {
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
+    // 磨砂度：0 最通透、100 最磨砂。未显式指定时跟随悬浮设置面板的全局值，
+    // 同时驱动背景模糊半径与玻璃底色不透明度。
+    const { frost: storedFrost } = useGlassFrost();
+    const { blurPx, tintAlpha } = glassFrostToPanel(frost ?? storedFrost);
     const { maps, maxDisp, bufferWidth, bufferHeight } = useDisplacementMaps(
         width,
         height,
@@ -250,20 +254,20 @@ export default function LiquidGlassPanel({
             */}
             <div
                 className="pointer-events-none absolute inset-0"
-                style={{ backdropFilter: `blur(${baseBlur}px) url(#${id})` }}
+                style={{ backdropFilter: `blur(${blurPx}px) url(#${id})` }}
             />
 
-            {/* 玻璃底色：与原实现一致的 60% 玻璃色调 */}
-            <div className="pointer-events-none absolute inset-0 bg-white/60 dark:bg-[#222222]/60" />
+            {/* 玻璃底色：不透明度由「液态玻璃」磨砂度滑块驱动（暗色模式用深灰底色） */}
+            <div className="pointer-events-none absolute inset-0 bg-white dark:hidden" style={{ opacity: tintAlpha }} />
+            <div className="pointer-events-none absolute inset-0 hidden bg-[#222222] dark:block" style={{ opacity: tintAlpha }} />
 
             {/* 边缘高光（iOS 27 液态玻璃调适）：
               上下“内部”亮色高光——沿上/下边缘内侧的亮线，向外渐淡；
-              左右“外部”暗色高光——沿左/右边缘的暗线，向外渐淡。
-              两组均用 1px 线 + 对称 box-shadow 扩散实现，仅作用于玻璃内部。 */}
+              左右“外部”渐淡暗线（两边最暗、向四端渐淡）由使用方在玻璃容器外
+              渲染 GlassEdgeRing（edges 变体）承载——容器 overflow-hidden 会裁掉
+              玻璃层向外的一切，外缘暗线必须画在容器外面。 */}
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-[23px] bg-white/70 dark:bg-white/25 [box-shadow:0_1px_5px_-1px_rgba(255,255,255,0.5)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px rounded-b-[23px] bg-white/70 dark:bg-white/25 [box-shadow:0_-1px_5px_-1px_rgba(255,255,255,0.5)]" />
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-px rounded-l-[23px] bg-black/25 dark:bg-black/50 [box-shadow:2px_0_5px_-2px_rgba(0,0,0,0.35)]" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-px rounded-r-[23px] bg-black/25 dark:bg-black/50 [box-shadow:-2px_0_5px_-2px_rgba(0,0,0,0.35)]" />
 
             <svg colorInterpolationFilters="sRGB" style={{ display: 'none' }}>
                 <defs>

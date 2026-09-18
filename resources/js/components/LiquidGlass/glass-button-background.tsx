@@ -32,12 +32,14 @@ export default function GlassButtonBackground({ size }: { size: number }) {
                 aria-hidden="true"
             />
 
-            {/* 边缘高光（iOS 27 液态玻璃调适）：上下内侧亮色 + 左右外侧暗色，均向外渐淡 */}
+            {/* 边缘高光（iOS 27 液态玻璃调适）：上下内部亮色高光。
+                左右外缘的渐淡暗线由按钮兄弟节点上的 GlassEdgeRing（circle 变体）承载，
+                按钮 overflow-hidden 裁不掉外层的环。 */}
             <div
                 className="pointer-events-none absolute inset-0 rounded-full"
                 style={{
                     boxShadow:
-                        'inset 0 2px 4px -2px rgba(255,255,255,0.9), inset 0 -2px 4px -2px rgba(255,255,255,0.9), inset 3px 0 5px -3px rgba(0,0,0,0.45), inset -3px 0 5px -3px rgba(0,0,0,0.45)',
+                        'inset 0 2px 4px -2px rgba(255,255,255,0.9), inset 0 -2px 4px -2px rgba(255,255,255,0.9)',
                 }}
                 aria-hidden="true"
             />

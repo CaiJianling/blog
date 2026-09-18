@@ -527,6 +527,17 @@
             "themeDefault": "默认（跟随站点主题）",
             "enabled": "开启",
             "disabled": "关闭",
+            "glassFrost": "液态玻璃",
+            "glassFrostClear": "透明",
+            "glassFrostFrosted": "模糊",
+            "glassFrostHint": "左侧更通透（背景清晰），右侧更磨砂（背景模糊）",
+            "resetGlassFrost": "恢复默认",
+            "pageFilter": "页面滤镜",
+            "saturation": "饱和度",
+            "brightness": "亮度",
+            "saturationHint": "左侧褪色偏灰白，右侧更鲜艳",
+            "brightnessHint": "左侧调暗页面，适合夜间阅读；右侧为正常亮度",
+            "resetFilter": "恢复默认",
             "synced": "已登录，设置将同步到账号",
             "local": "未登录，设置仅保存在本浏览器"
         }
@@ -648,6 +659,7 @@
         "title": "文章",
         "list": "文章列表",
         "allArticles": "所有文章",
+        "viewComments": "查看该文章的评论区",
         "create": "写文章",
         "categories": "分类目录",
         "tags": "标签",
@@ -717,12 +729,13 @@
         "ai": {
             "button": "AI 生成",
             "dialogTitle": "AI 生成文章",
-            "dialogDescription": "描述你想写的文章，AI 将生成标题、摘要与正文并填入编辑器，确认无误后再保存录入。",
+            "dialogDescription": "描述你想写的文章，AI 将生成标题、摘要、正文，并自动补齐 SEO、标签与分类，确认无误后再保存录入。",
             "promptPlaceholder": "例如：写一篇面向新手的本地咖啡店探店指南，包括点单建议和避坑提示…",
             "generate": "生成",
             "generating": "生成中…",
-            "success": "AI 已生成内容，请检查后再保存录入。",
+            "success": "AI 已生成内容（含 SEO、标签、分类），请检查后再保存录入。",
             "failed": "AI 生成失败，请稍后重试。",
+            "csrfFailed": "会话已失效或过期，请刷新页面后重试。",
             "confirmOverwrite": "当前已有标题或内容，继续将覆盖现有内容。确定继续吗？",
             "parseFailed": "AI 内容解析失败，请重试。",
             "viewDetail": "查看详情",
@@ -878,7 +891,14 @@
         "reply": "回复",
         "quickEdit": "快速编辑",
         "edit": "编辑",
-        "delete": "彻底删除"
+        "delete": "彻底删除",
+        "approveEdit": "通过修订",
+        "rejectEdit": "拒绝修订",
+        "pendingEdit": "修订待审",
+        "editTitle": "编辑评论",
+        "editHint": "管理员编辑直接生效；非管理员的修改进入待审修订，通过审批后才替换原内容",
+        "save": "保存修改",
+        "editedAt": "最后编辑"
     },
     "publicComment": {
         "title": "评论",
@@ -889,6 +909,14 @@
         "replyTo": "回复 @{{name}}",
         "replyingTo": "正在回复 {{name}} 的评论",
         "cancel": "取消",
+        "edit": "编辑",
+        "save": "保存",
+        "edited": "已编辑",
+        "pendingEdit": "修改待审",
+        "editing": "保存中…",
+        "editSaved": "评论修改已保存",
+        "editPendingSubmitted": "修改已提交，管理员审核通过后生效",
+        "editFailed": "评论修改失败，请重试",
         "anonymous": "匿名",
         "authorBadge": "作者",
         "privateBadge": "悄悄话",
@@ -906,7 +934,8 @@
         "privateHint": "悄悄话只有评论作者和文章作者可见",
         "emptyContent": "请输入评论内容。",
         "views": "{{count}} 次浏览",
-        "commentsCount": "{{count}} 条评论"
+        "commentsCount": "{{count}} 条评论",
+        "readTime": "预计 {{count}} 分钟阅读"
     },
     "articlePage": {
         "blog": "博客",
@@ -914,6 +943,55 @@
         "prev": "上一篇",
         "next": "下一篇",
         "noContent": "暂无内容"
+    },
+    "siteStats": {
+        "title": "站点统计",
+        "description": "查看站点访问趋势、流量来源、用户画像与访问途径",
+        "range7": "近 7 天",
+        "range30": "近 30 天",
+        "range90": "近 90 天",
+        "empty": "所选时间范围内暂无访问数据",
+        "overview": {
+            "pv": "浏览量",
+            "pvDesc": "所选时间范围页面浏览总次数",
+            "uv": "独立访客",
+            "uvDesc": "去重后的访客数量",
+            "newVisitors": "新访客",
+            "newDesc": "首次访问落在该范围的访客",
+            "returningVisitors": "回访访客",
+            "returningDesc": "该范围前已有访问记录的访客"
+        },
+        "trend": {
+            "title": "访问趋势",
+            "pv": "浏览量",
+            "uv": "独立访客"
+        },
+        "topPages": {
+            "title": "热门页面",
+            "empty": "暂无访问记录"
+        },
+        "sources": {
+            "title": "流量来源",
+            "direct": "直接访问",
+            "internal": "站内跳转",
+            "search": "搜索引擎",
+            "social": "社交平台",
+            "external": "其他外链",
+            "referrers": "外部来源 Top"
+        },
+        "profiles": {
+            "title": "用户画像",
+            "browser": "浏览器",
+            "os": "操作系统",
+            "device": "设备类型"
+        },
+        "paths": {
+            "title": "访问途径",
+            "from": "来源",
+            "to": "去向",
+            "landings": "直接访问落地页",
+            "empty": "暂无站内跳转记录"
+        }
     },
     "menus": {
         "title": "菜单",

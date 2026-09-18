@@ -4,16 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\AiRequestException;
 use App\Models\Article;
+use App\Models\Term;
 use App\Models\TermRelationship;
 use App\Models\TermTaxonomy;
 use App\Services\AiService;
+use App\Services\PermalinkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class ArticleController extends Controller
 {
+    public function __construct(
+        protected PermalinkService $permalinks,
+    ) {}
+
     public function index(Request $request)
     {
         $status = $request->query('status', 'all');
@@ -46,6 +53,7 @@ class ArticleController extends Controller
                     'id' => $article->id,
                     'title' => $article->title,
                     'author_name' => $article->author?->nickname ?: ($article->author?->name ?? ''),
+                    'permalink' => $this->permalinks->articlePath($article),
                     'categories' => $categories->pluck('term.name')->toArray(),
                     'tags' => $tags->pluck('term.name')->toArray(),
                     'comment_count' => $article->comment_count,
@@ -169,8 +177,13 @@ class ArticleController extends Controller
             ], 422);
         }
 
+        $context = [
+            'categories' => $this->existingTaxonomyNames('category'),
+            'tags' => $this->existingTaxonomyNames('tag'),
+        ];
+
         try {
-            $result = $ai->generateArticle($validated['prompt']);
+            $result = $ai->generateArticle($validated['prompt'], $context);
         } catch (AiRequestException $e) {
             // 附带真实错误上下文（状态码/URL/上游原始返回），供前端"查看详情"展示
             return response()->json([
@@ -183,7 +196,105 @@ class ArticleController extends Controller
             ], 502);
         }
 
-        return response()->json($result);
+        // 主生成若漏掉 标签/分类（弱模型或 JSON 被容错解析时会缺失），
+        // 再发一次聚焦的提取调用，依据正文补齐，保证贴合内容；补齐失败不影响已生成的标题/正文。
+        if (($result['tags'] ?? []) === [] || ($result['categories'] ?? []) === []) {
+            try {
+                $meta = $ai->extractArticleMeta($result['title'], $result['excerpt'], $result['markdown'], $context);
+
+                $result['tags'] = ($result['tags'] ?? []) !== [] ? $result['tags'] : $meta['tags'];
+                $result['categories'] = ($result['categories'] ?? []) !== [] ? $result['categories'] : $meta['categories'];
+                // 主生成若未产出更好的 SEO，则采用补全调用的（更贴切）
+                $result['meta_title'] = $meta['meta_title'] !== '' ? $meta['meta_title'] : $result['meta_title'];
+                $result['meta_description'] = $meta['meta_description'] !== '' ? $meta['meta_description'] : $result['meta_description'];
+            } catch (\Throwable $e) {
+                Log::warning('AiService: 补全 SEO/标签/分类失败，保留主生成内容', ['error' => $e->getMessage()]);
+            }
+        }
+
+        // 把 AI 生成的分类/标签名解析为 term_taxonomy_id：命中已有则复用，否则创建，
+        // 供前端直接选中（新创建的也会回填到选择器列表以便展示）。
+        $categories = $this->resolveTaxonomyIds('category', $result['categories'] ?? []);
+        $tags = $this->resolveTaxonomyIds('tag', $result['tags'] ?? []);
+
+        return response()->json(array_merge($result, [
+            'category_ids' => $categories['ids'],
+            'tag_ids' => $tags['ids'],
+            'created_categories' => $categories['created'],
+            'created_tags' => $tags['created'],
+        ]));
+    }
+
+    /**
+     * 列出某类（category/tag）下现有的词条名，作为 AI 选词上下文。
+     *
+     * @return array<int, string>
+     */
+    private function existingTaxonomyNames(string $taxonomy): array
+    {
+        return TermTaxonomy::where('taxonomy', $taxonomy)
+            ->with('term')
+            ->get()
+            ->map(fn (TermTaxonomy $item) => (string) $item->term->name)
+            ->filter(fn (string $name) => $name !== '')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * 将词条名解析为 term_taxonomy_id 列表：命中已有（忽略大小写）则复用，否则创建新的词条。
+     *
+     * @param  array<int, string>  $names
+     * @return array{ids: array<int, int>, created: array<int, array{id: int, name: string}>}
+     */
+    private function resolveTaxonomyIds(string $taxonomy, array $names): array
+    {
+        $existing = TermTaxonomy::where('taxonomy', $taxonomy)
+            ->with('term')
+            ->get()
+            ->keyBy(fn (TermTaxonomy $item) => mb_strtolower((string) $item->term->name));
+
+        $ids = [];
+        $created = [];
+
+        foreach ($names as $rawName) {
+            $name = trim((string) $rawName);
+
+            if ($name === '' || mb_strlen($name) > 100) {
+                continue;
+            }
+
+            $key = mb_strtolower($name);
+
+            if (isset($existing[$key])) {
+                $id = $existing[$key]->term_taxonomy_id;
+
+                if (! in_array($id, $ids, true)) {
+                    $ids[] = $id;
+                }
+
+                continue;
+            }
+
+            $term = Term::create([
+                'name' => $name,
+                'slug' => str()->slug($name),
+            ]);
+
+            $tt = TermTaxonomy::create([
+                'term_id' => $term->term_id,
+                'taxonomy' => $taxonomy,
+                'description' => '',
+                'parent' => 0,
+            ]);
+
+            // 登记到 existing，避免同一次请求内重复创建同名词条
+            $existing[$key] = $tt;
+            $ids[] = $tt->term_taxonomy_id;
+            $created[] = ['id' => $tt->term_taxonomy_id, 'name' => $name];
+        }
+
+        return ['ids' => $ids, 'created' => $created];
     }
 
     public function edit(Article $article)

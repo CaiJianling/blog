@@ -11,6 +11,7 @@ import { useAppearance } from '@/hooks/use-appearance';
 import { useLocale } from '@/hooks/use-locale';
 import type { Locale } from '@/i18n';
 import { CODE_LANGUAGES } from '@/lib/code-languages';
+import { getCsrfHeaders } from '@/lib/csrf';
 
 /**
  * BlockNote 块编辑器组件。
@@ -51,33 +52,12 @@ const editorSchema = BlockNoteSchema.create({
     },
 });
 
-function getCsrfToken(): { headerName: string; value: string } | null {
-    const meta = document
-        .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute('content');
-
-    if (meta) {
-        return { headerName: 'X-CSRF-TOKEN', value: meta };
-    }
-
-    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
-
-    if (match?.[1]) {
-        return {
-            headerName: 'X-XSRF-TOKEN',
-            value: decodeURIComponent(match[1]),
-        };
-    }
-
-    return null;
-}
-
 /** 上传文件到媒体库，返回可直接访问的 URL。 */
 async function uploadAttachment(file: File): Promise<string> {
     const formData = new FormData();
     formData.append('files[]', file);
 
-    const csrf = getCsrfToken();
+    const csrf = getCsrfHeaders();
 
     if (!csrf) {
         throw new Error('CSRF token not found.');
@@ -88,7 +68,7 @@ async function uploadAttachment(file: File): Promise<string> {
         headers: {
             Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            [csrf.headerName]: csrf.value,
+            ...csrf,
         },
         body: formData,
     });

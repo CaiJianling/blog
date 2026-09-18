@@ -8,7 +8,7 @@ export function AppSidebarHeader({
     breadcrumbs?: BreadcrumbItemType[];
 }) {
     return (
-        <header className="material-thin flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border/30 px-6 transition-[width,height] ease-[cubic-bezier(0.25,0.1,0.25,1)] duration-200 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4 z-20">
+        <header className="material-thin sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border/30 px-6 transition-[width,height] ease-[cubic-bezier(0.25,0.1,0.25,1)] duration-200 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4">
             <div className="flex items-center gap-2">
                 <SidebarTrigger className="-ml-1" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />

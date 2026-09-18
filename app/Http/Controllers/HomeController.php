@@ -64,6 +64,7 @@ class HomeController extends Controller
             'views' => $article->views,
             'likes' => $article->likes,
             'comment_count' => $article->comment_count,
+            'reading_time' => $article->estimatedReadingMinutes(),
             'created_at' => $article->created_at->format('Y-m-d'),
         ];
     }

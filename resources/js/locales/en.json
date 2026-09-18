@@ -527,6 +527,17 @@
             "themeDefault": "Default (site theme)",
             "enabled": "Enabled",
             "disabled": "Disabled",
+            "glassFrost": "Liquid glass",
+            "glassFrostClear": "Clear",
+            "glassFrostFrosted": "Frosted",
+            "glassFrostHint": "Left is more transparent (crisp background), right is more frosted (blurred background)",
+            "resetGlassFrost": "Reset to default",
+            "pageFilter": "Page filter",
+            "saturation": "Saturation",
+            "brightness": "Brightness",
+            "saturationHint": "Left washes out toward gray, right boosts vividness",
+            "brightnessHint": "Left dims the page for night reading, right is normal",
+            "resetFilter": "Reset to default",
             "synced": "Signed in, settings sync to your account",
             "local": "Signed out, settings stored in this browser only"
         }
@@ -648,6 +659,7 @@
         "title": "Articles",
         "list": "Article List",
         "allArticles": "All Articles",
+        "viewComments": "View the comments for this article",
         "create": "Write Article",
         "categories": "Categories",
         "tags": "Tags",
@@ -717,12 +729,13 @@
         "ai": {
             "button": "AI Generate",
             "dialogTitle": "Generate with AI",
-            "dialogDescription": "Describe the article you want. AI will draft a title, excerpt and body into the editor; review it before saving.",
+            "dialogDescription": "Describe the article you want. AI will draft a title, excerpt and body, and auto-fill SEO, tags and categories; review it before saving.",
             "promptPlaceholder": "e.g. Write a beginner-friendly guide to local coffee shops, including ordering tips…",
             "generate": "Generate",
             "generating": "Generating…",
-            "success": "AI content ready. Please review before saving.",
+            "success": "AI content ready (including SEO, tags and categories). Please review before saving.",
             "failed": "AI generation failed. Please try again later.",
+            "csrfFailed": "Your session has expired or become invalid. Please refresh the page and try again.",
             "confirmOverwrite": "You already have a title or content. Continuing will overwrite it. Continue?",
             "parseFailed": "Failed to parse AI content. Please try again.",
             "viewDetail": "View details",
@@ -878,7 +891,14 @@
         "reply": "Reply",
         "quickEdit": "Quick Edit",
         "edit": "Edit",
-        "delete": "Delete Permanently"
+        "delete": "Delete Permanently",
+        "approveEdit": "Approve edit",
+        "rejectEdit": "Reject edit",
+        "pendingEdit": "Pending edit",
+        "editTitle": "Edit comment",
+        "editHint": "Admin edits apply immediately; non-admin edits wait for approval before replacing the content",
+        "save": "Save changes",
+        "editedAt": "Last edited"
     },
     "publicComment": {
         "title": "Comments",
@@ -889,6 +909,14 @@
         "replyTo": "Reply to @{{name}}",
         "replyingTo": "Replying to {{name}}'s comment",
         "cancel": "Cancel",
+        "edit": "Edit",
+        "save": "Save",
+        "edited": "Edited",
+        "pendingEdit": "Your edit is pending review",
+        "editing": "Saving…",
+        "editSaved": "Comment updated",
+        "editPendingSubmitted": "Edit submitted. It takes effect after admin approval.",
+        "editFailed": "Failed to update the comment. Please try again.",
         "anonymous": "Anonymous",
         "authorBadge": "Author",
         "privateBadge": "Private",
@@ -906,7 +934,8 @@
         "privateHint": "Private comments are only visible to the comment author and the post author",
         "emptyContent": "Please enter a comment.",
         "views": "{{count}} views",
-        "commentsCount": "{{count}} comments"
+        "commentsCount": "{{count}} comments",
+        "readTime": "About {{count}} min read"
     },
     "articlePage": {
         "blog": "Blog",
@@ -914,6 +943,55 @@
         "prev": "Previous",
         "next": "Next",
         "noContent": "No content yet"
+    },
+    "siteStats": {
+        "title": "Site Stats",
+        "description": "View traffic trends, sources, audience profile and visit paths",
+        "range7": "Last 7 days",
+        "range30": "Last 30 days",
+        "range90": "Last 90 days",
+        "empty": "No visit data in the selected range",
+        "overview": {
+            "pv": "Page Views",
+            "pvDesc": "Total page views in range",
+            "uv": "Unique Visitors",
+            "uvDesc": "Deduplicated visitors",
+            "newVisitors": "New Visitors",
+            "newDesc": "Visitors whose first visit is in range",
+            "returningVisitors": "Returning Visitors",
+            "returningDesc": "Visitors with earlier records"
+        },
+        "trend": {
+            "title": "Traffic Trend",
+            "pv": "Page Views",
+            "uv": "Unique Visitors"
+        },
+        "topPages": {
+            "title": "Top Pages",
+            "empty": "No visits yet"
+        },
+        "sources": {
+            "title": "Traffic Sources",
+            "direct": "Direct",
+            "internal": "Internal",
+            "search": "Search Engine",
+            "social": "Social",
+            "external": "Other Referral",
+            "referrers": "Top External Referrers"
+        },
+        "profiles": {
+            "title": "Audience",
+            "browser": "Browser",
+            "os": "Operating System",
+            "device": "Device Type"
+        },
+        "paths": {
+            "title": "Visit Paths",
+            "from": "From",
+            "to": "To",
+            "landings": "Direct Landing Pages",
+            "empty": "No internal navigation yet"
+        }
     },
     "menus": {
         "title": "Menus",

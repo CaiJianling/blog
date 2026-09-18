@@ -4,6 +4,7 @@ import { MessageSquare, Rocket } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import FloatingSettingsPanel from '@/components/floating-settings-panel';
 import GlassButtonBackground from '@/components/LiquidGlass/glass-button-background';
+import GlassEdgeRing from '@/components/LiquidGlass/glass-edge-ring';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEffects } from '@/hooks/use-effects';
 import { cn } from '@/lib/utils';
@@ -89,22 +90,27 @@ export default function FloatingActions() {
             {isArticle && hasComments && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <motion.button
-                            type="button"
-                            onClick={scrollToComments}
-                            onPointerDown={() => press(pressComment)}
-                            onPointerUp={() => release(pressComment)}
-                            onPointerLeave={() => release(pressComment)}
+                        <motion.span
                             animate={pressComment}
-                            className={cn(
-                                'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
-                                !effectsEnabled && 'bg-popover',
-                            )}
-                            aria-label="跳转到评论区"
+                            className="relative block h-10 w-10"
                         >
-                            <GlassButtonBackground size={40} />
-                            <MessageSquare className="relative h-4 w-4" />
-                        </motion.button>
+                            <button
+                                type="button"
+                                onClick={scrollToComments}
+                                onPointerDown={() => press(pressComment)}
+                                onPointerUp={() => release(pressComment)}
+                                onPointerLeave={() => release(pressComment)}
+                                className={cn(
+                                    'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
+                                    !effectsEnabled && 'bg-popover',
+                                )}
+                                aria-label="跳转到评论区"
+                            >
+                                <GlassButtonBackground size={40} />
+                                <MessageSquare className="relative h-4 w-4" />
+                            </button>
+                            {effectsEnabled && <GlassEdgeRing variant="circle" />}
+                        </motion.span>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="tooltip-dark">
                         跳转到评论区
@@ -114,39 +120,44 @@ export default function FloatingActions() {
             {showTop && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <motion.button
-                            type="button"
-                            onClick={backToTop}
-                            onPointerDown={() => press(pressTop)}
-                            onPointerUp={() => release(pressTop)}
-                            onPointerLeave={() => release(pressTop)}
+                        <motion.span
                             animate={pressTop}
-                            className={cn(
-                                'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
-                                !effectsEnabled && 'bg-popover',
-                            )}
-                            aria-label="回到顶部"
+                            className="relative block h-10 w-10"
                         >
-                            <GlassButtonBackground size={40} />
-                            {showRing && (
-                                <svg viewBox="0 0 40 40" className="pointer-events-none absolute inset-0 h-10 w-10 -rotate-90">
-                                    <circle cx="20" cy="20" r={ringRadius} fill="none" stroke="currentColor" strokeWidth="2.5" className="text-border/40" />
-                                    <circle
-                                        cx="20"
-                                        cy="20"
-                                        r={ringRadius}
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2.5"
-                                        strokeLinecap="round"
-                                        className="text-primary transition-[stroke-dashoffset] duration-150 ease-out"
-                                        strokeDasharray={ringCircumference}
-                                        strokeDashoffset={ringCircumference * (1 - progress / 100)}
-                                    />
-                                </svg>
-                            )}
-                            <Rocket className="relative h-4 w-4" />
-                        </motion.button>
+                            <button
+                                type="button"
+                                onClick={backToTop}
+                                onPointerDown={() => press(pressTop)}
+                                onPointerUp={() => release(pressTop)}
+                                onPointerLeave={() => release(pressTop)}
+                                className={cn(
+                                    'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
+                                    !effectsEnabled && 'bg-popover',
+                                )}
+                                aria-label="回到顶部"
+                            >
+                                <GlassButtonBackground size={40} />
+                                {showRing && (
+                                    <svg viewBox="0 0 40 40" className="pointer-events-none absolute inset-0 h-10 w-10 -rotate-90">
+                                        <circle cx="20" cy="20" r={ringRadius} fill="none" stroke="currentColor" strokeWidth="2.5" className="text-border/40" />
+                                        <circle
+                                            cx="20"
+                                            cy="20"
+                                            r={ringRadius}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2.5"
+                                            strokeLinecap="round"
+                                            className="text-primary transition-[stroke-dashoffset] duration-150 ease-out"
+                                            strokeDasharray={ringCircumference}
+                                            strokeDashoffset={ringCircumference * (1 - progress / 100)}
+                                        />
+                                    </svg>
+                                )}
+                                <Rocket className="relative h-4 w-4" />
+                            </button>
+                            {effectsEnabled && <GlassEdgeRing variant="circle" />}
+                        </motion.span>
                     </TooltipTrigger>
                 <TooltipContent side="left" className="tooltip-dark">
                     {showRing ? `阅读进度 ${Math.round(progress)}%` : '回到顶部'}

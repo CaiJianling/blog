@@ -1,28 +1,46 @@
 import { usePage } from '@inertiajs/react';
 import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
-import { Moon, Palette, Settings, Sparkles, X } from 'lucide-react';
+import { Contrast, GlassWater, Moon, Palette, Settings, Sparkles, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import GlassButtonBackground from '@/components/LiquidGlass/glass-button-background';
+import GlassEdgeRing from '@/components/LiquidGlass/glass-edge-ring';
 import LiquidGlassPanel from '@/components/LiquidGlass/LiquidGlassPanel';
+import LiquidSlider from '@/components/LiquidGlass/LiquidSlider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEffects, updateEffectsEnabled } from '@/hooks/use-effects';
+import {
+    DEFAULT_GLASS_FROST,
+    GLASS_FROST_LIMITS,
+    useGlassFrost,
+} from '@/hooks/use-glass-frost';
 import { useLocale, updateLocale } from '@/hooks/use-locale';
+import {
+    BRIGHTNESS_LIMITS,
+    DEFAULT_PAGE_FILTER,
+    SATURATION_LIMITS,
+    updatePageFilter,
+    usePageFilter,
+} from '@/hooks/use-page-filter';
 import { useThemeColor, updateThemeColor } from '@/hooks/use-theme-color';
 import type { Locale } from '@/i18n';
+import { getCsrfHeaders } from '@/lib/csrf';
 import { cn } from '@/lib/utils';
 import { show as userSettingsShow, update as userSettingsUpdate } from '@/routes/user-settings';
 
 type UserPreferences = {
     locale: Locale;
     effectsEnabled: boolean;
+    filterSaturation: number;
+    filterBrightness: number;
 };
 
 /**
  * 前台右下角悬浮设置入口：
  * - 界面特效开关（液态玻璃 / 半透明磨砂）
  * - 界面语言切换
+ * - 页面滤镜调整（饱和度 / 亮度，CSS filter 作用于页面内容）
  *
  * 未登录时设置仅保存在浏览器（localStorage）；登录用户的设置同步到
  * 项目数据库（users 表），登录后自动拉取覆盖本地值。
@@ -43,13 +61,15 @@ export default function FloatingSettingsPanel() {
     const [open, setOpen] = useState(false);
     const [anchor, setAnchor] = useState<{ right: number; bottom: number } | null>(null);
     const [glassSize, setGlassSize] = useState({ width: 0, height: 0 });
-    const gearRef = useRef<HTMLButtonElement>(null);
+    const gearRef = useRef<HTMLElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
     const popoverBodyRef = useRef<HTMLDivElement>(null);
     const filterId = useId();
     const { effectsEnabled } = useEffects();
     const locale = useLocale();
     const themeColor = useThemeColor().themeColor;
+    const { saturation, brightness, resetPageFilter } = usePageFilter();
+    const { frost, updateGlassFrost, resetGlassFrost } = useGlassFrost();
     const pressGear = useAnimationControls();
     const lastSynced = useRef<UserPreferences | null>(null);
 
@@ -90,12 +110,25 @@ export default function FloatingSettingsPanel() {
             return;
         }
 
-        const observer = new ResizeObserver(() => {
+        const update = () => {
             setGlassSize({ width: el.offsetWidth, height: el.offsetHeight });
-        });
-        observer.observe(el);
+        };
 
-        return () => observer.disconnect();
+        // 立即测量一次（ResizeObserver 首次回调是异步的，直接测量可避免
+        // 弹窗展开瞬间玻璃层缺失）；RO 负责后续尺寸变化，定时器兜底节流环境。
+        update();
+
+        const observer = new ResizeObserver(update);
+
+        observer.observe(el);
+        const fallback1 = window.setTimeout(update, 50);
+        const fallback2 = window.setTimeout(update, 300);
+
+        return () => {
+            observer.disconnect();
+            window.clearTimeout(fallback1);
+            window.clearTimeout(fallback2);
+        };
     }, [open]);
 
     // 点击弹窗与齿轮按钮之外时关闭
@@ -139,6 +172,7 @@ export default function FloatingSettingsPanel() {
             lastSynced.current = data;
             updateLocale(data.locale);
             updateEffectsEnabled(data.effectsEnabled);
+            updatePageFilter(data.filterSaturation, data.filterBrightness);
         };
 
         void fetchSettings();
@@ -148,7 +182,8 @@ export default function FloatingSettingsPanel() {
         };
     }, [isAuthed]);
 
-    // 登录状态下偏好变化时同步回数据库（仅在有差异时写入）
+    // 登录状态下偏好变化时同步回数据库（仅在有差异时写入）。
+    // 滤镜数值拖拽时每帧变化，延迟 1.2s 合并写入，避免高频请求。
     useEffect(() => {
         const last = lastSynced.current;
 
@@ -156,16 +191,31 @@ export default function FloatingSettingsPanel() {
             return;
         }
 
-        if (locale === last.locale && effectsEnabled === last.effectsEnabled) {
+        const changed =
+            locale !== last.locale ||
+            effectsEnabled !== last.effectsEnabled ||
+            saturation !== last.filterSaturation ||
+            brightness !== last.filterBrightness;
+
+        if (!changed) {
             return;
         }
 
-        lastSynced.current = { locale, effectsEnabled };
-        void request<UserPreferences>(userSettingsUpdate.url(), {
-            method: 'PUT',
-            body: JSON.stringify({ locale, effects_enabled: effectsEnabled }),
-        });
-    }, [isAuthed, locale, effectsEnabled]);
+        const timer = setTimeout(() => {
+            lastSynced.current = { locale, effectsEnabled, filterSaturation: saturation, filterBrightness: brightness };
+            void request<UserPreferences>(userSettingsUpdate.url(), {
+                method: 'PUT',
+                body: JSON.stringify({
+                    locale,
+                    effects_enabled: effectsEnabled,
+                    filter_saturation: saturation,
+                    filter_brightness: brightness,
+                }),
+            });
+        }, 1200);
+
+        return () => clearTimeout(timer);
+    }, [isAuthed, locale, effectsEnabled, saturation, brightness]);
 
     return (
         <>
@@ -263,6 +313,44 @@ export default function FloatingSettingsPanel() {
                                     </div>
 
                                     <div className="mt-3">
+                                        <div className="mb-1.5 flex items-center justify-between">
+                                            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                                                <GlassWater className="h-3.5 w-3.5" />
+                                                {t('settings.floating.glassFrost')}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                {frost !== DEFAULT_GLASS_FROST ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => resetGlassFrost()}
+                                                        className="text-[11px] text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                                                    >
+                                                        {t('settings.floating.resetGlassFrost')}
+                                                    </button>
+                                                ) : null}
+                                                <span className="font-mono text-[11px] tabular-nums text-foreground">
+                                                    {frost}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
+                                            <span title={t('settings.floating.glassFrostHint')}>
+                                                {t('settings.floating.glassFrostClear')}
+                                            </span>
+                                            <span>{t('settings.floating.glassFrostFrosted')}</span>
+                                        </div>
+                                        <LiquidSlider
+                                            size={0.5}
+                                            fillContainer
+                                            min={GLASS_FROST_LIMITS.min}
+                                            max={GLASS_FROST_LIMITS.max}
+                                            value={frost}
+                                            onChange={(next) => updateGlassFrost(next)}
+                                            aria-label={t('settings.floating.glassFrost')}
+                                        />
+                                    </div>
+
+                                    <div className="mt-3">
                                         <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                                             <Palette className="h-3.5 w-3.5" />
                                             {t('settings.floating.themeColor')}
@@ -297,10 +385,89 @@ export default function FloatingSettingsPanel() {
                                         </div>
                                     </div>
 
+                                    <div className="mt-3">
+                                        <div className="mb-1.5 flex items-center justify-between">
+                                            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                                                <Contrast className="h-3.5 w-3.5" />
+                                                {t('settings.floating.pageFilter')}
+                                            </p>
+                                            {saturation !== DEFAULT_PAGE_FILTER.saturation ||
+                                            brightness !== DEFAULT_PAGE_FILTER.brightness ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => resetPageFilter()}
+                                                    className="text-[11px] text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                                                >
+                                                    {t('settings.floating.resetFilter')}
+                                                </button>
+                                            ) : null}
+                                        </div>
+                                        <div className="space-y-2.5">
+                                            <div>
+                                                <div className="mb-1 flex items-center justify-between">
+                                                    <span
+                                                        className="text-[11px] text-muted-foreground"
+                                                        title={t('settings.floating.saturationHint')}
+                                                    >
+                                                        {t('settings.floating.saturation')}
+                                                    </span>
+                                                    <span className="font-mono text-[11px] tabular-nums text-foreground">
+                                                        {saturation}%
+                                                    </span>
+                                                </div>
+                                                <LiquidSlider
+                                                    size={0.5}
+                                                    fillContainer
+                                                    min={SATURATION_LIMITS.min}
+                                                    max={SATURATION_LIMITS.max}
+                                                    value={saturation}
+                                                    onChange={(next) => updatePageFilter(next, brightness)}
+                                                    aria-label={t('settings.floating.saturation')}
+                                                />
+                                            </div>
+                                            <div>
+                                                <div className="mb-1 flex items-center justify-between">
+                                                    <span
+                                                        className="text-[11px] text-muted-foreground"
+                                                        title={t('settings.floating.brightnessHint')}
+                                                    >
+                                                        {t('settings.floating.brightness')}
+                                                    </span>
+                                                    <span className="font-mono text-[11px] tabular-nums text-foreground">
+                                                        {brightness}%
+                                                    </span>
+                                                </div>
+                                                <LiquidSlider
+                                                    size={0.5}
+                                                    fillContainer
+                                                    min={BRIGHTNESS_LIMITS.min}
+                                                    max={BRIGHTNESS_LIMITS.max}
+                                                    value={brightness}
+                                                    onChange={(next) => updatePageFilter(saturation, next)}
+                                                    aria-label={t('settings.floating.brightness')}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <p className="mt-3 border-t border-border/50 pt-2 text-[11px] leading-relaxed text-muted-foreground">
                                         {isAuthed ? t('settings.floating.synced') : t('settings.floating.local')}
                                     </p>
                                     </div>
+                                </motion.div>
+                            )}
+                            {/* 外缘暗线环（iOS 27）：与弹窗同动画的外层 1px 渐淡暗线兄弟节点 */}
+                            {open && effectsEnabled && (
+                                <motion.div
+                                    key="settings-popover-edge"
+                                    initial={{ y: 8, scale: 0.96 }}
+                                    animate={{ y: 0, scale: 1 }}
+                                    exit={{ y: 8, scale: 0.96 }}
+                                    transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                                    style={{ transformOrigin: 'bottom right' }}
+                                    className="pointer-events-none absolute inset-0"
+                                >
+                                    <GlassEdgeRing variant="edges" radius={24} />
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -310,24 +477,29 @@ export default function FloatingSettingsPanel() {
 
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <motion.button
+                    <motion.span
                         ref={gearRef}
-                        type="button"
-                        onClick={toggleOpen}
-                        onPointerDown={() => press(pressGear)}
-                        onPointerUp={() => release(pressGear)}
-                        onPointerLeave={() => release(pressGear)}
                         animate={pressGear}
-                        className={cn(
-                            'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
-                            !effectsEnabled && 'bg-popover',
-                            open && 'text-primary',
-                        )}
-                        aria-label={t('settings.floating.open')}
+                        className="relative block h-10 w-10"
                     >
-                        <GlassButtonBackground size={40} />
-                        <Settings className="relative h-4 w-4" />
-                    </motion.button>
+                        <button
+                            type="button"
+                            onClick={toggleOpen}
+                            onPointerDown={() => press(pressGear)}
+                            onPointerUp={() => release(pressGear)}
+                            onPointerLeave={() => release(pressGear)}
+                            className={cn(
+                                'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
+                                !effectsEnabled && 'bg-popover',
+                                open && 'text-primary',
+                            )}
+                            aria-label={t('settings.floating.open')}
+                        >
+                            <GlassButtonBackground size={40} />
+                            <Settings className="relative h-4 w-4" />
+                        </button>
+                        {effectsEnabled && <GlassEdgeRing variant="circle" />}
+                    </motion.span>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="tooltip-dark">
                     {t('settings.floating.open')}
@@ -338,19 +510,14 @@ export default function FloatingSettingsPanel() {
 }
 
 async function request<T>(url: string, init: RequestInit): Promise<T | null> {
-    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
-    const xsrf = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)?.[1];
     const headers: Record<string, string> = {
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
+        // 优先 XSRF-TOKEN cookie（服务端每个响应都会重发，始终与当前会话同步）；
+        // meta csrf-token 只在整页加载时渲染，会话轮换/过期后会陈旧导致 419
+        ...getCsrfHeaders(),
     };
-
-    if (csrf) {
-        headers['X-CSRF-TOKEN'] = csrf;
-    } else if (xsrf) {
-        headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrf);
-    }
 
     try {
         const response = await fetch(url, { ...init, headers });

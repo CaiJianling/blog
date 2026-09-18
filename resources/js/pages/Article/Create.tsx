@@ -58,6 +58,23 @@ interface Props {
     tags: Tag[];
 }
 
+/** 合并两组 id 并去重（保留原有顺序，新 id 追加在后）。 */
+function mergeUniqueIds(base: number[], extra: number[] | undefined): number[] {
+    if (!extra || extra.length === 0) {
+        return base;
+    }
+
+    return Array.from(new Set([...base, ...extra]));
+}
+
+/** 追加不在列表中的词条（按 id 去重），用于把 AI 新建的分类/标签回填进选择器。 */
+function mergeUniqueItems<T extends { id: number; name: string }>(base: T[], extra: T[]): T[] {
+    const existing = new Set(base.map((item) => item.id));
+    const fresh = extra.filter((item) => !existing.has(item.id));
+
+    return fresh.length ? [...base, ...fresh] : base;
+}
+
 function SidebarSection({
     icon: Icon,
     title,
@@ -132,6 +149,10 @@ export default function CreateArticle({ categories, tags }: Props) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
+    // 本地持有分类/标签列表：AI 生成会新建词条，需要追加进来以便选择器展示
+    const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+    const [localTags, setLocalTags] = useState<Tag[]>(tags);
+
     useEffect(() => {
         if (titleRef.current) {
             titleRef.current.focus();
@@ -176,7 +197,20 @@ export default function CreateArticle({ categories, tags }: Props) {
             ...prev,
             title: result.title,
             excerpt: result.excerpt || prev.excerpt,
+            meta_title: result.meta_title || prev.meta_title,
+            meta_description: result.meta_description || prev.meta_description,
+            categories: mergeUniqueIds(prev.categories, result.category_ids),
+            selectedTags: mergeUniqueIds(prev.selectedTags, result.tag_ids),
         }));
+
+        // 把 AI 新建的分类/标签追加进本地列表，选择器才能展示它们
+        if (result.created_categories?.length) {
+            setLocalCategories((prev) => mergeUniqueItems(prev, result.created_categories ?? []));
+        }
+
+        if (result.created_tags?.length) {
+            setLocalTags((prev) => mergeUniqueItems(prev, result.created_tags ?? []));
+        }
 
         if (!editor || typeof editor.tryParseMarkdownToBlocks !== 'function') {
             toast.error(t('articles.ai.parseFailed'));
@@ -446,7 +480,7 @@ export default function CreateArticle({ categories, tags }: Props) {
                             description={`已选 ${formData.categories.length} 个`}
                         >
                             <CategoryPicker
-                                items={categories as CategoryItem[]}
+                                items={localCategories as CategoryItem[]}
                                 selected={formData.categories}
                                 onChange={(next) =>
                                     setFormData({
@@ -463,7 +497,7 @@ export default function CreateArticle({ categories, tags }: Props) {
                             description={`已选 ${formData.selectedTags.length} 个`}
                         >
                             <TagPicker
-                                items={tags as TagItem[]}
+                                items={localTags as TagItem[]}
                                 selected={formData.selectedTags}
                                 onChange={(next) =>
                                     setFormData({

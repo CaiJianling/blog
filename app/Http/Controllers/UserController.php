@@ -9,9 +9,11 @@ use Inertia\Inertia;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::all();
+        $users = User::query()
+            ->orderBy('id', 'desc')
+            ->paginate(10);
 
         return Inertia::render('User/Index', [
             'users' => $users,

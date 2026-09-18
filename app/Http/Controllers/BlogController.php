@@ -79,6 +79,7 @@ class BlogController extends Controller
                 'views' => $article->views,
                 'likes' => $article->likes,
                 'comment_count' => $article->comment_count,
+                'reading_time' => $article->estimatedReadingMinutes(),
                 'created_at' => $article->created_at->format('Y-m-d'),
             ];
         });
@@ -246,6 +247,7 @@ class BlogController extends Controller
                 'tags' => $tags,
                 'views' => $article->views,
                 'comment_count' => $article->comment_count,
+                'reading_time' => $article->estimatedReadingMinutes(),
                 'created_at' => $article->created_at->format('Y-m-d'),
                 'permalink' => $this->permalinks->articlePath($article),
                 'comment_status' => $article->comment_status,
@@ -276,6 +278,8 @@ class BlogController extends Controller
      */
     private function formatComment(Comment $comment, ?User $user): array
     {
+        $isOwn = $user !== null && (int) $comment->user_id === (int) $user->id;
+
         return [
             'comment_id' => $comment->comment_id,
             'parent_id' => $comment->parent_id,
@@ -284,9 +288,17 @@ class BlogController extends Controller
             'author_qq' => $comment->author_qq,
             'avatar' => $comment->avatar_url,
             'html' => $this->commentService->renderContent($comment),
+            // 原文（未渲染），供本人编辑时回填编辑器
+            'content' => $comment->content,
+            'user_id' => $comment->user_id,
             'is_private' => $comment->is_private,
             'is_markdown' => $comment->is_markdown,
-            'is_own' => $user !== null && (int) $comment->user_id === (int) $user->id,
+            'is_own' => $isOwn,
+            // 本人评论是否有待审批的编辑修订
+            'has_pending_edit' => $isOwn && $comment->hasPendingEdit(),
+            // 待审修订原文（本人评论编辑时回填；无则为 null）
+            'pending_edit' => $isOwn ? $comment->edited_content : null,
+            'edited_at' => $comment->edited_at?->format('Y-m-d H:i'),
             'created_at' => $comment->created_at?->format('Y-m-d H:i'),
         ];
     }
