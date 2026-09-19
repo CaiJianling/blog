@@ -709,7 +709,7 @@ export default function Site({
                                                                         }
                                                                     >
                                                                         {
-                                                                            item.label
+                                                                            t(`settings.site.captchaType.${item.value}`)
                                                                         }
                                                                     </SelectItem>
                                                                 ),
@@ -750,7 +750,7 @@ export default function Site({
                                                                             }
                                                                         >
                                                                             {
-                                                                                item.label
+                                                                                t(`settings.site.captchaComplexity.${item.value}`)
                                                                             }
                                                                         </SelectItem>
                                                                     ),
@@ -833,7 +833,7 @@ export default function Site({
                                                                         }
                                                                     >
                                                                         {
-                                                                            item.label
+                                                                            t(`settings.site.captchaType.${item.value}`)
                                                                         }
                                                                     </SelectItem>
                                                                 ),
@@ -877,7 +877,7 @@ export default function Site({
                                                                                 }
                                                                             >
                                                                                 {
-                                                                                    item.label
+                                                                                    t(`settings.site.captchaComplexity.${item.value}`)
                                                                                 }
                                                                             </SelectItem>
                                                                         ),
@@ -958,7 +958,7 @@ export default function Site({
                                                                         }
                                                                     >
                                                                         {
-                                                                            item.label
+                                                                            t(`settings.site.captchaType.${item.value}`)
                                                                         }
                                                                     </SelectItem>
                                                                 ),
@@ -1002,7 +1002,7 @@ export default function Site({
                                                                                 }
                                                                             >
                                                                                 {
-                                                                                    item.label
+                                                                                    t(`settings.site.captchaComplexity.${item.value}`)
                                                                                 }
                                                                             </SelectItem>
                                                                         ),

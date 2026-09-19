@@ -1,8 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Github, Link2, Mail, Twitter } from 'lucide-react';
+import { Github, Link2, Mail, Rss, Twitter } from 'lucide-react';
 import { renderMarkdown } from '@/lib/markdown';
 import { home } from '@/routes';
 import blog from '@/routes/blog';
+import { index as feed } from '@/actions/App/Http/Controllers/FeedController';
 import links from '@/routes/links';
 import nav from '@/routes/nav';
 import tools from '@/routes/tools';
@@ -98,6 +99,16 @@ export default function PublicFooter() {
                                 >
                                     友链
                                 </Link>
+                            </li>
+                            <li>
+                                <a
+                                    href={feed().url}
+                                    className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                                    title="RSS 订阅"
+                                >
+                                    <Rss className="h-3.5 w-3.5 text-orange-500" />
+                                    RSS 订阅
+                                </a>
                             </li>
                         </ul>
                     </div>

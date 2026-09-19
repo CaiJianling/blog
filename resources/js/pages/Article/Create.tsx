@@ -14,6 +14,7 @@ import {
     ChevronRight,
     Sparkles,
     Search,
+    Image as ImageIcon,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +28,8 @@ import type {
 } from '@/components/blocknote-editor';
 import type { CategoryItem } from '@/components/category-picker';
 import { CategoryPicker } from '@/components/category-picker';
+import FeaturedImagePicker from '@/components/featured-image-picker';
+import type { FeaturedSelection } from '@/components/featured-image-picker';
 import MediaQuickUpload from '@/components/media-quick-upload';
 import type { TagItem } from '@/components/tag-picker';
 import { TagPicker } from '@/components/tag-picker';
@@ -148,6 +151,8 @@ export default function CreateArticle({ categories, tags }: Props) {
     });
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [aiDialogOpen, setAiDialogOpen] = useState(false);
+    const [featuredImage, setFeaturedImage] =
+        useState<FeaturedSelection>(null);
 
     // 本地持有分类/标签列表：AI 生成会新建词条，需要追加进来以便选择器展示
     const [localCategories, setLocalCategories] = useState<Category[]>(categories);
@@ -169,6 +174,7 @@ export default function CreateArticle({ categories, tags }: Props) {
             meta_title: formData.meta_title,
             meta_description: formData.meta_description,
             content: formData.content ?? [],
+            featured_image: featuredImage?.id ?? null,
             status: overrideStatus ?? formData.status,
             comment_status: formData.comment_status,
             categories: formData.categories,
@@ -335,6 +341,18 @@ export default function CreateArticle({ categories, tags }: Props) {
                                 : 'hidden w-0 shrink-0'
                         }
                     >
+                        <SidebarSection
+                            icon={ImageIcon}
+                            title={t('articles.featuredImage.title')}
+                            description={t('articles.featuredImage.hint')}
+                        >
+                            <FeaturedImagePicker
+                                selected={featuredImage}
+                                onSelect={setFeaturedImage}
+                                parentType="article"
+                            />
+                        </SidebarSection>
+
                         <SidebarSection
                             icon={Settings2}
                             title={t('articles.form.status')}

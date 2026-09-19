@@ -29,6 +29,7 @@ type Article = {
     slug: string;
     permalink: string;
     excerpt: string;
+    featured_image?: string | null;
     author_name: string;
     author_avatar: string;
     categories: { name: string; slug: string }[];
@@ -316,8 +317,18 @@ export default function Index({
                                     <Link
                                         key={article.id}
                                         href={article.permalink}
-                                        className="apple-card apple-press hover-glow group mb-5 block break-inside-avoid p-5"
+                                        className="apple-card apple-press hover-glow group mb-5 block break-inside-avoid overflow-hidden p-5"
                                     >
+                                        {article.featured_image && (
+                                            <div className="mb-4 -mt-5 -mx-5 overflow-hidden">
+                                                <img
+                                                    src={article.featured_image}
+                                                    alt={article.title}
+                                                    className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        )}
                                         {article.categories.length > 0 && (
                                             <div className="mb-3 flex flex-wrap gap-2">
                                                 {article.categories.map(

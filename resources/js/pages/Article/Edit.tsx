@@ -12,6 +12,7 @@ import {
     ChevronRight,
     RefreshCw,
     Search,
+    Image as ImageIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +20,8 @@ import { BlockNoteEditor } from '@/components/blocknote-editor';
 import type { BlockNoteDocument } from '@/components/blocknote-editor';
 import type { CategoryItem } from '@/components/category-picker';
 import { CategoryPicker } from '@/components/category-picker';
+import FeaturedImagePicker from '@/components/featured-image-picker';
+import type { FeaturedSelection } from '@/components/featured-image-picker';
 import MediaQuickUpload from '@/components/media-quick-upload';
 import type { TagItem } from '@/components/tag-picker';
 import { TagPicker } from '@/components/tag-picker';
@@ -50,6 +53,8 @@ interface ArticleData {
     title: string;
     slug: string;
     excerpt: string;
+    featured_image?: number | null;
+    featured_image_url?: string | null;
     meta_title: string | null;
     meta_description: string | null;
     content: BlockNoteDocument | null;
@@ -140,6 +145,14 @@ export default function EditArticle({
         selectedTags: selectedTags,
     });
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [featuredImage, setFeaturedImage] = useState<FeaturedSelection>(
+        article.featured_image
+            ? {
+                  id: article.featured_image,
+                  url: article.featured_image_url ?? '',
+              }
+            : null,
+    );
 
     const handleSubmit = (e: React.FormEvent, overrideStatus?: string) => {
         e.preventDefault();
@@ -151,6 +164,7 @@ export default function EditArticle({
             meta_title: formData.meta_title,
             meta_description: formData.meta_description,
             content: formData.content ?? [],
+            featured_image: featuredImage?.id ?? null,
             status: overrideStatus ?? formData.status,
             comment_status: formData.comment_status,
             categories: formData.categories,
@@ -257,6 +271,19 @@ export default function EditArticle({
                                 : 'hidden w-0 shrink-0'
                         }
                     >
+                        <SidebarSection
+                            icon={ImageIcon}
+                            title={t('articles.featuredImage.title')}
+                            description={t('articles.featuredImage.hint')}
+                        >
+                            <FeaturedImagePicker
+                                selected={featuredImage}
+                                onSelect={setFeaturedImage}
+                                parentType="article"
+                                parentId={article.id}
+                            />
+                        </SidebarSection>
+
                         <SidebarSection
                             icon={Settings2}
                             title={t('articles.form.status')}

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Facades\Storage;
 
 class Article extends Model
 {
@@ -22,6 +24,7 @@ class Article extends Model
         'title',
         'slug',
         'excerpt',
+        'featured_image',
         'meta_title',
         'meta_description',
         'content',
@@ -59,6 +62,33 @@ class Article extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * 特色图片（媒体库附件）。
+     */
+    public function featuredImage(): BelongsTo
+    {
+        return $this->belongsTo(Attachment::class, 'featured_image');
+    }
+
+    /**
+     * 特色图片的公开访问 URL；未设置或附件已删除时返回 null。
+     */
+    public function featuredImageUrl(): ?string
+    {
+        $attachment = $this->featured_image
+            ? Attachment::whereKey($this->featured_image)->where('mime_type', 'like', 'image/%')->first()
+            : null;
+
+        if (! $attachment) {
+            return null;
+        }
+
+        /** @var FilesystemAdapter $publicDisk */
+        $publicDisk = Storage::disk('public');
+
+        return $publicDisk->url($attachment->file_path);
     }
 
     public function categories(): HasManyThrough

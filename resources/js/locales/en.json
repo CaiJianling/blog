@@ -222,16 +222,25 @@
             "loginCaptchaComplexity": "CAPTCHA complexity",
             "loginCaptchaType": "CAPTCHA type",
             "commentCaptchaType": "Comment CAPTCHA type",
-            "commentCaptchaHint": "CAPTCHA shown to guest commenters. Defaults to simple arithmetic.",
+            "commentCaptchaHint": "Require a CAPTCHA for guest comments with configurable type and complexity. When off, guests can comment without one.",
             "registerCaptcha": "Registration CAPTCHA",
             "registerCaptchaLabel": "Enable registration CAPTCHA",
             "registerCaptchaHint": "When enabled, a CAPTCHA must be completed at registration to block bot sign-ups.",
             "requireEmailVerification": "Email verification",
             "requireEmailVerificationLabel": "Require verified email before login",
             "requireEmailVerificationHint": "When enabled, unverified accounts cannot log in until their email is confirmed.",
-            "settings.site.commentCaptcha": "Comment CAPTCHA",
-            "settings.site.commentCaptchaLabel": "Enable comment CAPTCHA",
-            "settings.site.commentCaptchaHint": "Require a CAPTCHA for guest comments with configurable type and complexity. When off, guests can comment without one."
+            "commentCaptcha": "Comment CAPTCHA",
+            "commentCaptchaLabel": "Enable comment CAPTCHA",
+            "captchaType": {
+                "math": "Simple arithmetic",
+                "image": "Image characters",
+                "image_math": "Arithmetic image"
+            },
+            "captchaComplexity": {
+                "easy": "Easy (4 chars, light noise)",
+                "medium": "Medium (4 chars, medium noise)",
+                "hard": "Hard (5 chars, heavy noise)"
+            }
         },
         "permalink": {
             "title": "Permalink Settings",
@@ -722,6 +731,23 @@
         "articlesCount": "{{count}} articles",
         "noArticles": "No articles yet",
         "writeFirst": "Write your first article",
+        "featuredImage": {
+            "title": "Featured Image",
+            "hint": "Shown at the top of blog cards",
+            "placeholder": "No featured image set",
+            "select": "Select image",
+            "change": "Change",
+            "remove": "Remove",
+            "dialogTitle": "Choose featured image",
+            "dialogDescription": "Pick from the media library or upload a new image",
+            "upload": "Upload image",
+            "uploading": "Uploading…",
+            "empty": "No images in the media library",
+            "loading": "Loading…",
+            "loadError": "Failed to load media library",
+            "uploadError": "Image upload failed",
+            "uploadSuccess": "Image selected"
+        },
         "table": {
             "title": "Title",
             "author": "Author",

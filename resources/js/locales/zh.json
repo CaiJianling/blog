@@ -222,16 +222,25 @@
             "loginCaptchaComplexity": "验证码复杂程度",
             "loginCaptchaType": "验证码方式",
             "commentCaptchaType": "评论验证码方式",
-            "commentCaptchaHint": "游客评论时需输入的验证码方式，默认为简单计算验证码。",
+            "commentCaptchaHint": "为游客评论启用验证码，可选择方式与复杂度；关闭后游客评论无需验证码。",
             "registerCaptcha": "注册验证码",
             "registerCaptchaLabel": "开启注册验证码",
             "registerCaptchaHint": "开启后注册需输入验证码，防止机器批量注册。",
             "requireEmailVerification": "邮箱验证",
             "requireEmailVerificationLabel": "注册后须先验证邮箱才能登录",
             "requireEmailVerificationHint": "开启后，未完成邮箱验证的账号无法登录，需先通过验证邮件确认邮箱。",
-            "settings.site.commentCaptcha": "评论验证码",
-            "settings.site.commentCaptchaLabel": "开启评论验证码",
-            "settings.site.commentCaptchaHint": "为游客评论启用验证码，可选择方式与复杂度；关闭后游客评论无需验证码。"
+            "commentCaptcha": "评论验证码",
+            "commentCaptchaLabel": "开启评论验证码",
+            "captchaType": {
+                "math": "简单计算验证码",
+                "image": "图形字符验证码",
+                "image_math": "简单计算图形验证码"
+            },
+            "captchaComplexity": {
+                "easy": "简单（4 位，轻度干扰）",
+                "medium": "中等（4 位，中等干扰）",
+                "hard": "困难（5 位，强干扰）"
+            }
         },
         "permalink": {
             "title": "固定链接设置",
@@ -722,6 +731,23 @@
         "articlesCount": "共 {{count}} 篇文章",
         "noArticles": "暂无文章",
         "writeFirst": "写第一篇文章",
+        "featuredImage": {
+            "title": "特色图片",
+            "hint": "显示在博客瀑布流卡片顶部",
+            "placeholder": "未设置特色图片",
+            "select": "选择图片",
+            "change": "更换",
+            "remove": "移除",
+            "dialogTitle": "选择特色图片",
+            "dialogDescription": "从媒体库选择，或直接上传一张新图片",
+            "upload": "上传图片",
+            "uploading": "上传中…",
+            "empty": "媒体库中暂无图片",
+            "loading": "加载中…",
+            "loadError": "加载媒体库失败",
+            "uploadError": "图片上传失败",
+            "uploadSuccess": "已选择新图片"
+        },
         "table": {
             "title": "标题",
             "author": "作者",

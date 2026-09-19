@@ -72,6 +72,7 @@ class BlogController extends Controller
                 'slug' => $article->slug,
                 'permalink' => $this->permalinks->articlePath($article),
                 'excerpt' => $article->excerpt,
+                'featured_image' => $article->featuredImageUrl(),
                 'author_name' => $article->author?->nickname ?: ($article->author?->name ?? ''),
                 'author_avatar' => $article->author?->avatarUrl() ?? '',
                 'categories' => $categories,

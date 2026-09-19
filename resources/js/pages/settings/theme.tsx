@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppearance } from '@/hooks/use-appearance';
+import { useEffects } from '@/hooks/use-effects';
 import { GLASS_FROST_LIMITS } from '@/hooks/use-glass-frost';
 import {
     applyThemeStyle,
@@ -93,6 +94,7 @@ export default function Theme({
 }: Props) {
     const { t } = useTranslation();
     const { resolvedAppearance } = useAppearance();
+    const { effectsEnabled } = useEffects();
 
     // 空值 = 使用内置默认蓝（浅/深各自默认），提交时据此决定发 '' 还是具体色值。
     const [color, setColor] = useState(themeColor || defaultColor);
@@ -480,16 +482,34 @@ export default function Theme({
                                                     {bgOpacity}%
                                                 </span>
                                             </div>
-                                            <input
-                                                id="bg-opacity"
-                                                type="range"
-                                                min={0}
-                                                max={100}
-                                                step={1}
-                                                value={bgOpacity}
-                                                onChange={(e) => setBgOpacity(Number(e.target.value))}
-                                                className="w-full accent-[var(--primary)]"
-                                            />
+                                            {effectsEnabled ? (
+                                                <LiquidSlider
+                                                    fillContainer
+                                                    size={0.5}
+                                                    min={0}
+                                                    max={100}
+                                                    value={bgOpacity}
+                                                    onChange={setBgOpacity}
+                                                    aria-label={t(
+                                                        'settings.theme.bgOpacity',
+                                                    )}
+                                                />
+                                            ) : (
+                                                <input
+                                                    id="bg-opacity"
+                                                    type="range"
+                                                    min={0}
+                                                    max={100}
+                                                    step={1}
+                                                    value={bgOpacity}
+                                                    onChange={(e) =>
+                                                        setBgOpacity(
+                                                            Number(e.target.value),
+                                                        )
+                                                    }
+                                                    className="w-full accent-[var(--primary)]"
+                                                />
+                                            )}
                                             <p className="text-xs text-muted-foreground">
                                                 {t('settings.theme.bgOpacityHint')}
                                             </p>
