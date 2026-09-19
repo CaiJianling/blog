@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, Eye, Lock, MessageCircle, Pencil, Send, Smile, Reply } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,13 @@ export type SmileyGroupData = {
     smileys: { code: string; url: string }[];
 };
 
-type Captcha = { question: string; token: string } | null;
+export type Captcha = {
+    /** math 简单计算（文本算术）| image 图形字符 | image_math 简单计算图形 */
+    type: 'math' | 'image' | 'image_math';
+    question?: string;
+    token?: string;
+    src?: string;
+} | null;
 
 type AuthUser = { id: number; name: string; nickname: string | null; email: string; role?: string } | null;
 
@@ -235,6 +241,12 @@ export default function CommentSection({ articleId, comments, captcha, smileyGro
     const [authorEmail, setAuthorEmail] = useState(guest.email ?? '');
     const [authorUrl, setAuthorUrl] = useState(guest.url ?? '');
     const [captchaAnswer, setCaptchaAnswer] = useState('');
+    // 图形验证码（image / image_math）的缓存戳：点击或校验失败后换一张
+    const [captchaStamp, setCaptchaStamp] = useState(Date.now());
+    const refreshCaptchaImage = useCallback(() => {
+        setCaptchaStamp(Date.now());
+        setCaptchaAnswer('');
+    }, []);
     const [isMarkdown, setIsMarkdown] = useState(true);
     const [isPrivate, setIsPrivate] = useState(false);
     const [notifyMail, setNotifyMail] = useState(false);
@@ -262,8 +274,9 @@ export default function CommentSection({ articleId, comments, captcha, smileyGro
             author_name: user ? null : authorName,
             author_email: user ? null : authorEmail,
             author_url: user ? null : authorUrl,
-            captcha_token: user ? null : captcha?.token,
-            captcha_answer: user ? null : Number(captchaAnswer),
+            // math 用加密 token + 整数答案；image / image_math 只传答案文本（服务端比对会话）
+            captcha_token: user || captcha?.type !== 'math' ? null : captcha?.token ?? null,
+            captcha_answer: user ? null : captchaAnswer.trim(),
             is_markdown: isMarkdown,
             is_private: isPrivate,
             notify_mail: notifyMail,
@@ -274,6 +287,8 @@ export default function CommentSection({ articleId, comments, captcha, smileyGro
                 setCaptchaAnswer('');
                 setReplyTo(null);
                 setSmileyOpen(false);
+                // 服务端已生成新验证码（captcha prop 重载），图形类换缓存戳强制重新拉图
+                setCaptchaStamp(Date.now());
 
                 if (!user) {
                     localStorage.setItem(AUTHOR_STORAGE_KEY, JSON.stringify({ name: authorName, email: authorEmail, url: authorUrl }));
@@ -284,6 +299,11 @@ export default function CommentSection({ articleId, comments, captcha, smileyGro
             onError: (errors) => {
                 const first = errors.message ?? Object.values(errors)[0];
                 setError(Array.isArray(first) ? first[0] : (first ?? 'Error'));
+
+                // 图形验证码一次性消费：失败后必须换一张
+                if (!user && captcha && captcha.type !== 'math') {
+                    refreshCaptchaImage();
+                }
             },
         });
     };
@@ -382,19 +402,35 @@ export default function CommentSection({ articleId, comments, captcha, smileyGro
                             </div>
                             <div className="relative">
                                 <Input
-                                    type="number"
+                                    type={captcha?.type === 'math' ? 'number' : 'text'}
                                     value={captchaAnswer}
                                     onChange={(e) => setCaptchaAnswer(e.target.value)}
                                     placeholder={t('publicComment.captcha')}
                                     className="pl-9"
+                                    maxLength={captcha && captcha.type !== 'math' ? 8 : undefined}
                                 />
                                 <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                {captcha && (
+                                {captcha && captcha.type === 'math' && (
                                     <span className="absolute top-1/2 right-3 -translate-y-1/2 rounded-md bg-secondary px-2 py-0.5 text-xs font-mono text-secondary-foreground">
                                         {captcha.question} =
                                     </span>
                                 )}
                             </div>
+                            {captcha && captcha.type !== 'math' && (
+                                <button
+                                    type="button"
+                                    onClick={refreshCaptchaImage}
+                                    title={t('publicComment.captchaRefresh')}
+                                    aria-label={t('publicComment.captchaRefresh')}
+                                    className="apple-press flex items-center justify-center overflow-hidden rounded-xl border border-border/70 transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    <img
+                                        src={`${captcha.src}?t=${captchaStamp}`}
+                                        alt={t('publicComment.captcha')}
+                                        className="block h-10 bg-background"
+                                    />
+                                </button>
+                            )}
                         </div>
                     )}
 

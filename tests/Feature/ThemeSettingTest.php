@@ -298,3 +298,49 @@ test('public pages share pageBackground props for the wallpaper layer', function
             ->where('pageBackground.url', null)
         );
 });
+
+test('theme settings page renders default glass frost with fallback when unset', function () {
+    $this->actingAs($this->admin)
+        ->get(route('theme.edit'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('defaultGlassFrost', ThemeSettingController::DEFAULT_GLASS_FROST),
+        );
+});
+
+test('theme settings page reflects a saved default glass frost value', function () {
+    Option::set('default_glass_frost', '30');
+
+    $this->actingAs($this->admin)
+        ->get(route('theme.edit'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('defaultGlassFrost', 30),
+        );
+});
+
+test('admin can save the default glass frost value', function () {
+    $this->actingAs($this->admin)
+        ->put(route('theme.update'), ['theme_color' => '', 'default_glass_frost' => 75])
+        ->assertRedirect(route('theme.edit'));
+
+    expect(Option::get('default_glass_frost'))->toBe('75');
+});
+
+test('default glass frost out of range fails validation', function () {
+    $this->actingAs($this->admin)
+        ->put(route('theme.update'), ['theme_color' => '', 'default_glass_frost' => 150])
+        ->assertSessionHasErrors(['default_glass_frost']);
+
+    expect(Option::get('default_glass_frost', ''))->toBe('');
+});
+
+test('public pages share the default glass frost in the theme prop', function () {
+    Option::set('default_glass_frost', '40');
+
+    $this->get('/blog')
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('theme.defaultGlassFrost', 40),
+        );
+});

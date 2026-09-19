@@ -25,6 +25,11 @@ class ThemeSettingController extends Controller
     public const DEFAULT_COLOR = '#0071e3';
 
     /**
+     * 默认液态玻璃模糊值兜底（0-100）。未配置时前台未自定义磨砂度者使用此值。
+     */
+    public const DEFAULT_GLASS_FROST = 50;
+
+    /**
      * 可选预设色板。
      *
      * @return array<int, string>
@@ -66,6 +71,14 @@ class ThemeSettingController extends Controller
     public static function color(): string
     {
         return (string) Option::get('theme_color', '');
+    }
+
+    /**
+     * 当前「默认液态玻璃模糊值」（0-100）。未配置时回退到内置默认 50。
+     */
+    public static function defaultGlassFrost(): int
+    {
+        return (int) Option::get('default_glass_frost', self::DEFAULT_GLASS_FROST);
     }
 
     /**
@@ -260,6 +273,7 @@ CSS;
             'defaultColor' => self::DEFAULT_COLOR,
             'presets' => self::presets(),
             'background' => $this->backgrounds->settingsProps(),
+            'defaultGlassFrost' => self::defaultGlassFrost(),
         ]);
     }
 
@@ -275,14 +289,18 @@ CSS;
             'theme_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'background_mode' => ['nullable', 'in:custom,bing'],
             'background_opacity' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'default_glass_frost' => ['nullable', 'integer', 'min:0', 'max:100'],
         ], [
             'theme_color.regex' => '主题颜色格式不正确，应为 #rrggbb。',
             'background_mode.in' => '背景模式不正确。',
             'background_opacity.min' => '壁纸透明度范围为 0-100。',
             'background_opacity.max' => '壁纸透明度范围为 0-100。',
+            'default_glass_frost.min' => '默认液态玻璃模糊值范围为 0-100。',
+            'default_glass_frost.max' => '默认液态玻璃模糊值范围为 0-100。',
         ]);
 
         Option::set('theme_color', $validated['theme_color'] ?? '');
+        Option::set('default_glass_frost', (string) ($validated['default_glass_frost'] ?? self::DEFAULT_GLASS_FROST));
 
         $mode = (string) ($validated['background_mode'] ?? '');
         $this->backgrounds->changeMode($mode);

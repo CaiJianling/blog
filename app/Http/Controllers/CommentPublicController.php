@@ -5,19 +5,22 @@ namespace App\Http\Controllers;
 use App\Mail\CommentReplyMail;
 use App\Models\Article;
 use App\Models\Comment;
+use App\Services\CaptchaService;
 use App\Services\CommentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 /**
- * 前台评论提交：登录用户直接评论，游客需昵称、邮箱/QQ 和算术验证码。
+ * 前台评论提交：登录用户直接评论，游客需昵称、邮箱/QQ 和验证码
+ * （方式由 comment_captcha_type 决定：math 算术 token / image 图形字符 / image_math 图形算式）。
  * 响应为 Inertia 重定向（错误通过 ValidationException 传回前端）。
  */
 class CommentPublicController extends Controller
 {
     public function __construct(
         protected CommentService $comments,
+        protected CaptchaService $captchas,
     ) {}
 
     /**
@@ -42,6 +45,7 @@ class CommentPublicController extends Controller
 
         $user = $request->user();
         $isGuest = $user === null;
+        $captchaIsMath = $this->captchas->commentType() === CaptchaService::TYPE_MATH;
 
         $rules = [
             'parent_id' => ['nullable', 'integer', 'exists:comments,comment_id'],
@@ -56,9 +60,17 @@ class CommentPublicController extends Controller
                 'author_name' => ['required', 'string', 'max:50'],
                 'author_email' => ['required', 'string', 'max:100'],
                 'author_url' => ['nullable', 'string', 'max:255'],
-                'captcha_token' => ['required', 'string'],
-                'captcha_answer' => ['required', 'integer'],
             ];
+
+            // math：加密 token + 整数答案；image / image_math：图形答案文本
+            $rules += $captchaIsMath
+                ? [
+                    'captcha_token' => ['required', 'string'],
+                    'captcha_answer' => ['required', 'integer'],
+                ]
+                : [
+                    'captcha_answer' => ['required', 'string', 'max:8'],
+                ];
         }
 
         $validated = $request->validate($rules, [
@@ -66,6 +78,7 @@ class CommentPublicController extends Controller
             'author_email.required' => '请填写邮箱或 QQ 号。',
             'captcha_token.required' => '验证码不能为空。',
             'captcha_answer.required' => '请填写验证码。',
+            'captcha_answer.max' => '验证码最多 8 个字符。',
         ]);
 
         $authorName = $validated['author_name'] ?? null;
@@ -86,7 +99,11 @@ class CommentPublicController extends Controller
                 ]);
             }
 
-            if (! $this->comments->verifyCaptcha($validated['captcha_token'] ?? null, $validated['captcha_answer'] ?? null)) {
+            $captchaVerified = $captchaIsMath
+                ? $this->comments->verifyCaptcha($validated['captcha_token'] ?? null, $validated['captcha_answer'] ?? null)
+                : $this->captchas->verifyImage(CaptchaService::SCOPE_COMMENT, $validated['captcha_answer'] ?? null);
+
+            if (! $captchaVerified) {
                 throw ValidationException::withMessages([
                     'message' => '验证码错误，请重试。',
                 ]);

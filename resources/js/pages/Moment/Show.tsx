@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Clock, Eye, Heart } from 'lucide-react';
 import { useMemo } from 'react';
 import CommentSection from '@/components/comments/comment-section';
 import type {
+    Captcha,
     CommentItem,
     SmileyGroupData,
 } from '@/components/comments/comment-section';
@@ -29,7 +30,7 @@ export type MomentDetail = {
 type Props = {
     moment: MomentDetail;
     comments: CommentItem[];
-    captcha: { question: string; token: string } | null;
+    captcha: Captcha;
     smileyGroups: SmileyGroupData[];
     prevMoment: { id: number } | null;
     nextMoment: { id: number } | null;

@@ -20,7 +20,7 @@ class VerifyLoginCaptcha
     public function __construct(protected CaptchaService $captcha) {}
 
     /**
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -32,9 +32,18 @@ class VerifyLoginCaptcha
             return $next($request);
         }
 
-        if (! $this->captcha->verifyAndConsume($request->input('captcha'))) {
+        // 按验证码方式校验：math 用加密 token（一次性消费），image / image_math 用会话图形答案
+        $verified = $this->captcha->loginType() === CaptchaService::TYPE_MATH
+            ? $this->captcha->verifyMath(
+                $request->input('captcha_token'),
+                $request->input('captcha_answer'),
+                consume: true,
+            )
+            : $this->captcha->verifyImage(CaptchaService::SCOPE_LOGIN, $request->input('captcha'));
+
+        if (! $verified) {
             throw ValidationException::withMessages([
-                'captcha' => '图形验证码不正确或已过期，请重新输入。',
+                'captcha' => '验证码不正确或已过期，请重新输入。',
             ]);
         }
 

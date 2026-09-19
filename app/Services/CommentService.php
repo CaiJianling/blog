@@ -7,10 +7,9 @@ use App\Models\Comment;
 use App\Models\Smiley;
 use App\Models\SmileyGroup;
 use App\Models\User;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -19,6 +18,8 @@ use Illuminate\Support\Str;
  */
 class CommentService
 {
+    public function __construct(protected CaptchaService $captchas) {}
+
     /**
      * 生成算术验证码，返回题目与加密 token。
      *
@@ -26,32 +27,7 @@ class CommentService
      */
     public function generateCaptcha(): array
     {
-        $operators = ['+', '-', '*'];
-        $operator = $operators[random_int(0, 2)];
-
-        $max = $operator === '*' ? 9 : 20;
-        $a = random_int(1, $max);
-        $b = random_int(1, $max);
-
-        if ($operator === '-' && $b > $a) {
-            [$a, $b] = [$b, $a];
-        }
-
-        $answer = match ($operator) {
-            '+' => $a + $b,
-            '-' => $a - $b,
-            default => $a * $b,
-        };
-
-        $token = Crypt::encrypt([
-            'answer' => $answer,
-            'expires' => Carbon::now()->addMinutes(10)->timestamp,
-        ]);
-
-        return [
-            'question' => "{$a} {$operator} {$b}",
-            'token' => $token,
-        ];
+        return $this->captchas->generateMath();
     }
 
     /**
@@ -59,21 +35,7 @@ class CommentService
      */
     public function verifyCaptcha(?string $token, mixed $answer): bool
     {
-        if ($token === null || $token === '' || $answer === null || $answer === '') {
-            return false;
-        }
-
-        try {
-            $payload = Crypt::decrypt($token);
-        } catch (\Throwable) {
-            return false;
-        }
-
-        if (! is_array($payload) || (int) ($payload['expires'] ?? 0) < Carbon::now()->timestamp) {
-            return false;
-        }
-
-        return (int) $payload['answer'] === (int) $answer;
+        return $this->captchas->verifyMath($token, $answer);
     }
 
     /**
@@ -113,7 +75,7 @@ class CommentService
                     return $matches[0];
                 }
 
-                $url = \Storage::url($smileys->get($code));
+                $url = Storage::url($smileys->get($code));
 
                 return sprintf(
                     '<img src="%s" alt="%s" class="inline-block h-6 w-6 align-text-bottom" loading="lazy" />',
@@ -205,9 +167,10 @@ class CommentService
     }
 
     /**
-     * 前台评论表单所需数据：游客验证码（登录用户免）与表情分组。
+     * 前台评论表单所需数据：游客验证码（登录用户免，方式由 comment_captcha_type
+     * 决定：math 文本算术 / image 图形字符 / image_math 图形算式）与表情分组。
      *
-     * @return array{captcha: array{question: string, token: string}|null, smileyGroups: array}
+     * @return array{captcha: array{type: string, question?: string, token?: string, src?: string}|null, smileyGroups: array}
      */
     public function discussionExtras(?User $user): array
     {
@@ -219,13 +182,13 @@ class CommentService
                     'code' => $s->code,
                     'url' => str_starts_with((string) $s->image, 'http')
                         ? $s->image
-                        : \Storage::url((string) $s->image),
+                        : Storage::url((string) $s->image),
                 ])->values(),
             ];
         })->values()->all();
 
         return [
-            'captcha' => $user === null ? $this->generateCaptcha() : null,
+            'captcha' => $user === null ? $this->captchas->commentCaptchaProps() : null,
             'smileyGroups' => $smileyGroups,
         ];
     }

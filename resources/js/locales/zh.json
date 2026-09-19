@@ -41,7 +41,10 @@
             "captcha": "图形验证码",
             "captchaPlaceholder": "输入图中字符",
             "captchaRefresh": "看不清？换一张",
-            "captchaHint": "不区分大小写；点击图片可更换。每次尝试后都会刷新。"
+            "captchaHint": "不区分大小写；点击图片可更换。每次尝试后都会刷新。",
+            "mathCaptcha": "计算验证码",
+            "mathCaptchaPlaceholder": "计算结果",
+            "mathCaptchaHint": "请输入算式的计算结果；每次尝试后都会刷新。"
         },
         "forgotPassword": {
             "title": "忘记密码",
@@ -209,7 +212,10 @@
             "loginCaptcha": "登录图形验证码",
             "loginCaptchaLabel": "开启登录图形验证码",
             "loginCaptchaHint": "开启后登录需输入图形验证码，防止机器人爆破攻击。",
-            "loginCaptchaComplexity": "验证码复杂程度"
+            "loginCaptchaComplexity": "验证码复杂程度",
+            "loginCaptchaType": "验证码方式",
+            "commentCaptchaType": "评论验证码方式",
+            "commentCaptchaHint": "游客评论时需输入的验证码方式，默认为简单计算验证码。"
         },
         "permalink": {
             "title": "固定链接设置",
@@ -238,6 +244,11 @@
             "preview": "效果预览",
             "save": "保存更改",
             "saved": "主题颜色已保存。",
+            "liquidGlass": "液态玻璃",
+            "liquidGlassHint": "调整前台「液态玻璃」的默认模糊值。访客未自行设置磨砂度时使用此默认值；数值越大，背景越模糊。",
+            "defaultGlassFrost": "默认模糊值",
+            "glassFrostClear": "通透",
+            "glassFrostFrosted": "磨砂",
             "background": "背景设置",
             "backgroundHint": "为前台网页设置背景壁纸：可用本地上传壁纸或必应每日壁纸，也可不使用；壁纸透明度可自由调节。更换或移除壁纸时会自动删除上一张存储的壁纸。",
             "bgModeNone": "不使用壁纸",
@@ -963,7 +974,8 @@
         "emptyContent": "请输入评论内容。",
         "views": "{{count}} 次浏览",
         "commentsCount": "{{count}} 条评论",
-        "readTime": "预计 {{count}} 分钟阅读"
+        "readTime": "预计 {{count}} 分钟阅读",
+        "captchaRefresh": "看不清？换一张"
     },
     "articlePage": {
         "blog": "博客",

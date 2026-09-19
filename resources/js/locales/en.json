@@ -41,7 +41,10 @@
             "captcha": "CAPTCHA",
             "captchaPlaceholder": "Enter the characters",
             "captchaRefresh": "Can't read? Get a new one",
-            "captchaHint": "Case-insensitive. Click the image to get a new one. It refreshes after every attempt."
+            "captchaHint": "Case-insensitive. Click the image to get a new one. It refreshes after every attempt.",
+            "mathCaptcha": "Math CAPTCHA",
+            "mathCaptchaPlaceholder": "Result",
+            "mathCaptchaHint": "Enter the result of the expression. It refreshes after every attempt."
         },
         "forgotPassword": {
             "title": "Forgot password",
@@ -209,7 +212,10 @@
             "loginCaptcha": "Login CAPTCHA",
             "loginCaptchaLabel": "Enable login CAPTCHA",
             "loginCaptchaHint": "Require a CAPTCHA on login to protect against bot brute-force attacks.",
-            "loginCaptchaComplexity": "CAPTCHA complexity"
+            "loginCaptchaComplexity": "CAPTCHA complexity",
+            "loginCaptchaType": "CAPTCHA type",
+            "commentCaptchaType": "Comment CAPTCHA type",
+            "commentCaptchaHint": "CAPTCHA shown to guest commenters. Defaults to simple arithmetic."
         },
         "permalink": {
             "title": "Permalink Settings",
@@ -238,6 +244,11 @@
             "preview": "Preview",
             "save": "Save Changes",
             "saved": "Theme color saved.",
+            "liquidGlass": "Liquid glass",
+            "liquidGlassHint": "Set the default blur for the front-end “liquid glass” effect. Used when a visitor hasn't customized their frost level; higher values blur the background more.",
+            "defaultGlassFrost": "Default frost",
+            "glassFrostClear": "Clear",
+            "glassFrostFrosted": "Frosted",
             "background": "Page Background",
             "backgroundHint": "Set a wallpaper for the public site: upload your own, use Bing’s daily image, or none at all — with adjustable wallpaper opacity. The previous stored wallpaper is deleted automatically on replace or removal.",
             "bgModeNone": "None",
@@ -963,7 +974,8 @@
         "emptyContent": "Please enter a comment.",
         "views": "{{count}} views",
         "commentsCount": "{{count}} comments",
-        "readTime": "About {{count}} min read"
+        "readTime": "About {{count}} min read",
+        "captchaRefresh": "Can't read? Get a new one"
     },
     "articlePage": {
         "blog": "Blog",

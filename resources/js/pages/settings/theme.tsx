@@ -1,16 +1,18 @@
 import { Form, Head } from '@inertiajs/react';
-import { Image as ImageIcon, Palette, Trash2, Upload } from 'lucide-react';
+import { GlassWater, Image as ImageIcon, Palette, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import * as themeActions from '@/actions/App/Http/Controllers/ThemeSettingController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import LiquidSlider from '@/components/LiquidGlass/LiquidSlider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppearance } from '@/hooks/use-appearance';
+import { GLASS_FROST_LIMITS } from '@/hooks/use-glass-frost';
 import {
     applyThemeStyle,
     primaryForeground,
@@ -32,6 +34,7 @@ interface Props {
     defaultColor: string;
     presets: string[];
     background: BackgroundSettings;
+    defaultGlassFrost: number;
 }
 
 const HEX_RE = /^#?[0-9a-fA-F]{6}$/;
@@ -81,7 +84,13 @@ function getCsrfToken(): { headerName: string; value: string } | null {
     return null;
 }
 
-export default function Theme({ themeColor, defaultColor, presets, background }: Props) {
+export default function Theme({
+    themeColor,
+    defaultColor,
+    presets,
+    background,
+    defaultGlassFrost,
+}: Props) {
     const { t } = useTranslation();
     const { resolvedAppearance } = useAppearance();
 
@@ -97,6 +106,9 @@ export default function Theme({ themeColor, defaultColor, presets, background }:
     const [bingUrl, setBingUrl] = useState<string | null>(background?.bingUrl ?? null);
     const [uploading, setUploading] = useState(false);
     const wallpaperInputRef = useRef<HTMLInputElement>(null);
+
+    // 默认液态玻璃模糊值（0-100）：前台未自定义磨砂度者使用的兜底默认
+    const [glassFrost, setGlassFrost] = useState(defaultGlassFrost);
 
     // 保存（Inertia 回跳）后用服务端最新背景状态同步本地预览
     useEffect(() => {
@@ -249,6 +261,11 @@ export default function Theme({ themeColor, defaultColor, presets, background }:
                                 name="background_opacity"
                                 value={bgOpacity}
                             />
+                            <input
+                                type="hidden"
+                                name="default_glass_frost"
+                                value={glassFrost}
+                            />
 
                             <Card className="gap-0 overflow-hidden py-0">
                                 {cardHeader(
@@ -366,6 +383,51 @@ export default function Theme({ themeColor, defaultColor, presets, background }:
                                                 高亮
                                             </span>
                                         </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-end border-t border-border/40 pt-4">
+                                        <Button type="submit" disabled={processing}>
+                                            {processing
+                                                ? t('common.saving')
+                                                : t('settings.theme.save')}
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* 液态玻璃：默认模糊值（前台未自定义磨砂度者使用的兜底默认） */}
+                            <Card className="gap-0 overflow-hidden py-0">
+                                {cardHeader(
+                                    <GlassWater className="h-4 w-4" />,
+                                    t('settings.theme.liquidGlass'),
+                                )}
+                                <CardContent className="space-y-5 px-6 py-5">
+                                    <p className="text-sm text-muted-foreground">
+                                        {t('settings.theme.liquidGlassHint')}
+                                    </p>
+
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <Label>
+                                                {t('settings.theme.defaultGlassFrost')}
+                                            </Label>
+                                            <span className="font-mono text-sm tabular-nums text-foreground">
+                                                {glassFrost}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                            <span>{t('settings.theme.glassFrostClear')}</span>
+                                            <span>{t('settings.theme.glassFrostFrosted')}</span>
+                                        </div>
+                                        <LiquidSlider
+                                            fillContainer
+                                            size={0.5}
+                                            min={GLASS_FROST_LIMITS.min}
+                                            max={GLASS_FROST_LIMITS.max}
+                                            value={glassFrost}
+                                            onChange={setGlassFrost}
+                                            aria-label={t('settings.theme.defaultGlassFrost')}
+                                        />
                                     </div>
 
                                     <div className="flex items-center justify-end border-t border-border/40 pt-4">

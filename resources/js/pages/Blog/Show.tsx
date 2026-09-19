@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import type { BlockNoteDocument } from '@/components/blocknote-editor';
 import CommentSection from '@/components/comments/comment-section';
 import type {
+    Captcha,
     CommentItem,
     SmileyGroupData,
 } from '@/components/comments/comment-section';
@@ -63,7 +64,7 @@ type PrevNext = {
 type Props = {
     article: Article;
     comments: CommentItem[];
-    captcha: { question: string; token: string } | null;
+    captcha: Captcha;
     smileyGroups: SmileyGroupData[];
     relatedArticles: Related[];
     prevArticle: PrevNext;

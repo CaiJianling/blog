@@ -68,10 +68,15 @@ Route::post('/assistant/chat', [AssistantChatController::class, 'store'])
     ->middleware('throttle:20,1')
     ->name('assistant.chat');
 
-// 登录图形验证码图片（未开启时 404，按 IP 限流）
+// 登录图形验证码图片（未开启或简单计算方式时 404，按 IP 限流）
 Route::get('/captcha', [CaptchaController::class, 'show'])
     ->middleware('throttle:30,1')
     ->name('captcha.show');
+
+// 评论图形验证码图片（简单计算方式时 404，按 IP 限流）
+Route::get('/comment-captcha', [CaptchaController::class, 'commentShow'])
+    ->middleware('throttle:30,1')
+    ->name('captcha.comment');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');

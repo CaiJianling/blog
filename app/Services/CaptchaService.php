@@ -3,14 +3,21 @@
 namespace App\Services;
 
 use App\Models\Option;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Session;
 
 /**
- * 登录图形验证码：GD 生成图片（无第三方依赖），答案哈希后存会话，
- * 校验时一次性消费并限时有效，防止机器人爆破登录。
+ * 统一验证码服务：登录与评论共用。
  *
- * 复杂程度（后台「站点设置 → 常规」可配）：easy / medium / hard，
- * 分别影响字符数、旋转角度、干扰线与噪点密度。
+ * 三种方式（type）：
+ * - math       简单计算验证码：文本算术题 + 加密 token（无状态，10 分钟有效）
+ * - image      图形字符验证码：GD 渲染随机字符，答案哈希存会话（一次性消费）
+ * - image_math 简单计算图形验证码：GD 把算式渲染成图片，答案为计算结果
+ *
+ * 会话键按 scope 区分（captcha_login / captcha_comment），登录与评论互不干扰。
+ * 复杂程度（easy/medium/hard）影响图形方式的字符数、旋转角度与干扰密度；
+ * 简单计算的难度固定（加减乘、小数值），与评论原有行为一致。
  */
 class CaptchaService
 {
@@ -21,17 +28,52 @@ class CaptchaService
     public const COMPLEXITY_HARD = 'hard';
 
     /**
-     * 会话存储键。
+     * 验证码方式：简单计算（文本）。
      */
-    protected const SESSION_KEY = 'login_captcha';
+    public const TYPE_MATH = 'math';
 
     /**
-     * 验证码有效期（分钟）。
+     * 验证码方式：图形字符。
+     */
+    public const TYPE_IMAGE = 'image';
+
+    /**
+     * 验证码方式：简单计算图形。
+     */
+    public const TYPE_IMAGE_MATH = 'image_math';
+
+    /**
+     * 会话 scope：登录。
+     */
+    public const SCOPE_LOGIN = 'login';
+
+    /**
+     * 会话 scope：评论。
+     */
+    public const SCOPE_COMMENT = 'comment';
+
+    /**
+     * 会话存储键前缀（captcha_{scope}）。
+     */
+    protected const SESSION_PREFIX = 'captcha_';
+
+    /**
+     * 已消费的简单计算 token 签名（会话键，登录场景一次性使用，防重放）。
+     */
+    protected const SESSION_MATH_USED = 'captcha_math_used';
+
+    /**
+     * 图形验证码有效期（分钟）。
      */
     protected const TTL_MINUTES = 5;
 
     /**
-     * 各复杂程度的渲染参数。
+     * 简单计算 token 有效期（分钟）。
+     */
+    protected const MATH_TTL_MINUTES = 10;
+
+    /**
+     * 各复杂程度的图形渲染参数。
      * length 字符数；rotate 最大旋转角；lines 干扰线；dots 噪点；jitter 垂直抖动。
      *
      * @var array<string, array{length: int, rotate: int, lines: int, dots: int, jitter: int}>
@@ -43,7 +85,7 @@ class CaptchaService
     ];
 
     /**
-     * 验证码字符集（剔除易混淆的 0/o/1/l/I/i）。
+     * 图形字符验证码字符集（剔除易混淆的 0/o/1/l/I/i）。
      */
     protected const CHARSET = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ';
 
@@ -53,6 +95,22 @@ class CaptchaService
     public function isEnabled(): bool
     {
         return Option::get('login_captcha_enabled', '0') === '1';
+    }
+
+    /**
+     * 登录验证码方式（默认简单计算）。
+     */
+    public function loginType(): string
+    {
+        return $this->normalizeType(Option::get('login_captcha_type', self::TYPE_MATH));
+    }
+
+    /**
+     * 评论验证码方式（游客必填；默认简单计算）。
+     */
+    public function commentType(): string
+    {
+        return $this->normalizeType(Option::get('comment_captcha_type', self::TYPE_MATH));
     }
 
     /**
@@ -76,6 +134,181 @@ class CaptchaService
     }
 
     /**
+     * 合法验证码方式列表。
+     *
+     * @return array<int, string>
+     */
+    public static function validTypes(): array
+    {
+        return [self::TYPE_MATH, self::TYPE_IMAGE, self::TYPE_IMAGE_MATH];
+    }
+
+    /**
+     * 登录页所需的验证码 props（未开启返回 null）。
+     * - math：题目文本 + 加密 token
+     * - image / image_math：图片地址（GET /captcha）
+     *
+     * @return array{type: string, question?: string, token?: string, src?: string}|null
+     */
+    public function loginCaptchaProps(): ?array
+    {
+        if (! $this->isEnabled()) {
+            return null;
+        }
+
+        $type = $this->loginType();
+
+        if ($type === self::TYPE_MATH) {
+            return ['type' => $type] + $this->generateMath();
+        }
+
+        return ['type' => $type, 'src' => '/captcha'];
+    }
+
+    /**
+     * 评论表单所需的验证码 props（登录用户返回 null）。
+     *
+     * @return array{type: string, question?: string, token?: string, src?: string}|null
+     */
+    public function commentCaptchaProps(): ?array
+    {
+        $type = $this->commentType();
+
+        if ($type === self::TYPE_MATH) {
+            return ['type' => $type] + $this->generateMath();
+        }
+
+        return ['type' => $type, 'src' => '/comment-captcha'];
+    }
+
+    /**
+     * 生成简单计算验证码：返回算式文本与加密 token（含答案与过期时间）。
+     *
+     * @return array{question: string, token: string}
+     */
+    public function generateMath(): array
+    {
+        ['question' => $question, 'answer' => $answer] = $this->buildMathQuestion();
+
+        $token = Crypt::encrypt([
+            'answer' => $answer,
+            'expires' => Carbon::now()->addMinutes(self::MATH_TTL_MINUTES)->timestamp,
+        ]);
+
+        return ['question' => $question, 'token' => $token];
+    }
+
+    /**
+     * 校验简单计算验证码（token + 答案）。
+     *
+     * @param  bool  $consume  一次性消费（登录场景传 true：同一 token 会话内只能成功用一次，
+     *                         防止解出一次答案后重复用于爆破；评论保持无状态不消费）
+     */
+    public function verifyMath(?string $token, mixed $answer, bool $consume = false): bool
+    {
+        if ($token === null || $token === '' || $answer === null || $answer === '') {
+            return false;
+        }
+
+        try {
+            $payload = Crypt::decrypt($token);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        if (! is_array($payload) || (int) ($payload['expires'] ?? 0) < Carbon::now()->timestamp) {
+            return false;
+        }
+
+        if ((int) $payload['answer'] !== (int) $answer) {
+            return false;
+        }
+
+        if ($consume) {
+            $signature = hash('sha256', (string) $token);
+            /** @var array<int, string> $used */
+            $used = Session::get(self::SESSION_MATH_USED, []);
+
+            if (in_array($signature, $used, true)) {
+                return false;
+            }
+
+            $used[] = $signature;
+            Session::put(self::SESSION_MATH_USED, array_slice($used, -20));
+        }
+
+        return true;
+    }
+
+    /**
+     * 生成图形验证码图片（scope 区分会话；type 区分字符/算式）。
+     *
+     * @return string PNG 图片字节
+     */
+    public function generateImage(string $scope, string $type): string
+    {
+        $complexity = $this->complexity();
+
+        if ($type === self::TYPE_IMAGE_MATH) {
+            ['question' => $question, 'answer' => $answer] = $this->buildMathQuestion();
+
+            $this->storeSessionAnswer($scope, (string) $answer);
+
+            return $this->render("{$question} = ?", $complexity, 20);
+        }
+
+        $code = $this->buildCode($complexity);
+
+        $this->storeSessionAnswer($scope, $code);
+
+        return $this->render($code, $complexity, 30);
+    }
+
+    /**
+     * 校验并消费图形验证码（无论对错均失效，需重新获取）。
+     * 忽略大小写与空格；过期或不存在视为失败。
+     */
+    public function verifyImage(string $scope, ?string $answer): bool
+    {
+        /** @var array{hash?: string, expires?: int}|mixed $stored */
+        $stored = Session::pull(self::SESSION_PREFIX.$scope);
+
+        if (! is_array($stored) || ! isset($stored['hash'], $stored['expires'])) {
+            return false;
+        }
+
+        if (Carbon::now()->timestamp > (int) $stored['expires']) {
+            return false;
+        }
+
+        $normalized = strtolower((string) preg_replace('/[^a-zA-Z0-9]/', '', (string) $answer));
+
+        if ($normalized === '') {
+            return false;
+        }
+
+        return hash_equals((string) $stored['hash'], hash('sha256', $normalized));
+    }
+
+    /**
+     * 生成登录图形验证码（沿用旧入口：字符图形，scope=login）。
+     *
+     * @return string PNG 图片字节
+     */
+    public function generate(): string
+    {
+        return $this->generateImage(self::SCOPE_LOGIN, self::TYPE_IMAGE);
+    }
+
+    /**
+     * 校验并消费登录图形验证码（沿用旧入口）。
+     */
+    public function verifyAndConsume(?string $answer): bool
+    {
+        return $this->verifyImage(self::SCOPE_LOGIN, $answer);
+    }
+
+    /**
      * 按复杂程度生成随机验证码文本。
      */
     public function buildCode(string $complexity): string
@@ -92,59 +325,54 @@ class CaptchaService
     }
 
     /**
-     * 生成验证码：渲染 PNG 并把答案哈希写入会话（覆盖旧验证码）。
+     * 生成一道简单计算题（与评论原有规则一致：+ - *，乘法 1-9，其余 1-20）。
      *
-     * @return string PNG 图片字节
+     * @return array{question: string, answer: int}
      */
-    public function generate(): string
+    public function buildMathQuestion(): array
     {
-        $complexity = $this->complexity();
-        $code = $this->buildCode($complexity);
+        $operators = ['+', '-', '*'];
+        $operator = $operators[random_int(0, 2)];
 
-        Session::put(self::SESSION_KEY, [
-            'hash' => hash('sha256', strtolower($code)),
-            'expires' => now()->addMinutes(self::TTL_MINUTES)->timestamp,
-        ]);
+        $max = $operator === '*' ? 9 : 20;
+        $a = random_int(1, $max);
+        $b = random_int(1, $max);
 
-        return $this->render($code, $complexity);
+        if ($operator === '-' && $b > $a) {
+            [$a, $b] = [$b, $a];
+        }
+
+        $answer = match ($operator) {
+            '+' => $a + $b,
+            '-' => $a - $b,
+            default => $a * $b,
+        };
+
+        return ['question' => "{$a} {$operator} {$b}", 'answer' => $answer];
     }
 
     /**
-     * 校验并消费验证码（无论对错均失效，需重新获取）。
-     * 忽略大小写与空格；过期或不存在视为失败。
+     * 把答案哈希写入会话（覆盖旧验证码），5 分钟有效。
      */
-    public function verifyAndConsume(?string $answer): bool
+    protected function storeSessionAnswer(string $scope, string $answer): void
     {
-        /** @var array{hash?: string, expires?: int}|mixed $stored */
-        $stored = Session::pull(self::SESSION_KEY);
-
-        if (! is_array($stored) || ! isset($stored['hash'], $stored['expires'])) {
-            return false;
-        }
-
-        if (now()->timestamp > (int) $stored['expires']) {
-            return false;
-        }
-
-        $normalized = strtolower((string) preg_replace('/[^a-zA-Z0-9]/', '', (string) $answer));
-
-        if ($normalized === '') {
-            return false;
-        }
-
-        return hash_equals((string) $stored['hash'], hash('sha256', $normalized));
+        Session::put(self::SESSION_PREFIX.$scope, [
+            'hash' => hash('sha256', strtolower($answer)),
+            'expires' => Carbon::now()->addMinutes(self::TTL_MINUTES)->timestamp,
+        ]);
     }
 
     /**
      * 渲染验证码图片：逐字符绘制到小块 → 旋转 → 贴主画布，再叠加干扰线与噪点。
+     *
+     * @param  int  $cellWidth  每个字符占位宽度（算式图片用窄格）
      */
-    protected function render(string $code, string $complexity): string
+    protected function render(string $text, string $complexity, int $cellWidth = 30): string
     {
         $config = self::COMPLEXITY_CONFIG[$this->normalizeComplexity($complexity)];
-        $cellWidth = 30;
         $height = 48;
         $padding = 10;
-        $width = $cellWidth * strlen($code) + $padding * 2;
+        $width = $cellWidth * strlen($text) + $padding * 2;
 
         $image = imagecreatetruecolor($width, $height);
 
@@ -158,7 +386,11 @@ class CaptchaService
         $charWidth = imagefontwidth($font);
         $charHeight = imagefontheight($font);
 
-        foreach (str_split($code) as $index => $char) {
+        foreach (str_split($text) as $index => $char) {
+            if ($char === ' ') {
+                continue;
+            }
+
             $cell = imagecreatetruecolor($cellWidth, $height);
             $cellBackground = imagecolorallocate($cell, 247, 248, 250);
 
@@ -231,5 +463,15 @@ class CaptchaService
     protected function normalizeComplexity(string $complexity): string
     {
         return isset(self::COMPLEXITY_CONFIG[$complexity]) ? $complexity : self::COMPLEXITY_MEDIUM;
+    }
+
+    /**
+     * 归一化验证码方式：非法值回退 math。
+     */
+    protected function normalizeType(mixed $type): string
+    {
+        $type = (string) $type;
+
+        return in_array($type, self::validTypes(), true) ? $type : self::TYPE_MATH;
     }
 }

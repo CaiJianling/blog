@@ -116,13 +116,14 @@ class HandleInertiaRequests extends Middleware
      * 主题色配置：管理员在后台设置的全局主题色（空 = 内置默认蓝）。
      * 供前台「悬浮设置面板」展示默认色板与预设色。
      *
-     * @return array{defaultColor: string, presets: array<int, string>}
+     * @return array{defaultColor: string, presets: array<int, string>, defaultGlassFrost: int}
      */
     protected function themeProps(): array
     {
         return [
             'defaultColor' => ThemeSettingController::color() ?: ThemeSettingController::DEFAULT_COLOR,
             'presets' => ThemeSettingController::frontPresets(),
+            'defaultGlassFrost' => ThemeSettingController::defaultGlassFrost(),
         ];
     }
 

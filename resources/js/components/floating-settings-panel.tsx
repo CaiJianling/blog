@@ -11,8 +11,8 @@ import LiquidSlider from '@/components/LiquidGlass/LiquidSlider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEffects, updateEffectsEnabled } from '@/hooks/use-effects';
 import {
-    DEFAULT_GLASS_FROST,
     GLASS_FROST_LIMITS,
+    getGlassFrostDefault,
     useGlassFrost,
 } from '@/hooks/use-glass-frost';
 import { useLocale, updateLocale } from '@/hooks/use-locale';
@@ -319,7 +319,7 @@ export default function FloatingSettingsPanel() {
                                                 {t('settings.floating.glassFrost')}
                                             </p>
                                             <div className="flex items-center gap-2">
-                                                {frost !== DEFAULT_GLASS_FROST ? (
+                                                {frost !== getGlassFrostDefault() ? (
                                                     <button
                                                         type="button"
                                                         onClick={() => resetGlassFrost()}

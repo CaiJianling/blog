@@ -14,37 +14,50 @@ import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
+type CaptchaProp = {
+    /** math 简单计算（文本算术）| image 图形字符 | image_math 简单计算图形 */
+    type: 'math' | 'image' | 'image_math';
+    question?: string;
+    token?: string;
+    src?: string;
+};
+
 type Props = {
     status?: string;
     canResetPassword: boolean;
     captchaEnabled?: boolean;
+    captcha?: CaptchaProp | null;
 };
 
-export default function Login({ status, canResetPassword, captchaEnabled }: Props) {
+export default function Login({ status, canResetPassword, captchaEnabled, captcha }: Props) {
     const { t } = useTranslation();
     const { canRegister, errors: pageErrors } = usePage().props as {
         canRegister?: boolean;
         errors?: Record<string, string>;
     };
 
-    // 图形验证码：登录 POST 会消费会话中的验证码（无论对错），
-    // 因此首次挂载与每次登录失败（验证码错误/密码错误）后都必须换一张新的。
-    const [captchaSrc, setCaptchaSrc] = useState('');
+    // 图形验证码（image / image_math）：登录 POST 会消费会话中的验证码（无论对错），
+    // 因此首次挂载与每次登录失败后都必须换一张新的。
+    // math（简单计算）为无状态题目：校验失败回跳时服务端会生成新题，无需前端刷新。
+    const [captchaStamp, setCaptchaStamp] = useState(Date.now());
     const refreshCaptcha = useCallback(() => {
-        setCaptchaSrc(`/captcha?t=${Date.now()}`);
+        setCaptchaStamp(Date.now());
     }, []);
 
-    useEffect(() => {
-        if (captchaEnabled) {
-            refreshCaptcha();
-        }
-    }, [captchaEnabled, refreshCaptcha]);
+    const showImageCaptcha = captchaEnabled === true && captcha != null && captcha.type !== 'math';
+    const showMathCaptcha = captchaEnabled === true && captcha?.type === 'math';
 
     useEffect(() => {
-        if (captchaEnabled && pageErrors && Object.keys(pageErrors).length > 0) {
+        if (showImageCaptcha) {
             refreshCaptcha();
         }
-    }, [captchaEnabled, pageErrors, refreshCaptcha]);
+    }, [showImageCaptcha, refreshCaptcha]);
+
+    useEffect(() => {
+        if (showImageCaptcha && pageErrors && Object.keys(pageErrors).length > 0) {
+            refreshCaptcha();
+        }
+    }, [showImageCaptcha, pageErrors, refreshCaptcha]);
 
     return (
         <>
@@ -99,9 +112,13 @@ export default function Login({ status, canResetPassword, captchaEnabled }: Prop
                                 <InputError message={errors.password} />
                             </div>
 
-                            {captchaEnabled && (
+                            {showImageCaptcha && (
                                 <div className="grid gap-2">
-                                    <Label htmlFor="captcha">{t('auth.login.captcha')}</Label>
+                                    <Label htmlFor="captcha">
+                                        {captcha.type === 'image_math'
+                                            ? t('auth.login.mathCaptcha')
+                                            : t('auth.login.captcha')}
+                                    </Label>
                                     <div className="flex items-center gap-2">
                                         <Input
                                             id="captcha"
@@ -111,6 +128,11 @@ export default function Login({ status, canResetPassword, captchaEnabled }: Prop
                                             autoComplete="off"
                                             spellCheck={false}
                                             maxLength={6}
+                                            inputMode={
+                                                captcha.type === 'image_math'
+                                                    ? 'numeric'
+                                                    : undefined
+                                            }
                                             className="flex-1 font-mono tracking-[0.3em] uppercase"
                                             placeholder={t('auth.login.captchaPlaceholder')}
                                         />
@@ -121,20 +143,50 @@ export default function Login({ status, canResetPassword, captchaEnabled }: Prop
                                             aria-label={t('auth.login.captchaRefresh')}
                                             className="shrink-0 overflow-hidden rounded-lg border border-border/70 transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         >
-                                            {captchaSrc ? (
-                                                <img
-                                                    src={captchaSrc}
-                                                    alt={t('auth.login.captcha')}
-                                                    className="block h-10 w-[9rem] bg-background"
-                                                />
-                                            ) : (
-                                                <span className="block h-10 w-[9rem] animate-pulse bg-muted" />
-                                            )}
+                                            <img
+                                                src={`${captcha.src}?t=${captchaStamp}`}
+                                                alt={t('auth.login.captcha')}
+                                                className="block h-10 bg-background"
+                                            />
                                         </button>
                                     </div>
                                     <InputError message={errors.captcha} />
                                     <p className="text-xs text-muted-foreground">
-                                        {t('auth.login.captchaHint')}
+                                        {captcha.type === 'image_math'
+                                            ? t('auth.login.mathCaptchaHint')
+                                            : t('auth.login.captchaHint')}
+                                    </p>
+                                </div>
+                            )}
+
+                            {showMathCaptcha && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="captcha_answer">
+                                        {t('auth.login.mathCaptcha')}
+                                    </Label>
+                                    <div className="flex items-center gap-2">
+                                        <span className="flex h-10 shrink-0 select-none items-center rounded-lg border border-border/70 bg-muted/50 px-3 font-mono text-base font-medium tracking-wider">
+                                            {captcha.question} = ?
+                                        </span>
+                                        <Input
+                                            id="captcha_answer"
+                                            name="captcha_answer"
+                                            required
+                                            tabIndex={3}
+                                            inputMode="numeric"
+                                            autoComplete="off"
+                                            className="flex-1"
+                                            placeholder={t('auth.login.mathCaptchaPlaceholder')}
+                                        />
+                                    </div>
+                                    <input
+                                        type="hidden"
+                                        name="captcha_token"
+                                        value={captcha.token}
+                                    />
+                                    <InputError message={errors.captcha} />
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('auth.login.mathCaptchaHint')}
                                     </p>
                                 </div>
                             )}

@@ -53,6 +53,8 @@ class FortifyServiceProvider extends ServiceProvider
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
             'captchaEnabled' => app(CaptchaService::class)->isEnabled(),
+            // 方式由 login_captcha_type 决定：math 题目+token / image、image_math 图片地址
+            'captcha' => app(CaptchaService::class)->loginCaptchaProps(),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/reset-password', [

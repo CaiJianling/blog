@@ -39,7 +39,9 @@ class OptionController extends Controller
         'start_of_week',
         'timeline_include_moments',
         'login_captcha_enabled',
+        'login_captcha_type',
         'login_captcha_complexity',
+        'comment_captcha_type',
     ];
 
     /**
@@ -50,9 +52,11 @@ class OptionController extends Controller
         $options = Option::whereIn('option_name', self::SITE_OPTION_KEYS)
             ->pluck('option_value', 'option_name');
 
-        // 验证码设置默认值：默认关闭、中等复杂度
+        // 验证码设置默认值：登录默认关闭、简单计算方式、中等复杂度；评论默认简单计算方式
         $options->put('login_captcha_enabled', $options->get('login_captcha_enabled', '0'));
+        $options->put('login_captcha_type', $options->get('login_captcha_type', CaptchaService::TYPE_MATH));
         $options->put('login_captcha_complexity', $options->get('login_captcha_complexity', CaptchaService::COMPLEXITY_MEDIUM));
+        $options->put('comment_captcha_type', $options->get('comment_captcha_type', CaptchaService::TYPE_MATH));
 
         $siteIconId = (int) $options->get('site_icon', '');
         $siteIcon = null;
@@ -107,6 +111,11 @@ class OptionController extends Controller
                 ['value' => CaptchaService::COMPLEXITY_MEDIUM, 'label' => '中等（4 位，中等干扰）'],
                 ['value' => CaptchaService::COMPLEXITY_HARD, 'label' => '困难（5 位，强干扰）'],
             ],
+            'captchaTypes' => [
+                ['value' => CaptchaService::TYPE_MATH, 'label' => '简单计算验证码'],
+                ['value' => CaptchaService::TYPE_IMAGE, 'label' => '图形字符验证码'],
+                ['value' => CaptchaService::TYPE_IMAGE_MATH, 'label' => '简单计算图形验证码'],
+            ],
         ]);
     }
 
@@ -124,6 +133,12 @@ class OptionController extends Controller
             'login_captcha_complexity' => in_array($request->input('login_captcha_complexity'), [CaptchaService::COMPLEXITY_EASY, CaptchaService::COMPLEXITY_MEDIUM, CaptchaService::COMPLEXITY_HARD], true)
                 ? $request->input('login_captcha_complexity')
                 : CaptchaService::COMPLEXITY_MEDIUM,
+            'login_captcha_type' => in_array($request->input('login_captcha_type'), CaptchaService::validTypes(), true)
+                ? $request->input('login_captcha_type')
+                : CaptchaService::TYPE_MATH,
+            'comment_captcha_type' => in_array($request->input('comment_captcha_type'), CaptchaService::validTypes(), true)
+                ? $request->input('comment_captcha_type')
+                : CaptchaService::TYPE_MATH,
         ]);
 
         $validated = $request->validate([
@@ -139,6 +154,8 @@ class OptionController extends Controller
             'timeline_include_moments' => ['nullable', 'in:0,1'],
             'login_captcha_enabled' => ['nullable', 'in:0,1'],
             'login_captcha_complexity' => ['nullable', 'in:easy,medium,hard'],
+            'login_captcha_type' => ['nullable', 'in:math,image,image_math'],
+            'comment_captcha_type' => ['nullable', 'in:math,image,image_math'],
             'default_role' => ['required', 'in:subscriber,contributor,author'],
             'site_language' => ['required', 'in:zh,en'],
             'timezone' => ['required', 'string', 'timezone'],
