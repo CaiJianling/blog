@@ -37,7 +37,11 @@
             "remember": "Remember me",
             "noAccount": "Don't have an account?",
             "signUp": "Sign up",
-            "login": "Log in"
+            "login": "Log in",
+            "captcha": "CAPTCHA",
+            "captchaPlaceholder": "Enter the characters",
+            "captchaRefresh": "Can't read? Get a new one",
+            "captchaHint": "Case-insensitive. Click the image to get a new one. It refreshes after every attempt."
         },
         "forgotPassword": {
             "title": "Forgot password",
@@ -201,7 +205,11 @@
             "iconRemoved": "Site icon removed.",
             "custom": "Custom",
             "customFormat": "Custom format",
-            "preview": "Preview"
+            "preview": "Preview",
+            "loginCaptcha": "Login CAPTCHA",
+            "loginCaptchaLabel": "Enable login CAPTCHA",
+            "loginCaptchaHint": "Require a CAPTCHA on login to protect against bot brute-force attacks.",
+            "loginCaptchaComplexity": "CAPTCHA complexity"
         },
         "permalink": {
             "title": "Permalink Settings",

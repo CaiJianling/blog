@@ -37,7 +37,11 @@
             "remember": "记住我",
             "noAccount": "没有账户？",
             "signUp": "注册",
-            "login": "登录"
+            "login": "登录",
+            "captcha": "图形验证码",
+            "captchaPlaceholder": "输入图中字符",
+            "captchaRefresh": "看不清？换一张",
+            "captchaHint": "不区分大小写；点击图片可更换。每次尝试后都会刷新。"
         },
         "forgotPassword": {
             "title": "忘记密码",
@@ -201,7 +205,11 @@
             "iconRemoved": "站点图标已移除。",
             "custom": "自定义",
             "customFormat": "自定义格式",
-            "preview": "预览"
+            "preview": "预览",
+            "loginCaptcha": "登录图形验证码",
+            "loginCaptchaLabel": "开启登录图形验证码",
+            "loginCaptchaHint": "开启后登录需输入图形验证码，防止机器人爆破攻击。",
+            "loginCaptchaComplexity": "验证码复杂程度"
         },
         "permalink": {
             "title": "固定链接设置",

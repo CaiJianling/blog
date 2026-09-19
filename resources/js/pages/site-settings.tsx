@@ -42,6 +42,7 @@ interface Props {
     weekdays: OptionItem[];
     dateFormats: { value: string; example: string }[];
     timeFormats: { value: string; example: string }[];
+    captchaComplexities: OptionItem[];
 }
 
 const PRESET_DATE_FORMATS = ['Y年n月j日', 'Y-m-d', 'm/d/Y', 'd/m/Y', 'd.m.Y'];
@@ -85,6 +86,7 @@ export default function Site({
     weekdays,
     dateFormats,
     timeFormats,
+    captchaComplexities,
 }: Props) {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -116,6 +118,12 @@ export default function Site({
     const [membership, setMembership] = useState(options.membership === '1');
     const [timelineIncludeMoments, setTimelineIncludeMoments] = useState(
         options.timeline_include_moments === '1',
+    );
+    const [loginCaptchaEnabled, setLoginCaptchaEnabled] = useState(
+        options.login_captcha_enabled === '1',
+    );
+    const [loginCaptchaComplexity, setLoginCaptchaComplexity] = useState(
+        options.login_captcha_complexity ?? 'medium',
     );
     const [defaultRole, setDefaultRole] = useState(
         options.default_role ?? 'subscriber',
@@ -295,6 +303,16 @@ export default function Site({
                                 type="hidden"
                                 name="timeline_include_moments"
                                 value={timelineIncludeMoments ? '1' : '0'}
+                            />
+                            <input
+                                type="hidden"
+                                name="login_captcha_enabled"
+                                value={loginCaptchaEnabled ? '1' : '0'}
+                            />
+                            <input
+                                type="hidden"
+                                name="login_captcha_complexity"
+                                value={loginCaptchaComplexity}
                             />
                             <input
                                 type="hidden"
@@ -563,6 +581,78 @@ export default function Site({
                                         <p className="text-footnote text-muted-foreground">
                                             {t('settings.site.timelineHint')}
                                         </p>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label>
+                                            {t('settings.site.loginCaptcha')}
+                                        </Label>
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id="login_captcha_enabled"
+                                                checked={loginCaptchaEnabled}
+                                                onCheckedChange={(checked) =>
+                                                    setLoginCaptchaEnabled(
+                                                        checked === true,
+                                                    )
+                                                }
+                                            />
+                                            <Label
+                                                htmlFor="login_captcha_enabled"
+                                                className="cursor-pointer font-normal"
+                                            >
+                                                {t(
+                                                    'settings.site.loginCaptchaLabel',
+                                                )}
+                                            </Label>
+                                        </div>
+                                        <p className="text-footnote text-muted-foreground">
+                                            {t('settings.site.loginCaptchaHint')}
+                                        </p>
+                                        {loginCaptchaEnabled && (
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="login_captcha_complexity">
+                                                    {t(
+                                                        'settings.site.loginCaptchaComplexity',
+                                                    )}
+                                                </Label>
+                                                <Select
+                                                    value={loginCaptchaComplexity}
+                                                    onValueChange={
+                                                        setLoginCaptchaComplexity
+                                                    }
+                                                >
+                                                    <SelectTrigger
+                                                        id="login_captcha_complexity"
+                                                        className="w-72"
+                                                    >
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {captchaComplexities.map(
+                                                            (item) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        item.value
+                                                                    }
+                                                                    value={
+                                                                        item.value
+                                                                    }
+                                                                >
+                                                                    {item.label}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        )}
+                                        <InputError
+                                            className="mt-2"
+                                            message={
+                                                errors.login_captcha_complexity
+                                            }
+                                        />
                                     </div>
 
                                     <div className="grid gap-2">
