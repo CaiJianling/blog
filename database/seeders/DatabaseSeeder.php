@@ -21,5 +21,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // 同步 config 中的工具与导航内容到数据库（幂等）
+        $this->call(ToolsAndNavSeeder::class);
     }
 }

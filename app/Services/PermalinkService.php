@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Article;
 use App\Models\Option;
+use App\Models\Page;
 
 /**
  * 固定链接服务：按站点固定链接结构生成和解析文章 URL。
@@ -93,6 +94,77 @@ class PermalinkService
         $path = str_replace(array_keys($replacements), array_values($replacements), $structure);
 
         return '/'.trim($path, '/');
+    }
+
+    /**
+     * 生成页面的固定链接路径（与文章共用同一固定链接结构，如 /3.html）。
+     */
+    public function pagePath(Page $page): string
+    {
+        $structure = $this->structure();
+
+        if ($structure === '') {
+            return '/?p='.$page->id;
+        }
+
+        $replacements = [
+            '%year%' => $page->created_at?->format('Y') ?? date('Y'),
+            '%monthnum%' => $page->created_at?->format('m') ?? date('m'),
+            '%day%' => $page->created_at?->format('d') ?? date('d'),
+            '%hour%' => $page->created_at?->format('H') ?? date('H'),
+            '%minute%' => $page->created_at?->format('i') ?? date('i'),
+            '%second%' => $page->created_at?->format('s') ?? date('s'),
+            '%post_id%' => (string) $page->id,
+            '%postname%' => $page->slug ?: (string) $page->id,
+            '%category%' => 'uncategorized',
+            '%author%' => $page->author?->nickname ?? $page->author?->name ?? 'author',
+        ];
+
+        $path = str_replace(array_keys($replacements), array_values($replacements), $structure);
+
+        return '/'.trim($path, '/');
+    }
+
+    /**
+     * 按结构解析路径并定位已发布页面（与文章共用同一固定链接结构）。
+     */
+    public function resolvePage(string $path): ?Page
+    {
+        $structure = $this->structure();
+
+        if ($structure === '') {
+            return null;
+        }
+
+        $regex = $this->buildRegex($structure);
+
+        if ($regex === null || ! preg_match($regex, '/'.trim($path, '/'), $matches)) {
+            return null;
+        }
+
+        $query = Page::where('status', 'publish');
+
+        if (isset($matches['post_id']) && $matches['post_id'] !== '') {
+            $query->where('id', (int) $matches['post_id']);
+        } elseif (isset($matches['postname']) && $matches['postname'] !== '') {
+            $query->where(function ($q) use ($matches) {
+                $q->where('slug', $matches['postname'])->orWhere('id', (int) $matches['postname']);
+            });
+        } else {
+            return null;
+        }
+
+        if (($matches['year'] ?? '') !== '') {
+            $query->whereYear('created_at', (int) $matches['year']);
+        }
+        if (($matches['monthnum'] ?? '') !== '') {
+            $query->whereMonth('created_at', (int) $matches['monthnum']);
+        }
+        if (($matches['day'] ?? '') !== '') {
+            $query->whereDay('created_at', (int) $matches['day']);
+        }
+
+        return $query->first();
     }
 
     /**

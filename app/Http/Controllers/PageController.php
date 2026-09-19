@@ -2,18 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AiRequestException;
 use App\Models\Page;
+use App\Services\AiService;
+use App\Services\PermalinkService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class PageController extends Controller
 {
+    public function __construct(
+        protected PermalinkService $permalinks,
+    ) {}
+
     public function index(Request $request)
     {
         $status = $request->query('status', 'all');
 
-        $query = Page::with('author')->orderBy('created_at', 'desc');
+        $query = Page::with('author')->withCount('comments')->orderBy('created_at', 'desc');
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -26,9 +34,11 @@ class PageController extends Controller
                     'title' => $page->title,
                     'author_name' => $page->author?->nickname ?: ($page->author?->name ?? ''),
                     'slug' => $page->slug,
+                    'permalink' => $this->permalinks->pagePath($page),
                     'status' => $page->status,
                     'views' => $page->views,
                     'likes' => $page->likes,
+                    'comment_count' => $page->comments_count,
                     'created_at' => $page->created_at->format('Y-m-d'),
                 ];
             });
@@ -76,6 +86,42 @@ class PageController extends Controller
         ]);
 
         return redirect()->route('pages.index');
+    }
+
+    /**
+     * AI 生成页面：根据作者给出的写作提示生成标题、正文与 SEO 元信息，
+     * 由前端解析为块数据填入编辑器，作者检查确认后再手动保存。
+     */
+    public function aiGenerate(Request $request, AiService $ai): JsonResponse
+    {
+        $validated = $request->validate([
+            'prompt' => ['required', 'string', 'max:2000'],
+        ], [
+            'prompt.required' => '请输入写作提示。',
+            'prompt.max' => '写作提示不能超过 2000 个字符。',
+        ]);
+
+        if (! $ai->isConfigured()) {
+            return response()->json([
+                'message' => '请先在后台「设置 → AI 设置」中完成 AI 接口配置。',
+            ], 422);
+        }
+
+        try {
+            $result = $ai->generatePage($validated['prompt']);
+        } catch (AiRequestException $e) {
+            // 附带真实错误上下文（状态码/URL/上游原始返回），供前端"查看详情"展示
+            return response()->json([
+                'message' => $e->getMessage(),
+                'debug' => $e->context(),
+            ], 502);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 502);
+        }
+
+        return response()->json($result);
     }
 
     public function edit(Page $page)

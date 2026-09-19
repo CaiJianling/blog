@@ -1,16 +1,9 @@
 import { Head, router } from '@inertiajs/react';
-import { FileText, Eye, Heart, Calendar, Pencil, Plus, Search, Trash2, Send, CheckCircle, FileEdit, Inbox, RotateCcw } from 'lucide-react';
+import { FileText, Eye, Heart, MessageSquare, Calendar, Pencil, Plus, Search, Trash2, Send, CheckCircle, FileEdit, Inbox, RotateCcw } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 import * as pageActions from '@/actions/App/Http/Controllers/PageController';
+import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +14,14 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
     Table,
@@ -30,7 +31,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import Pagination from '@/components/pagination';
 import { index as pagesIndex } from '@/routes/pages';
 
 interface PageItem {
@@ -38,9 +38,11 @@ interface PageItem {
     title: string;
     author_name: string;
     slug: string;
+    permalink: string;
     created_at: string;
     views: number;
     likes: number;
+    comment_count: number;
     status: string;
 }
 
@@ -147,7 +149,10 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
     };
 
     const executeForceDelete = () => {
-        if (!forceDeleteTarget) return;
+        if (!forceDeleteTarget) {
+            return;
+        }
+
         router.delete(`/pages/${forceDeleteTarget.id}`, {
             preserveScroll: true,
             onFinish: () => setForceDeleteTarget(null),
@@ -356,6 +361,9 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                                     <TableHead className="h-11 px-3 text-footnote font-semibold uppercase tracking-wider text-muted-foreground">
                                         {t('pages.table.views')}
                                     </TableHead>
+                                    <TableHead className="h-11 px-3 text-footnote font-semibold uppercase tracking-wider text-muted-foreground">
+                                        {t('pages.table.comments')}
+                                    </TableHead>
                                     <TableHead className="h-11 px-5 text-footnote font-semibold uppercase tracking-wider text-muted-foreground text-right">
                                         {t('pages.table.actions')}
                                     </TableHead>
@@ -365,7 +373,7 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                                 {pageList.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="py-12 text-center"
                                         >
                                             <div className="flex flex-col items-center gap-3">
@@ -454,6 +462,24 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                                                     <div className="flex items-center gap-1.5">
                                                         <Eye className="h-4 w-4 text-muted-foreground/50" />
                                                         <span className="text-callout tabular-nums">{page.views}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-3 py-3.5">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <MessageSquare className="h-4 w-4 text-muted-foreground/50" />
+                                                        {page.status === 'publish' && page.permalink ? (
+                                                            <a
+                                                                href={`${page.permalink}#comments`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                title={t('pages.viewComments')}
+                                                                className="text-callout tabular-nums text-primary hover:underline"
+                                                            >
+                                                                {page.comment_count}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-callout tabular-nums">{page.comment_count}</span>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-5 py-3.5 text-right">

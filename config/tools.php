@@ -46,6 +46,12 @@ return [
             'description' => 'URL encode / decode 在线处理。',
             'icon' => 'Link',
         ],
+        [
+            'slug' => 'password-generator',
+            'name' => '密码生成器',
+            'description' => '生成高强度随机密码，可定制长度与字符集。',
+            'icon' => 'KeyRound',
+        ],
     ],
     '文本处理' => [
         [
@@ -66,6 +72,12 @@ return [
             'description' => '对比两段文本的差异。',
             'icon' => 'GitCompare',
         ],
+        [
+            'slug' => 'markdown-preview',
+            'name' => 'Markdown 编辑预览',
+            'description' => '实时预览 Markdown 渲染效果，支持常用语法。',
+            'icon' => 'FileText',
+        ],
     ],
     '编码转换' => [
         [
@@ -85,6 +97,38 @@ return [
             'name' => '时间戳转换',
             'description' => 'Unix 时间戳与日期时间互转。',
             'icon' => 'Clock',
+        ],
+        [
+            'slug' => 'color-converter',
+            'name' => '颜色转换',
+            'description' => 'HEX、RGB、HSL 颜色格式互转与取色预览。',
+            'icon' => 'Palette',
+        ],
+        [
+            'slug' => 'image-to-base64',
+            'name' => '图片转 Base64',
+            'description' => '把图片转换为 Base64 数据 URI，便于内嵌网页。',
+            'icon' => 'Image',
+        ],
+    ],
+    '开发常用' => [
+        [
+            'slug' => 'uuid-generator',
+            'name' => 'UUID 生成器',
+            'description' => '批量生成 UUID v4 随机标识符。',
+            'icon' => 'Fingerprint',
+        ],
+        [
+            'slug' => 'radix-converter',
+            'name' => '进制转换',
+            'description' => '二进制、八进制、十进制、十六进制互转。',
+            'icon' => 'Binary',
+        ],
+        [
+            'slug' => 'jwt-decoder',
+            'name' => 'JWT 解析器',
+            'description' => '解码 JWT 的 Header 与 Payload，本地解析不上传。',
+            'icon' => 'KeySquare',
         ],
     ],
 ];

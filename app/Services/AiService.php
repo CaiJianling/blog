@@ -210,6 +210,59 @@ PROMPT;
     }
 
     /**
+     * 根据写作提示生成独立页面（标题 + 正文 + SEO），供前端填入编辑器，作者确认后再保存。
+     *
+     * 页面没有摘要/标签/分类字段，只产出标题、Markdown 正文与 SEO 元信息。
+     *
+     * @return array{title: string, markdown: string, meta_title: string, meta_description: string}
+     *
+     * @throws \RuntimeException 配置缺失、接口失败或返回格式异常时抛出
+     */
+    public function generatePage(string $prompt): array
+    {
+        $systemPrompt = <<<'PROMPT'
+你是一位资深的网页内容写作助手。请根据用户给出的要求创作一个网站独立页面（如关于我们、联系、服务介绍、政策、落地页等）的内容，并为其补充 SEO 元信息。
+严格输出一个 JSON 对象，不要输出 JSON 以外的任何内容，也不要用 Markdown 代码块包裹。格式：
+{"title":"页面标题","markdown":"使用 Markdown 语法的页面正文","meta_title":"SEO 标题","meta_description":"SEO 描述"}
+字段要求：
+- 正文：使用 Markdown 语法；包含清晰的段落与必要的二级/三级标题（##/###）；适合处使用列表；不要输出一级标题；语言与写作要求一致。
+- meta_title（SEO 标题）：约 20~30 字，突出主题与核心关键词。
+- meta_description（SEO 描述）：约 50~120 字，概括正文并自然包含关键词。
+重要：输出必须是合法 JSON。字符串值内部禁止输出未转义的英文双引号；正文中如需引用词语，请一律使用中文引号「」。
+PROMPT;
+
+        $userMessage = "页面要求：{$prompt}";
+
+        $text = $this->chatCompletion([
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => $userMessage],
+        ]);
+
+        $data = $this->extractArticlePayload($text);
+
+        // 兼容个别模型输出中文键名的情况
+        $title = trim((string) ($data['title'] ?? $data['标题'] ?? ''));
+        $markdown = trim((string) ($data['markdown'] ?? $data['正文'] ?? ''));
+        $metaTitle = trim((string) ($data['meta_title'] ?? $data['seo_title'] ?? $data['seo标题'] ?? ''));
+        $metaDescription = trim((string) ($data['meta_description'] ?? $data['seo_description'] ?? $data['seo描述'] ?? ''));
+
+        if ($title === '' || $markdown === '') {
+            Log::warning('AiService: AI 返回内容缺少 title 或 markdown（页面）', ['raw' => mb_substr($text, 0, 1000)]);
+
+            throw new AiRequestException('AI 返回的内容格式不正确，请重试或更换模型。', [
+                'raw' => mb_substr($text, 0, 800),
+            ]);
+        }
+
+        return [
+            'title' => $title,
+            'markdown' => $markdown,
+            'meta_title' => $metaTitle !== '' ? $metaTitle : $title,
+            'meta_description' => $metaDescription,
+        ];
+    }
+
+    /**
      * 依据已生成的文章内容，专门补全 SEO 与归类（标签/分类）。
      *
      * 主生成调用有时（弱模型或 JSON 被容错解析）会漏掉这些字段，此方法用一次

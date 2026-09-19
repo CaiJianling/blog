@@ -398,3 +398,87 @@ test('site settings save captcha types with defaults', function () {
     expect(Option::get('login_captcha_type'))->toBe('image_math')
         ->and(Option::get('comment_captcha_type'))->toBe('image');
 });
+
+test('comment captcha defaults to enabled for guests', function () {
+    $service = new CaptchaService;
+
+    expect($service->commentEnabled())->toBeTrue();
+});
+
+test('guest comment skips captcha when comment captcha is disabled', function () {
+    Option::set('comment_captcha_enabled', '0');
+    $admin = User::factory()->create(['role' => 'administrator', 'email_verified_at' => now()]);
+    $article = Article::create([
+        'author_id' => $admin->id,
+        'title' => 'No Captcha Comment Post',
+        'slug' => 'no-captcha-comment-post',
+        'excerpt' => '',
+        'content' => [],
+        'status' => 'publish',
+    ]);
+
+    // 文章页不再下发验证码
+    $this->get('/blog/'.$article->slug)
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page->where('captcha', null));
+
+    // 无验证码字段也能评论
+    $this->post(route('comments.public.store'), [
+        'object_id' => $article->id,
+        'content' => '免验证码评论',
+        'author_name' => '访客',
+        'author_email' => 'guest@example.com',
+    ])->assertRedirect();
+
+    expect(Comment::where('content', '免验证码评论')->exists())->toBeTrue();
+});
+
+test('comment complexity is configured per scope', function () {
+    $service = new CaptchaService;
+
+    // 默认均为 medium
+    expect($service->complexityFor(CaptchaService::SCOPE_LOGIN))->toBe('medium')
+        ->and($service->complexityFor(CaptchaService::SCOPE_COMMENT))->toBe('medium')
+        ->and($service->complexityFor(CaptchaService::SCOPE_REGISTER))->toBe('medium');
+
+    // 各 scope 独立配置互不影响
+    Option::set('login_captcha_complexity', 'easy');
+    Option::set('comment_captcha_complexity', 'hard');
+    Option::set('register_captcha_complexity', 'medium');
+
+    expect($service->complexityFor(CaptchaService::SCOPE_LOGIN))->toBe('easy')
+        ->and($service->complexityFor(CaptchaService::SCOPE_COMMENT))->toBe('hard')
+        ->and($service->complexityFor(CaptchaService::SCOPE_REGISTER))->toBe('medium');
+});
+
+test('site settings save comment and register captcha toggles and complexities', function () {
+    $admin = User::factory()->create(['role' => 'administrator', 'email_verified_at' => now()]);
+
+    $this->actingAs($admin)->put(route('site.update'), [
+        'site_title' => 'My Blog',
+        'site_icon' => '',
+        'cms_url' => 'https://example.com/admin',
+        'site_url' => 'https://example.com',
+        'admin_email' => 'admin@example.com',
+        'login_captcha_enabled' => '1',
+        'login_captcha_type' => 'math',
+        'login_captcha_complexity' => 'easy',
+        'comment_captcha_enabled' => '0',
+        'comment_captcha_type' => 'image_math',
+        'comment_captcha_complexity' => 'hard',
+        'register_captcha_enabled' => '1',
+        'register_captcha_type' => 'image',
+        'register_captcha_complexity' => 'medium',
+        'default_role' => 'author',
+        'site_language' => 'en',
+        'timezone' => 'Asia/Shanghai',
+        'date_format' => 'Y-m-d',
+        'time_format' => 'H:i',
+        'start_of_week' => '0',
+    ])->assertRedirect(route('site.edit'));
+
+    expect(Option::get('comment_captcha_enabled'))->toBe('0')
+        ->and(Option::get('comment_captcha_complexity'))->toBe('hard')
+        ->and(Option::get('register_captcha_complexity'))->toBe('medium')
+        ->and(Option::get('register_captcha_type'))->toBe('image');
+});

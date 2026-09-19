@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Article;
+use App\Models\Comment;
 use App\Models\Option;
+use App\Models\Page;
 use App\Models\User;
 use App\Services\PermalinkService;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -141,4 +143,101 @@ test('plain structure redirects p parameter to canonical permalink', function ()
 
 test('unknown paths return 404', function () {
     $this->get('/this-page-does-not-exist')->assertNotFound();
+});
+
+test('page path and resolution use the configured structure', function () {
+    Option::set('permalink_structure', '/%postname%/');
+
+    $page = Page::create([
+        'author_id' => $this->admin->id,
+        'title' => 'About Us',
+        'slug' => 'about-us',
+        'content' => [],
+        'status' => 'publish',
+    ]);
+
+    $service = app(PermalinkService::class);
+
+    expect($service->pagePath($page))->toBe('/about-us')
+        ->and($service->resolvePage('about-us')?->id)->toBe($page->id);
+});
+
+test('permalink route renders the page when no article matches', function () {
+    Option::set('permalink_structure', '/%postname%/');
+
+    $page = Page::create([
+        'author_id' => $this->admin->id,
+        'title' => 'Contact',
+        'slug' => 'contact-us',
+        'content' => [],
+        'status' => 'publish',
+        'comment_status' => 'open',
+    ]);
+
+    $this
+        ->get('/contact-us')
+        ->assertOk()
+        ->assertInertia(fn (Assert $p) => $p
+            ->component('Page/Show')
+            ->has('page')
+            ->where('page.id', $page->id)
+            ->has('comments'),
+        );
+});
+
+test('published page permalink 404s when the page is not published', function () {
+    Option::set('permalink_structure', '/%postname%/');
+
+    Page::create([
+        'author_id' => $this->admin->id,
+        'title' => 'Draft Page',
+        'slug' => 'draft-page',
+        'content' => [],
+        'status' => 'draft',
+    ]);
+
+    $this->get('/draft-page')->assertNotFound();
+});
+
+test('public comment can be posted to an open page', function () {
+    $page = Page::create([
+        'author_id' => $this->admin->id,
+        'title' => 'Open Page',
+        'slug' => 'open-page',
+        'content' => [],
+        'status' => 'publish',
+        'comment_status' => 'open',
+    ]);
+
+    $response = $this->actingAs($this->regular)->post(route('comments.public.store'), [
+        'object_id' => $page->id,
+        'object_type' => 'page',
+        'content' => '来自页面的评论',
+        'is_markdown' => true,
+    ]);
+
+    $response->assertRedirect();
+
+    expect(Comment::where('object_type', 'page')->where('object_id', $page->id)->count())->toBe(1);
+});
+
+test('public comment is rejected for a closed page', function () {
+    $page = Page::create([
+        'author_id' => $this->admin->id,
+        'title' => 'Closed Page',
+        'slug' => 'closed-page',
+        'content' => [],
+        'status' => 'publish',
+        'comment_status' => 'close',
+    ]);
+
+    $response = $this->actingAs($this->regular)->post(route('comments.public.store'), [
+        'object_id' => $page->id,
+        'object_type' => 'page',
+        'content' => '不该成功',
+    ]);
+
+    $response->assertSessionHasErrors('message');
+
+    expect(Comment::where('object_type', 'page')->where('object_id', $page->id)->count())->toBe(0);
 });

@@ -51,6 +51,8 @@ type AuthUser = { id: number; name: string; nickname: string | null; email: stri
 
 interface Props {
     articleId: number;
+    /** 评论目标对象类型：文章（默认）或页面 */
+    objectType?: 'article' | 'page';
     comments: CommentItem[];
     captcha: Captcha;
     smileyGroups: SmileyGroupData[];
@@ -229,7 +231,7 @@ function CommentItemView({ comment, onReply }: { comment: CommentItem; onReply: 
     );
 }
 
-export default function CommentSection({ articleId, comments, captcha, smileyGroups, commentStatus }: Props) {
+export default function CommentSection({ articleId, objectType = 'article', comments, captcha, smileyGroups, commentStatus }: Props) {
     const { t } = useTranslation();
     const { auth } = usePage().props as { auth: { user: AuthUser } };
     const user = auth.user;
@@ -269,6 +271,7 @@ export default function CommentSection({ articleId, comments, captcha, smileyGro
 
         router.post('/comments', {
             object_id: articleId,
+            object_type: objectType,
             parent_id: replyTo?.comment_id ?? null,
             content,
             author_name: user ? null : authorName,
@@ -294,7 +297,7 @@ export default function CommentSection({ articleId, comments, captcha, smileyGro
                     localStorage.setItem(AUTHOR_STORAGE_KEY, JSON.stringify({ name: authorName, email: authorEmail, url: authorUrl }));
                 }
 
-                router.reload({ only: ['comments', 'captcha', 'article'] });
+                router.reload({ only: ['comments', 'captcha', objectType === 'page' ? 'page' : 'article'] });
             },
             onError: (errors) => {
                 const first = errors.message ?? Object.values(errors)[0];
@@ -400,22 +403,28 @@ export default function CommentSection({ articleId, comments, captcha, smileyGro
                                 />
                                 <Eye className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             </div>
-                            <div className="relative">
-                                <Input
-                                    type={captcha?.type === 'math' ? 'number' : 'text'}
-                                    value={captchaAnswer}
-                                    onChange={(e) => setCaptchaAnswer(e.target.value)}
-                                    placeholder={t('publicComment.captcha')}
-                                    className="pl-9"
-                                    maxLength={captcha && captcha.type !== 'math' ? 8 : undefined}
-                                />
-                                <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                {captcha && captcha.type === 'math' && (
-                                    <span className="absolute top-1/2 right-3 -translate-y-1/2 rounded-md bg-secondary px-2 py-0.5 text-xs font-mono text-secondary-foreground">
-                                        {captcha.question} =
-                                    </span>
-                                )}
-                            </div>
+                            {captcha && (
+                                <div className="relative">
+                                    <Input
+                                        type={captcha?.type === 'image' ? 'text' : 'number'}
+                                        value={captchaAnswer}
+                                        onChange={(e) => setCaptchaAnswer(e.target.value)}
+                                        placeholder={
+                                            captcha?.type === 'image'
+                                                ? t('publicComment.captchaPlaceholder')
+                                                : t('publicComment.mathCaptchaPlaceholder')
+                                        }
+                                        className="pl-9"
+                                        maxLength={captcha?.type === 'image' ? 8 : undefined}
+                                    />
+                                    <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    {captcha && captcha.type === 'math' && (
+                                        <span className="absolute top-1/2 right-3 -translate-y-1/2 rounded-md bg-secondary px-2 py-0.5 text-xs font-mono text-secondary-foreground">
+                                            {captcha.question} =
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                             {captcha && captcha.type !== 'math' && (
                                 <button
                                     type="button"

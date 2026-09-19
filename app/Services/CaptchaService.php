@@ -53,6 +53,11 @@ class CaptchaService
     public const SCOPE_COMMENT = 'comment';
 
     /**
+     * 会话 scope：注册。
+     */
+    public const SCOPE_REGISTER = 'register';
+
+    /**
      * 会话存储键前缀（captcha_{scope}）。
      */
     protected const SESSION_PREFIX = 'captcha_';
@@ -106,7 +111,7 @@ class CaptchaService
     }
 
     /**
-     * 评论验证码方式（游客必填；默认简单计算）。
+     * 评论验证码方式（默认简单计算）。
      */
     public function commentType(): string
     {
@@ -114,11 +119,43 @@ class CaptchaService
     }
 
     /**
-     * 当前复杂程度（未配置或非法值回退 medium）。
+     * 是否已开启评论验证码（默认开启，保持游客评论必填验证码的既有行为）。
+     */
+    public function commentEnabled(): bool
+    {
+        return Option::get('comment_captcha_enabled', '1') === '1';
+    }
+
+    /**
+     * 是否已开启注册验证码。
+     */
+    public function registerEnabled(): bool
+    {
+        return Option::get('register_captcha_enabled', '0') === '1';
+    }
+
+    /**
+     * 注册验证码方式（默认简单计算）。
+     */
+    public function registerType(): string
+    {
+        return $this->normalizeType(Option::get('register_captcha_type', self::TYPE_MATH));
+    }
+
+    /**
+     * 当前复杂程度（登录 scope，未配置或非法值回退 medium）。
      */
     public function complexity(): string
     {
-        $complexity = (string) Option::get('login_captcha_complexity', self::COMPLEXITY_MEDIUM);
+        return $this->complexityFor(self::SCOPE_LOGIN);
+    }
+
+    /**
+     * 指定 scope（login/comment/register）的复杂程度，各自独立配置。
+     */
+    public function complexityFor(string $scope): string
+    {
+        $complexity = (string) Option::get($scope.'_captcha_complexity', self::COMPLEXITY_MEDIUM);
 
         return isset(self::COMPLEXITY_CONFIG[$complexity]) ? $complexity : self::COMPLEXITY_MEDIUM;
     }
@@ -172,6 +209,10 @@ class CaptchaService
      */
     public function commentCaptchaProps(): ?array
     {
+        if (! $this->commentEnabled()) {
+            return null;
+        }
+
         $type = $this->commentType();
 
         if ($type === self::TYPE_MATH) {
@@ -179,6 +220,26 @@ class CaptchaService
         }
 
         return ['type' => $type, 'src' => '/comment-captcha'];
+    }
+
+    /**
+     * 注册表单所需的验证码 props（未开启返回 null）。
+     *
+     * @return array{type: string, question?: string, token?: string, src?: string}|null
+     */
+    public function registerCaptchaProps(): ?array
+    {
+        if (! $this->registerEnabled()) {
+            return null;
+        }
+
+        $type = $this->registerType();
+
+        if ($type === self::TYPE_MATH) {
+            return ['type' => $type] + $this->generateMath();
+        }
+
+        return ['type' => $type, 'src' => '/register-captcha'];
     }
 
     /**
@@ -247,7 +308,7 @@ class CaptchaService
      */
     public function generateImage(string $scope, string $type): string
     {
-        $complexity = $this->complexity();
+        $complexity = $this->complexityFor($scope);
 
         if ($type === self::TYPE_IMAGE_MATH) {
             ['question' => $question, 'answer' => $answer] = $this->buildMathQuestion();

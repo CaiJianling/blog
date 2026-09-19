@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Page extends Model
 {
@@ -37,5 +38,13 @@ class Page extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * 该页面收到的评论（按 object_type=page 关联，支持 withCount('comments')）。
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class, 'object_id')->where('object_type', 'page');
     }
 }

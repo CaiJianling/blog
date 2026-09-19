@@ -73,6 +73,9 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::registerView(fn () => Inertia::render('auth/register', [
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'captchaEnabled' => app(CaptchaService::class)->registerEnabled(),
+            // 方式由 register_captcha_type 决定：math 题目+token / image、image_math 图片地址
+            'captcha' => app(CaptchaService::class)->registerCaptchaProps(),
         ]));
 
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));

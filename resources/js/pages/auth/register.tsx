@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -7,20 +8,41 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { login } from '@/routes';
-import { store } from '@/routes/register';
 import { useLocale, updateLocale } from '@/hooks/use-locale';
 import { cn } from '@/lib/utils';
+import { login } from '@/routes';
+import { store } from '@/routes/register';
+
+type CaptchaProp = {
+    /** math 简单计算（文本算术）| image 图形字符 | image_math 简单计算图形 */
+    type: 'math' | 'image' | 'image_math';
+    question?: string;
+    token?: string;
+    src?: string;
+};
 
 type Props = {
     passwordRules: string;
+    captchaEnabled?: boolean;
+    captcha?: CaptchaProp | null;
 };
 
 type Locale = 'zh' | 'en';
 
-export default function Register({ passwordRules }: Props) {
+export default function Register({ passwordRules, captchaEnabled, captcha }: Props) {
     const { t } = useTranslation();
     const locale = useLocale();
+
+    // 图形验证码（image / image_math）：提交失败后需重新拉图取新的会话答案。
+    // 用自增计数做图片缓存戳（避免 Date.now() 在渲染期被判定为不纯），首屏 ?t=0 即为一次全新获取。
+    const [captchaStamp, setCaptchaStamp] = useState(0);
+    const refreshCaptcha = useCallback(
+        () => setCaptchaStamp((stamp) => stamp + 1),
+        [],
+    );
+    const showImageCaptcha =
+        captchaEnabled === true && captcha != null && captcha.type !== 'math';
+    const showMathCaptcha = captchaEnabled === true && captcha?.type === 'math';
 
     const handleLocaleChange = (newLocale: Locale) => {
         updateLocale(newLocale);
@@ -67,6 +89,11 @@ export default function Register({ passwordRules }: Props) {
                     {...store.form()}
                     resetOnSuccess={['password', 'password_confirmation']}
                     disableWhileProcessing
+                    onError={() => {
+                        if (showImageCaptcha) {
+                            refreshCaptcha();
+                        }
+                    }}
                     className="flex flex-col gap-6"
                 >
                     {({ processing, errors }) => (
@@ -141,6 +168,87 @@ export default function Register({ passwordRules }: Props) {
                                     name="locale"
                                     value={locale}
                                 />
+
+                                {showImageCaptcha && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="captcha">
+                                            {captcha.type === 'image_math'
+                                                ? t('auth.register.mathCaptcha')
+                                                : t('auth.register.captcha')}
+                                        </Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                id="captcha"
+                                                name="captcha"
+                                                required
+                                                autoComplete="off"
+                                                spellCheck={false}
+                                                maxLength={6}
+                                                inputMode={
+                                                    captcha.type === 'image_math'
+                                                        ? 'numeric'
+                                                        : undefined
+                                                }
+                                                className="flex-1 font-mono tracking-[0.3em] uppercase"
+                                                placeholder={
+                                                    captcha.type === 'image_math'
+                                                        ? t('auth.register.mathCaptchaPlaceholder')
+                                                        : t('auth.register.captchaPlaceholder')
+                                                }
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={refreshCaptcha}
+                                                title={t('auth.register.captchaRefresh')}
+                                                aria-label={t('auth.register.captchaRefresh')}
+                                                className="shrink-0 overflow-hidden rounded-lg border border-border/70 transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            >
+                                                <img
+                                                    src={`${captcha.src}?t=${captchaStamp}`}
+                                                    alt={t('auth.register.captcha')}
+                                                    className="block h-10 bg-background"
+                                                />
+                                            </button>
+                                        </div>
+                                        <InputError message={errors.captcha} />
+                                        <p className="text-xs text-muted-foreground">
+                                            {captcha.type === 'image_math'
+                                                ? t('auth.register.mathCaptchaHint')
+                                                : t('auth.register.captchaHint')}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {showMathCaptcha && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="captcha_answer">
+                                            {t('auth.register.mathCaptcha')}
+                                        </Label>
+                                        <div className="flex items-center gap-2">
+                                            <span className="flex h-10 shrink-0 select-none items-center rounded-lg border border-border/70 bg-muted/50 px-3 font-mono text-base font-medium tracking-wider">
+                                                {captcha.question} = ?
+                                            </span>
+                                            <Input
+                                                id="captcha_answer"
+                                                name="captcha_answer"
+                                                required
+                                                inputMode="numeric"
+                                                autoComplete="off"
+                                                className="flex-1"
+                                                placeholder={t('auth.register.mathCaptchaPlaceholder')}
+                                            />
+                                        </div>
+                                        <input
+                                            type="hidden"
+                                            name="captcha_token"
+                                            value={captcha.token}
+                                        />
+                                        <InputError message={errors.captcha} />
+                                        <p className="text-xs text-muted-foreground">
+                                            {t('auth.register.mathCaptchaHint')}
+                                        </p>
+                                    </div>
+                                )}
 
                                 <Button
                                     type="submit"

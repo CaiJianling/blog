@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Article;
 use App\Models\Comment;
+use App\Models\Page;
 use App\Models\Smiley;
 use App\Models\SmileyGroup;
 use App\Models\User;
@@ -102,7 +103,7 @@ class CommentService
     /**
      * 判断用户是否可以查看这条（悄悄话）评论。
      */
-    public function canView(Comment $comment, ?User $user, Article $article): bool
+    public function canView(Comment $comment, ?User $user, Article|Page $owner): bool
     {
         if (! $comment->is_private) {
             return true;
@@ -123,7 +124,7 @@ class CommentService
             return true;
         }
 
-        return (int) $article->author_id === (int) $user->id;
+        return (int) $owner->author_id === (int) $user->id;
     }
 
     /**
@@ -139,7 +140,7 @@ class CommentService
      *
      * @return array<int, array<string, mixed>>
      */
-    public function threadTree(string $objectType, int $objectId, ?User $user, Article $owner): array
+    public function threadTree(string $objectType, int $objectId, ?User $user, Article|Page $owner): array
     {
         $allComments = Comment::where('object_id', $objectId)
             ->where('object_type', $objectType)

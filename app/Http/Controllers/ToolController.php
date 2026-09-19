@@ -30,6 +30,7 @@ class ToolController extends Controller
                         'url' => $tool->url,
                         'description' => $tool->description,
                         'icon' => $tool->icon,
+                        'clicks' => (int) $tool->clicks,
                     ])
                     ->values(),
             ])
@@ -65,6 +66,9 @@ class ToolController extends Controller
         // 外链工具没有内部详情页
         abort_if(! $tool || $tool->isExternal(), 404);
 
+        // 打开工具详情计一次点击
+        $tool->increment('clicks');
+
         return Inertia::render('Tools/Show', [
             'tool' => [
                 'id' => $tool->id,
@@ -72,8 +76,23 @@ class ToolController extends Controller
                 'name' => $tool->name,
                 'description' => $tool->description,
                 'icon' => $tool->icon,
+                'clicks' => (int) $tool->clicks,
             ],
             'category' => $tool->category->name,
         ]);
+    }
+
+    /**
+     * 外链工具跳转：计数一次后重定向到工具地址。
+     */
+    public function go(string $slug)
+    {
+        $tool = Tool::where('slug', $slug)->first();
+
+        abort_if(! $tool || ! $tool->isExternal(), 404);
+
+        $tool->increment('clicks');
+
+        return redirect()->away($tool->url);
     }
 }

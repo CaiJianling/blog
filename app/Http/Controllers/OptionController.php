@@ -41,7 +41,13 @@ class OptionController extends Controller
         'login_captcha_enabled',
         'login_captcha_type',
         'login_captcha_complexity',
+        'comment_captcha_enabled',
         'comment_captcha_type',
+        'comment_captcha_complexity',
+        'register_captcha_enabled',
+        'register_captcha_type',
+        'register_captcha_complexity',
+        'require_email_verification',
     ];
 
     /**
@@ -56,7 +62,13 @@ class OptionController extends Controller
         $options->put('login_captcha_enabled', $options->get('login_captcha_enabled', '0'));
         $options->put('login_captcha_type', $options->get('login_captcha_type', CaptchaService::TYPE_MATH));
         $options->put('login_captcha_complexity', $options->get('login_captcha_complexity', CaptchaService::COMPLEXITY_MEDIUM));
+        $options->put('comment_captcha_enabled', $options->get('comment_captcha_enabled', '1'));
         $options->put('comment_captcha_type', $options->get('comment_captcha_type', CaptchaService::TYPE_MATH));
+        $options->put('comment_captcha_complexity', $options->get('comment_captcha_complexity', CaptchaService::COMPLEXITY_MEDIUM));
+        $options->put('register_captcha_enabled', $options->get('register_captcha_enabled', '0'));
+        $options->put('register_captcha_type', $options->get('register_captcha_type', CaptchaService::TYPE_MATH));
+        $options->put('register_captcha_complexity', $options->get('register_captcha_complexity', CaptchaService::COMPLEXITY_MEDIUM));
+        $options->put('require_email_verification', $options->get('require_email_verification', '0'));
 
         $siteIconId = (int) $options->get('site_icon', '');
         $siteIcon = null;
@@ -136,9 +148,21 @@ class OptionController extends Controller
             'login_captcha_type' => in_array($request->input('login_captcha_type'), CaptchaService::validTypes(), true)
                 ? $request->input('login_captcha_type')
                 : CaptchaService::TYPE_MATH,
+            'comment_captcha_enabled' => $request->input('comment_captcha_enabled', '1') === '1' ? '1' : '0',
             'comment_captcha_type' => in_array($request->input('comment_captcha_type'), CaptchaService::validTypes(), true)
                 ? $request->input('comment_captcha_type')
                 : CaptchaService::TYPE_MATH,
+            'comment_captcha_complexity' => in_array($request->input('comment_captcha_complexity'), [CaptchaService::COMPLEXITY_EASY, CaptchaService::COMPLEXITY_MEDIUM, CaptchaService::COMPLEXITY_HARD], true)
+                ? $request->input('comment_captcha_complexity')
+                : CaptchaService::COMPLEXITY_MEDIUM,
+            'register_captcha_enabled' => $request->input('register_captcha_enabled', '0') === '1' ? '1' : '0',
+            'register_captcha_type' => in_array($request->input('register_captcha_type'), CaptchaService::validTypes(), true)
+                ? $request->input('register_captcha_type')
+                : CaptchaService::TYPE_MATH,
+            'register_captcha_complexity' => in_array($request->input('register_captcha_complexity'), [CaptchaService::COMPLEXITY_EASY, CaptchaService::COMPLEXITY_MEDIUM, CaptchaService::COMPLEXITY_HARD], true)
+                ? $request->input('register_captcha_complexity')
+                : CaptchaService::COMPLEXITY_MEDIUM,
+            'require_email_verification' => $request->input('require_email_verification', '0') === '1' ? '1' : '0',
         ]);
 
         $validated = $request->validate([
@@ -155,7 +179,13 @@ class OptionController extends Controller
             'login_captcha_enabled' => ['nullable', 'in:0,1'],
             'login_captcha_complexity' => ['nullable', 'in:easy,medium,hard'],
             'login_captcha_type' => ['nullable', 'in:math,image,image_math'],
+            'comment_captcha_enabled' => ['nullable', 'in:0,1'],
             'comment_captcha_type' => ['nullable', 'in:math,image,image_math'],
+            'comment_captcha_complexity' => ['nullable', 'in:easy,medium,hard'],
+            'register_captcha_complexity' => ['nullable', 'in:easy,medium,hard'],
+            'register_captcha_enabled' => ['nullable', 'in:0,1'],
+            'register_captcha_type' => ['nullable', 'in:math,image,image_math'],
+            'require_email_verification' => ['nullable', 'in:0,1'],
             'default_role' => ['required', 'in:subscriber,contributor,author'],
             'site_language' => ['required', 'in:zh,en'],
             'timezone' => ['required', 'string', 'timezone'],

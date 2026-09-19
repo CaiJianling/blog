@@ -293,6 +293,7 @@ class NavigationSettingController extends Controller
             'description' => $link->description,
             'has_intro' => $link->intro_content !== null,
             'icon_url' => $this->attachments->systemImageUrl('nav_link_icon', $link->id),
+            'clicks' => (int) $link->clicks,
         ];
 
         if ($withIntro) {

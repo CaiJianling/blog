@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureVerifiedEmailToLogin;
+use App\Http\Middleware\VerifyLoginCaptcha;
+use App\Http\Middleware\VerifyRegisterCaptcha;
 use Laravel\Fortify\Features;
 
 return [
@@ -104,7 +107,11 @@ return [
     'middleware' => [
         'web',
         // 登录图形验证码：内部仅拦截 POST /login，其余 Fortify 路由直接放行
-        \App\Http\Middleware\VerifyLoginCaptcha::class,
+        VerifyLoginCaptcha::class,
+        // 注册验证码：内部仅拦截 POST /register（开启时校验）
+        VerifyRegisterCaptcha::class,
+        // 强制邮箱验证登录：开关开启时，未验证邮箱账号无法登录
+        EnsureVerifiedEmailToLogin::class,
     ],
 
     /*

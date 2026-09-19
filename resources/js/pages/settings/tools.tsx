@@ -41,6 +41,7 @@ type ToolData = {
     description: string | null;
     icon: string;
     sort_order: number;
+    clicks: number;
     is_external: boolean;
 };
 
@@ -72,6 +73,12 @@ const ICON_GLYPHS: Record<string, string> = {
     Calculator: '🧮',
     Globe: '🌐',
     Terminal: '⌨',
+    FileText: 'MD',
+    KeyRound: '🔑',
+    Palette: '🎨',
+    Image: '🖼',
+    Fingerprint: 'ID',
+    KeySquare: '🔐',
 };
 
 const ICON_OPTIONS = Object.keys(ICON_GLYPHS);
@@ -436,6 +443,7 @@ export default function Tools({ categories }: Props) {
                                                 {tool.description
                                                     ? ` · ${tool.description}`
                                                     : ''}
+                                                {` · 点击 ${tool.clicks ?? 0}`}
                                             </p>
                                         </div>
                                         <div className="flex shrink-0 items-center gap-0.5">

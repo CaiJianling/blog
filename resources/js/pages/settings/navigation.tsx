@@ -35,6 +35,7 @@ type NavLinkData = {
     description: string | null;
     icon_url: string | null;
     has_intro: boolean;
+    clicks: number;
 };
 
 const ICON_GLYPHS: Record<string, string> = {
@@ -479,6 +480,7 @@ export default function Navigation({ categories }: Props) {
                                                 {link.description
                                                     ? ` · ${link.description}`
                                                     : ''}
+                                                {` · 点击 ${link.clicks ?? 0}`}
                                             </p>
                                         </div>
                                         <div className="flex shrink-0 items-center gap-0.5">

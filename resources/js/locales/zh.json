@@ -73,7 +73,14 @@
             "hasAccount": "已有账户？",
             "logIn": "登录",
             "login": "登录",
-            "createAccount": "创建账户"
+            "createAccount": "创建账户",
+            "captcha": "图形验证码",
+            "captchaPlaceholder": "输入图中字符",
+            "mathCaptcha": "计算验证码",
+            "mathCaptchaPlaceholder": "计算结果",
+            "captchaRefresh": "看不清？换一张",
+            "captchaHint": "不区分大小写；点击图片可更换。提交失败后会自动刷新。",
+            "mathCaptchaHint": "请输入算式的计算结果；提交失败后会自动刷新。"
         },
         "resetPassword": {
             "title": "重置密码",
@@ -215,7 +222,16 @@
             "loginCaptchaComplexity": "验证码复杂程度",
             "loginCaptchaType": "验证码方式",
             "commentCaptchaType": "评论验证码方式",
-            "commentCaptchaHint": "游客评论时需输入的验证码方式，默认为简单计算验证码。"
+            "commentCaptchaHint": "游客评论时需输入的验证码方式，默认为简单计算验证码。",
+            "registerCaptcha": "注册验证码",
+            "registerCaptchaLabel": "开启注册验证码",
+            "registerCaptchaHint": "开启后注册需输入验证码，防止机器批量注册。",
+            "requireEmailVerification": "邮箱验证",
+            "requireEmailVerificationLabel": "注册后须先验证邮箱才能登录",
+            "requireEmailVerificationHint": "开启后，未完成邮箱验证的账号无法登录，需先通过验证邮件确认邮箱。",
+            "settings.site.commentCaptcha": "评论验证码",
+            "settings.site.commentCaptchaLabel": "开启评论验证码",
+            "settings.site.commentCaptchaHint": "为游客评论启用验证码，可选择方式与复杂度；关闭后游客评论无需验证码。"
         },
         "permalink": {
             "title": "固定链接设置",
@@ -787,8 +803,25 @@
         "list": "页面列表",
         "allPages": "所有页面",
         "create": "创建页面",
+        "ai": {
+            "button": "AI 生成",
+            "dialogTitle": "AI 生成页面",
+            "dialogDescription": "描述你想要的页面，AI 将生成标题、正文与 SEO 元信息，确认无误后再保存录入。",
+            "promptPlaceholder": "例如：写一个关于我们页面，介绍网站定位、团队与联系方式…",
+            "generate": "生成",
+            "generating": "生成中…",
+            "success": "AI 已生成页面内容（含 SEO），请检查后再保存录入。",
+            "failed": "AI 生成失败，请稍后重试。",
+            "csrfFailed": "会话已失效或过期，请刷新页面后重试。",
+            "confirmOverwrite": "当前已有标题或内容，继续将覆盖现有内容。确定继续吗？",
+            "parseFailed": "AI 内容解析失败，请重试。",
+            "viewDetail": "查看详情",
+            "detailHint": "点击「查看详情」可查看接口的真实返回报错",
+            "errorTitle": "接口错误详情"
+        },
         "editPage": "编辑页面",
         "managePages": "管理您的页面",
+        "viewComments": "查看该页面的评论区",
         "pagesCount": "共 {{count}} 个页面",
         "noPages": "暂无页面",
         "writeFirst": "写第一个页面",
@@ -806,6 +839,7 @@
             "slug": "别名",
             "date": "日期",
             "views": "浏览量",
+            "comments": "评论",
             "actions": "操作"
         },
         "status": {
@@ -975,7 +1009,9 @@
         "views": "{{count}} 次浏览",
         "commentsCount": "{{count}} 条评论",
         "readTime": "预计 {{count}} 分钟阅读",
-        "captchaRefresh": "看不清？换一张"
+        "captchaRefresh": "看不清？换一张",
+        "captchaPlaceholder": "输入图中字符",
+        "mathCaptchaPlaceholder": "输入计算结果"
     },
     "articlePage": {
         "blog": "博客",

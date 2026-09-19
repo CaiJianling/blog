@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, MousePointerClick } from 'lucide-react';
+import { formatCount } from '@/lib/utils';
 import tools from '@/routes/tools';
 import JsonFormatter from '@/components/tools/JsonFormatter';
 import XmlFormatter from '@/components/tools/XmlFormatter';
@@ -13,12 +14,20 @@ import CaseConverter from '@/components/tools/CaseConverter';
 import TimestampConverter from '@/components/tools/TimestampConverter';
 import SqlFormatter from '@/components/tools/SqlFormatter';
 import UnitConverter from '@/components/tools/UnitConverter';
+import MarkdownPreview from '@/components/tools/MarkdownPreview';
+import PasswordGenerator from '@/components/tools/PasswordGenerator';
+import UuidGenerator from '@/components/tools/UuidGenerator';
+import RadixConverter from '@/components/tools/RadixConverter';
+import JwtDecoder from '@/components/tools/JwtDecoder';
+import ColorConverter from '@/components/tools/ColorConverter';
+import ImageToBase64 from '@/components/tools/ImageToBase64';
 
 type Tool = {
     slug: string;
     name: string;
     description: string;
     icon: string;
+    clicks: number;
 };
 
 type Props = {
@@ -39,6 +48,13 @@ const toolMap: Record<string, React.FC> = {
     'timestamp': TimestampConverter,
     'sql-formatter': SqlFormatter,
     'unit-converter': UnitConverter,
+    'markdown-preview': MarkdownPreview,
+    'password-generator': PasswordGenerator,
+    'uuid-generator': UuidGenerator,
+    'radix-converter': RadixConverter,
+    'jwt-decoder': JwtDecoder,
+    'color-converter': ColorConverter,
+    'image-to-base64': ImageToBase64,
 };
 
 export default function Show({ tool, category }: Props) {
@@ -61,6 +77,10 @@ export default function Show({ tool, category }: Props) {
                     <span className="text-footnote text-muted-foreground">{category}</span>
                     <h1 className="mt-1 text-display">{tool.name}</h1>
                     <p className="mt-2 text-body text-muted-foreground">{tool.description}</p>
+                    <p className="mt-3 flex items-center gap-1.5 text-footnote text-muted-foreground/80">
+                        <MousePointerClick className="h-3.5 w-3.5" />
+                        累计使用 {formatCount(tool.clicks ?? 0)} 次
+                    </p>
                 </header>
 
                 <div className="apple-card p-6 md:p-8">

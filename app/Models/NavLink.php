@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $description
  * @property array<int, mixed>|null $intro_content
  * @property int $sort_order
+ * @property int $clicks
  */
 class NavLink extends Model
 {
@@ -28,6 +29,7 @@ class NavLink extends Model
         'description',
         'intro_content',
         'sort_order',
+        'clicks',
     ];
 
     protected $casts = [

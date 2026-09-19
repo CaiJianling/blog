@@ -34,6 +34,7 @@ class NavController extends Controller
                         'color' => $link->color,
                         'icon_url' => $this->attachments->systemImageUrl('nav_link_icon', $link->id),
                         'has_intro' => $link->intro_content !== null,
+                        'clicks' => (int) $link->clicks,
                     ])
                     ->values(),
             ])
@@ -45,10 +46,12 @@ class NavController extends Controller
     }
 
     /**
-     * 链接的图文介绍页（前台"查看介绍"跳转的独立页面）。
+     * 链接的图文介绍页（前台"查看介绍"跳转的独立页面）。浏览介绍计一次点击。
      */
     public function show(NavLink $link): Response
     {
+        $link->increment('clicks');
+
         return Inertia::render('Nav/Intro', [
             'link' => [
                 'id' => $link->id,
@@ -57,7 +60,18 @@ class NavController extends Controller
                 'description' => $link->description,
                 'color' => $link->color,
                 'intro_content' => $link->intro_content,
+                'clicks' => (int) $link->clicks,
             ],
         ]);
+    }
+
+    /**
+     * 导航链接跳转：计数一次后重定向到目标网站。
+     */
+    public function go(NavLink $link)
+    {
+        $link->increment('clicks');
+
+        return redirect()->away($link->url);
     }
 }

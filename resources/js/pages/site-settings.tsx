@@ -130,8 +130,26 @@ export default function Site({
     const [loginCaptchaComplexity, setLoginCaptchaComplexity] = useState(
         options.login_captcha_complexity ?? 'medium',
     );
+    const [commentCaptchaEnabled, setCommentCaptchaEnabled] = useState(
+        options.comment_captcha_enabled !== '0',
+    );
     const [commentCaptchaType, setCommentCaptchaType] = useState(
         options.comment_captcha_type ?? 'math',
+    );
+    const [commentCaptchaComplexity, setCommentCaptchaComplexity] = useState(
+        options.comment_captcha_complexity ?? 'medium',
+    );
+    const [registerCaptchaEnabled, setRegisterCaptchaEnabled] = useState(
+        options.register_captcha_enabled === '1',
+    );
+    const [registerCaptchaType, setRegisterCaptchaType] = useState(
+        options.register_captcha_type ?? 'math',
+    );
+    const [registerCaptchaComplexity, setRegisterCaptchaComplexity] = useState(
+        options.register_captcha_complexity ?? 'medium',
+    );
+    const [requireEmailVerification, setRequireEmailVerification] = useState(
+        options.require_email_verification === '1',
     );
     const [defaultRole, setDefaultRole] = useState(
         options.default_role ?? 'subscriber',
@@ -329,8 +347,38 @@ export default function Site({
                             />
                             <input
                                 type="hidden"
+                                name="comment_captcha_enabled"
+                                value={commentCaptchaEnabled ? '1' : '0'}
+                            />
+                            <input
+                                type="hidden"
                                 name="comment_captcha_type"
                                 value={commentCaptchaType}
+                            />
+                            <input
+                                type="hidden"
+                                name="comment_captcha_complexity"
+                                value={commentCaptchaComplexity}
+                            />
+                            <input
+                                type="hidden"
+                                name="register_captcha_enabled"
+                                value={registerCaptchaEnabled ? '1' : '0'}
+                            />
+                            <input
+                                type="hidden"
+                                name="register_captcha_type"
+                                value={registerCaptchaType}
+                            />
+                            <input
+                                type="hidden"
+                                name="register_captcha_complexity"
+                                value={registerCaptchaComplexity}
+                            />
+                            <input
+                                type="hidden"
+                                name="require_email_verification"
+                                value={requireEmailVerification ? '1' : '0'}
                             />
                             <input
                                 type="hidden"
@@ -724,38 +772,289 @@ export default function Site({
                                     <div className="grid gap-2">
                                         <Label>
                                             {t(
-                                                'settings.site.commentCaptchaType',
+                                                'settings.site.commentCaptcha',
                                             )}
                                         </Label>
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id="comment_captcha_enabled"
+                                                checked={commentCaptchaEnabled}
+                                                onCheckedChange={(checked) =>
+                                                    setCommentCaptchaEnabled(
+                                                        checked === true,
+                                                    )
+                                                }
+                                            />
+                                            <Label
+                                                htmlFor="comment_captcha_enabled"
+                                                className="cursor-pointer font-normal"
+                                            >
+                                                {t(
+                                                    'settings.site.commentCaptchaLabel',
+                                                )}
+                                            </Label>
+                                        </div>
                                         <p className="text-footnote text-muted-foreground">
                                             {t(
                                                 'settings.site.commentCaptchaHint',
                                             )}
                                         </p>
-                                        <Select
-                                            value={commentCaptchaType}
-                                            onValueChange={
-                                                setCommentCaptchaType
-                                            }
-                                        >
-                                            <SelectTrigger className="w-72">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {captchaTypes.map((item) => (
-                                                    <SelectItem
-                                                        key={item.value}
-                                                        value={item.value}
+                                        {commentCaptchaEnabled && (
+                                            <>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="comment_captcha_type">
+                                                        {t(
+                                                            'settings.site.loginCaptchaType',
+                                                        )}
+                                                    </Label>
+                                                    <Select
+                                                        value={
+                                                            commentCaptchaType
+                                                        }
+                                                        onValueChange={
+                                                            setCommentCaptchaType
+                                                        }
                                                     >
-                                                        {item.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                                        <SelectTrigger
+                                                            id="comment_captcha_type"
+                                                            className="w-72"
+                                                        >
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {captchaTypes.map(
+                                                                (item) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            item.value
+                                                                        }
+                                                                        value={
+                                                                            item.value
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            item.label
+                                                                        }
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    </div>
+                                                    {commentCaptchaType !==
+                                                        'math' && (
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="comment_captcha_complexity">
+                                                                {t(
+                                                                    'settings.site.loginCaptchaComplexity',
+                                                                )}
+                                                            </Label>
+                                                            <Select
+                                                                value={
+                                                                    commentCaptchaComplexity
+                                                                }
+                                                                onValueChange={
+                                                                    setCommentCaptchaComplexity
+                                                                }
+                                                            >
+                                                                <SelectTrigger
+                                                                    id="comment_captcha_complexity"
+                                                                    className="w-72"
+                                                                >
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {captchaComplexities.map(
+                                                                        (
+                                                                            item,
+                                                                        ) => (
+                                                                            <SelectItem
+                                                                                key={
+                                                                                    item.value
+                                                                                }
+                                                                                value={
+                                                                                    item.value
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    item.label
+                                                                                }
+                                                                            </SelectItem>
+                                                                        ),
+                                                                    )}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    )}
+                                            </>
+                                        )}
                                         <InputError
                                             className="mt-2"
                                             message={
-                                                errors.comment_captcha_type
+                                                errors.comment_captcha_complexity
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label>
+                                            {t('settings.site.registerCaptcha')}
+                                        </Label>
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id="register_captcha_enabled"
+                                                checked={registerCaptchaEnabled}
+                                                onCheckedChange={(checked) =>
+                                                    setRegisterCaptchaEnabled(
+                                                        checked === true,
+                                                    )
+                                                }
+                                            />
+                                            <Label
+                                                htmlFor="register_captcha_enabled"
+                                                className="cursor-pointer font-normal"
+                                            >
+                                                {t(
+                                                    'settings.site.registerCaptchaLabel',
+                                                )}
+                                            </Label>
+                                        </div>
+                                        <p className="text-footnote text-muted-foreground">
+                                            {t(
+                                                'settings.site.registerCaptchaHint',
+                                            )}
+                                        </p>
+                                        {registerCaptchaEnabled && (
+                                            <>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="register_captcha_type">
+                                                        {t(
+                                                            'settings.site.loginCaptchaType',
+                                                        )}
+                                                    </Label>
+                                                    <Select
+                                                        value={
+                                                            registerCaptchaType
+                                                        }
+                                                        onValueChange={
+                                                            setRegisterCaptchaType
+                                                        }
+                                                    >
+                                                        <SelectTrigger
+                                                            id="register_captcha_type"
+                                                            className="w-72"
+                                                        >
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {captchaTypes.map(
+                                                                (item) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            item.value
+                                                                        }
+                                                                        value={
+                                                                            item.value
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            item.label
+                                                                        }
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    </div>
+                                                    {registerCaptchaType !==
+                                                        'math' && (
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="register_captcha_complexity">
+                                                                {t(
+                                                                    'settings.site.loginCaptchaComplexity',
+                                                                )}
+                                                            </Label>
+                                                            <Select
+                                                                value={
+                                                                    registerCaptchaComplexity
+                                                                }
+                                                                onValueChange={
+                                                                    setRegisterCaptchaComplexity
+                                                                }
+                                                            >
+                                                                <SelectTrigger
+                                                                    id="register_captcha_complexity"
+                                                                    className="w-72"
+                                                                >
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {captchaComplexities.map(
+                                                                        (
+                                                                            item,
+                                                                        ) => (
+                                                                            <SelectItem
+                                                                                key={
+                                                                                    item.value
+                                                                                }
+                                                                                value={
+                                                                                    item.value
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    item.label
+                                                                                }
+                                                                            </SelectItem>
+                                                                        ),
+                                                                    )}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    )}
+                                            </>
+                                        )}
+                                        <InputError
+                                            className="mt-2"
+                                            message={
+                                                errors.register_captcha_complexity
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label>
+                                            {t(
+                                                'settings.site.requireEmailVerification',
+                                            )}
+                                        </Label>
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id="require_email_verification"
+                                                checked={requireEmailVerification}
+                                                onCheckedChange={(checked) =>
+                                                    setRequireEmailVerification(
+                                                        checked === true,
+                                                    )
+                                                }
+                                            />
+                                            <Label
+                                                htmlFor="require_email_verification"
+                                                className="cursor-pointer font-normal"
+                                            >
+                                                {t(
+                                                    'settings.site.requireEmailVerificationLabel',
+                                                )}
+                                            </Label>
+                                        </div>
+                                        <p className="text-footnote text-muted-foreground">
+                                            {t(
+                                                'settings.site.requireEmailVerificationHint',
+                                            )}
+                                        </p>
+                                        <InputError
+                                            className="mt-2"
+                                            message={
+                                                errors.require_email_verification
                                             }
                                         />
                                     </div>

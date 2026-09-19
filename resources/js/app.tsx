@@ -77,6 +77,9 @@ initPromise.then(() => {
                     name.startsWith('Moment/') ||
                     name.startsWith('Archive/'):
                     return PublicLayout;
+                case name === 'Page/Show':
+                    // 页面公开详情页（后台 Page/* 列表页仍走 AppLayout）
+                    return PublicLayout;
                 case name.startsWith('auth/'):
                     return AuthLayout;
                 case name === 'settings/permalink':

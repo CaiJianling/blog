@@ -10,11 +10,15 @@ import {
     Link2,
     ChevronRight,
     Search,
+    Sparkles,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import AiGenerateDialog from '@/components/ai-generate-dialog';
+import type { AiArticleResult } from '@/components/ai-generate-dialog';
 import { BlockNoteEditor } from '@/components/blocknote-editor';
-import type { BlockNoteDocument } from '@/components/blocknote-editor';
+import type { BlockNoteDocument, BlockNoteEditorRef } from '@/components/blocknote-editor';
 import MediaQuickUpload from '@/components/media-quick-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -86,6 +90,7 @@ function SidebarSection({
 export default function CreatePage() {
     const { t } = useTranslation();
     const titleRef = useRef<HTMLInputElement>(null);
+    const editorRef = useRef<BlockNoteEditorRef | null>(null);
     const [formData, setFormData] = useState({
         title: '',
         slug: '',
@@ -96,6 +101,7 @@ export default function CreatePage() {
         comment_status: 'close',
     });
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
     useEffect(() => {
         if (titleRef.current) {
@@ -120,6 +126,46 @@ export default function CreatePage() {
             '/pages',
             data as unknown as Parameters<typeof router.post>[1],
         );
+    };
+
+    // AI 生成结果填入编辑器，作者检查确认后再手动保存录入
+    const applyAiResult = async (result: AiArticleResult) => {
+        const editor = editorRef.current;
+
+        const hasContent =
+            formData.title.trim() !== '' ||
+            (Array.isArray(formData.content) && formData.content.length > 1);
+
+        if (hasContent && !window.confirm(t('pages.ai.confirmOverwrite'))) {
+            return;
+        }
+
+        setFormData((prev) => ({
+            ...prev,
+            title: result.title,
+            meta_title: result.meta_title || prev.meta_title,
+            meta_description: result.meta_description || prev.meta_description,
+        }));
+
+        if (!editor || typeof editor.tryParseMarkdownToBlocks !== 'function') {
+            toast.error(t('pages.ai.parseFailed'));
+
+            return;
+        }
+
+        const blocks = await editor.tryParseMarkdownToBlocks(result.markdown);
+
+        if (!blocks || blocks.length === 0) {
+            toast.error(t('pages.ai.parseFailed'));
+
+            return;
+        }
+
+        editor.replaceBlocks(editor.document, blocks);
+        setFormData((prev) => ({
+            ...prev,
+            content: editor.document as BlockNoteDocument,
+        }));
     };
 
     return (
@@ -149,6 +195,13 @@ export default function CreatePage() {
                             ) : (
                                 <PanelRightOpen className="h-[18px] w-[18px]" />
                             )}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setAiDialogOpen(true)}
+                        >
+                            <Sparkles className="h-4 w-4" />
+                            {t('pages.ai.button')}
                         </Button>
                         <Button
                             variant="secondary"
@@ -197,6 +250,9 @@ export default function CreatePage() {
                                                 content: document,
                                             })
                                         }
+                                        onReady={(editor) => {
+                                            editorRef.current = editor;
+                                        }}
                                     />
                                 </div>
                             </CardContent>
@@ -344,6 +400,14 @@ export default function CreatePage() {
                     </div>
                 </div>
             </div>
+
+            <AiGenerateDialog
+                open={aiDialogOpen}
+                onOpenChange={setAiDialogOpen}
+                onApply={applyAiResult}
+                endpoint="/pages/ai-generate"
+                i18nBase="pages"
+            />
         </>
     );
 }

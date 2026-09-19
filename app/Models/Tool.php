@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $description
  * @property string $icon
  * @property int $sort_order
+ * @property int $clicks
  */
 class Tool extends Model
 {
@@ -28,6 +29,7 @@ class Tool extends Model
         'description',
         'icon',
         'sort_order',
+        'clicks',
     ];
 
     public function category(): BelongsTo

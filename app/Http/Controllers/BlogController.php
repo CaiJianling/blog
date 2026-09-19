@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\ArticleLike;
 use App\Models\Attachment;
 use App\Models\Option;
+use App\Models\Page;
 use App\Models\TermTaxonomy;
 use App\Services\CommentService;
 use App\Services\PermalinkService;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Inertia\RenderingResponse;
 
 class BlogController extends Controller
 {
@@ -113,15 +115,22 @@ class BlogController extends Controller
     }
 
     /**
-     * 按固定链接结构解析路径并展示文章。
+     * 按固定链接结构解析路径并展示内容：
+     * 文章与页面共用同一固定链接结构，先按文章解析，未命中再按页面解析。
      */
     public function permalink(string $permalink, Request $request)
     {
         $article = $this->permalinks->resolve($permalink);
 
-        abort_if($article === null, 404);
+        if ($article !== null) {
+            return $this->renderArticle($article, $request);
+        }
 
-        return $this->renderArticle($article, $request);
+        $page = $this->permalinks->resolvePage($permalink);
+
+        abort_if($page === null, 404);
+
+        return $this->renderPage($page, $request);
     }
 
     /**
@@ -237,6 +246,44 @@ class BlogController extends Controller
                 'title' => $next->title,
                 'permalink' => $this->permalinks->articlePath($next),
             ] : null,
+        ]);
+    }
+
+    /**
+     * 渲染页面公开详情（浏览计数、评论区）。
+     *
+     * @return RenderingResponse
+     */
+    private function renderPage(Page $page, Request $request)
+    {
+        $page->increment('views');
+        $page->refresh();
+
+        $user = $request->user();
+
+        $commentTree = $this->commentService->threadTree('page', $page->id, $user, $page);
+        $extras = $this->commentService->discussionExtras($user);
+
+        return Inertia::render('Page/Show', [
+            'page' => [
+                'id' => $page->id,
+                'title' => $page->title,
+                'slug' => $page->slug,
+                'content' => $page->content,
+                'meta_title' => $page->meta_title,
+                'meta_description' => $page->meta_description,
+                'author_name' => $page->author?->nickname ?: ($page->author?->name ?? ''),
+                'author_avatar' => $page->author?->avatarUrl() ?? '',
+                'views' => $page->views,
+                'likes' => $page->likes,
+                'comment_count' => $page->comments()->where('status', '1')->count(),
+                'comment_status' => $page->comment_status,
+                'created_at' => $page->created_at->format('Y-m-d'),
+                'permalink' => $this->permalinks->pagePath($page),
+            ],
+            'comments' => $commentTree,
+            'captcha' => $extras['captcha'],
+            'smileyGroups' => $extras['smileyGroups'],
         ]);
     }
 

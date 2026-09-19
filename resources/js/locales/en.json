@@ -73,7 +73,14 @@
             "hasAccount": "Already have an account?",
             "logIn": "Log in",
             "login": "Log in",
-            "createAccount": "Create account"
+            "createAccount": "Create account",
+            "captcha": "CAPTCHA",
+            "captchaPlaceholder": "Enter the characters",
+            "mathCaptcha": "Arithmetic CAPTCHA",
+            "mathCaptchaPlaceholder": "Result",
+            "captchaRefresh": "Can't read it? Get a new one",
+            "captchaHint": "Case-insensitive. Click the image for a new one. It refreshes after a failed submit.",
+            "mathCaptchaHint": "Enter the result of the expression. It refreshes after a failed submit."
         },
         "resetPassword": {
             "title": "Reset password",
@@ -215,7 +222,16 @@
             "loginCaptchaComplexity": "CAPTCHA complexity",
             "loginCaptchaType": "CAPTCHA type",
             "commentCaptchaType": "Comment CAPTCHA type",
-            "commentCaptchaHint": "CAPTCHA shown to guest commenters. Defaults to simple arithmetic."
+            "commentCaptchaHint": "CAPTCHA shown to guest commenters. Defaults to simple arithmetic.",
+            "registerCaptcha": "Registration CAPTCHA",
+            "registerCaptchaLabel": "Enable registration CAPTCHA",
+            "registerCaptchaHint": "When enabled, a CAPTCHA must be completed at registration to block bot sign-ups.",
+            "requireEmailVerification": "Email verification",
+            "requireEmailVerificationLabel": "Require verified email before login",
+            "requireEmailVerificationHint": "When enabled, unverified accounts cannot log in until their email is confirmed.",
+            "settings.site.commentCaptcha": "Comment CAPTCHA",
+            "settings.site.commentCaptchaLabel": "Enable comment CAPTCHA",
+            "settings.site.commentCaptchaHint": "Require a CAPTCHA for guest comments with configurable type and complexity. When off, guests can comment without one."
         },
         "permalink": {
             "title": "Permalink Settings",
@@ -787,8 +803,25 @@
         "list": "Page List",
         "allPages": "All Pages",
         "create": "Create Page",
+        "ai": {
+            "button": "AI Generate",
+            "dialogTitle": "Generate Page with AI",
+            "dialogDescription": "Describe the page you want. AI will draft a title, body and SEO metadata; review it before saving.",
+            "promptPlaceholder": "e.g. Write an About page introducing the site's mission, team and contact details…",
+            "generate": "Generate",
+            "generating": "Generating…",
+            "success": "AI page content ready (including SEO). Please review before saving.",
+            "failed": "AI generation failed. Please try again later.",
+            "csrfFailed": "Your session has expired or become invalid. Please refresh the page and try again.",
+            "confirmOverwrite": "You already have a title or content. Continuing will overwrite it. Continue?",
+            "parseFailed": "Failed to parse AI content. Please try again.",
+            "viewDetail": "View details",
+            "detailHint": "Click \"View details\" to see the raw API response",
+            "errorTitle": "API Error Details"
+        },
         "editPage": "Edit Page",
         "managePages": "Manage your pages",
+        "viewComments": "View the comments for this page",
         "pagesCount": "{{count}} pages",
         "noPages": "No pages yet",
         "writeFirst": "Write your first page",
@@ -806,6 +839,7 @@
             "slug": "Slug",
             "date": "Date",
             "views": "Views",
+            "comments": "Comments",
             "actions": "Actions"
         },
         "status": {
@@ -975,7 +1009,9 @@
         "views": "{{count}} views",
         "commentsCount": "{{count}} comments",
         "readTime": "About {{count}} min read",
-        "captchaRefresh": "Can't read? Get a new one"
+        "captchaRefresh": "Can't read? Get a new one",
+        "captchaPlaceholder": "Enter the characters in the image",
+        "mathCaptchaPlaceholder": "Enter the result of the calculation"
     },
     "articlePage": {
         "blog": "Blog",

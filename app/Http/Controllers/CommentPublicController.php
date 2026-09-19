@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Mail\CommentReplyMail;
 use App\Models\Article;
 use App\Models\Comment;
+use App\Models\Page;
 use App\Services\CaptchaService;
 use App\Services\CommentService;
+use App\Services\PermalinkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -21,30 +23,40 @@ class CommentPublicController extends Controller
     public function __construct(
         protected CommentService $comments,
         protected CaptchaService $captchas,
+        protected PermalinkService $permalinks,
     ) {}
 
     /**
-     * 处理评论提交。
+     * 处理评论提交（object_type 支持 article / page，默认 article）。
      */
     public function store(Request $request)
     {
-        // 先校验文章并检查评论开关，再验证其余字段
-        $request->validate(['object_id' => ['required', 'integer', 'exists:articles,id']]);
+        // 目标对象类型：文章或页面（缺省文章，兼容旧请求）
+        $objectType = $request->input('object_type', 'article');
+        $objectType = in_array($objectType, ['article', 'page'], true) ? $objectType : 'article';
+        $objectTable = $objectType === 'page' ? 'pages' : 'articles';
 
-        $article = Article::where('status', 'publish')->find($request->integer('object_id'));
+        // 先校验目标对象并检查评论开关，再验证其余字段
+        $request->validate(['object_id' => ['required', 'integer', 'exists:'.$objectTable.',id']]);
 
-        if ($article === null) {
+        $object = $objectType === 'page'
+            ? Page::where('status', 'publish')->find($request->integer('object_id'))
+            : Article::where('status', 'publish')->find($request->integer('object_id'));
+
+        if ($object === null) {
             abort(404);
         }
 
-        if ($article->comment_status !== 'open') {
+        if ($object->comment_status !== 'open') {
             throw ValidationException::withMessages([
-                'message' => '该文章已关闭评论。',
+                'message' => $objectType === 'page' ? '该页面已关闭评论。' : '该文章已关闭评论。',
             ]);
         }
 
         $user = $request->user();
         $isGuest = $user === null;
+        // 评论验证码可整体开关；开启时按方式（math/image/image_math）校验
+        $captchaRequired = $isGuest && $this->captchas->commentEnabled();
         $captchaIsMath = $this->captchas->commentType() === CaptchaService::TYPE_MATH;
 
         $rules = [
@@ -62,15 +74,17 @@ class CommentPublicController extends Controller
                 'author_url' => ['nullable', 'string', 'max:255'],
             ];
 
-            // math：加密 token + 整数答案；image / image_math：图形答案文本
-            $rules += $captchaIsMath
-                ? [
-                    'captcha_token' => ['required', 'string'],
-                    'captcha_answer' => ['required', 'integer'],
-                ]
-                : [
-                    'captcha_answer' => ['required', 'string', 'max:8'],
-                ];
+            // math：加密 token + 整数答案；image / image_math：图形答案文本（关闭时无验证码字段）
+            $rules += ! $captchaRequired
+                ? []
+                : ($captchaIsMath
+                    ? [
+                        'captcha_token' => ['required', 'string'],
+                        'captcha_answer' => ['required', 'integer'],
+                    ]
+                    : [
+                        'captcha_answer' => ['required', 'string', 'max:8'],
+                    ]);
         }
 
         $validated = $request->validate($rules, [
@@ -99,14 +113,16 @@ class CommentPublicController extends Controller
                 ]);
             }
 
-            $captchaVerified = $captchaIsMath
-                ? $this->comments->verifyCaptcha($validated['captcha_token'] ?? null, $validated['captcha_answer'] ?? null)
-                : $this->captchas->verifyImage(CaptchaService::SCOPE_COMMENT, $validated['captcha_answer'] ?? null);
+            if ($captchaRequired) {
+                $captchaVerified = $captchaIsMath
+                    ? $this->comments->verifyCaptcha($validated['captcha_token'] ?? null, $validated['captcha_answer'] ?? null)
+                    : $this->captchas->verifyImage(CaptchaService::SCOPE_COMMENT, $validated['captcha_answer'] ?? null);
 
-            if (! $captchaVerified) {
-                throw ValidationException::withMessages([
-                    'message' => '验证码错误，请重试。',
-                ]);
+                if (! $captchaVerified) {
+                    throw ValidationException::withMessages([
+                        'message' => '验证码错误，请重试。',
+                    ]);
+                }
             }
         }
 
@@ -116,7 +132,8 @@ class CommentPublicController extends Controller
 
         if ($parentId !== null) {
             $parent = Comment::where('comment_id', $parentId)
-                ->where('object_id', $article->id)
+                ->where('object_id', $object->id)
+                ->where('object_type', $objectType)
                 ->first();
 
             if ($parent === null) {
@@ -127,8 +144,8 @@ class CommentPublicController extends Controller
         }
 
         $comment = Comment::create([
-            'object_id' => $article->id,
-            'object_type' => 'article',
+            'object_id' => $object->id,
+            'object_type' => $objectType,
             'author_name' => $authorName,
             'author_email' => $authorEmail,
             'author_qq' => $authorQq,
@@ -143,15 +160,22 @@ class CommentPublicController extends Controller
             'is_markdown' => (bool) ($validated['is_markdown'] ?? true),
         ]);
 
-        $article->increment('comment_count');
+        // 文章维护冗余计数列；页面评论数实时统计（withCount），无需累加
+        if ($objectType === 'article') {
+            $object->increment('comment_count');
+        }
 
         // 邮件提醒：被回复的评论人勾选过提醒且非悄悄话场景
         if ($parent !== null && $parent->notify_mail && ! $comment->is_private && $parent->author_email) {
+            $objectUrl = $objectType === 'page'
+                ? $this->permalinks->pagePath($object)
+                : '/'.$object->id.'.html';
+
             Mail::to($parent->author_email)->queue(new CommentReplyMail(
                 $comment,
                 $parent,
-                $article->title,
-                url('/'.$article->id.'.html#comment-'.$parent->comment_id),
+                $object->title,
+                url($objectUrl.'#comment-'.$parent->comment_id),
             ));
         }
 

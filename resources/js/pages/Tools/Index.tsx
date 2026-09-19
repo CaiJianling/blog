@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, MousePointerClick } from 'lucide-react';
+import { formatCount } from '@/lib/utils';
 import { useState } from 'react';
 import PageSearch from '@/components/page-search';
 import { buildSeoMeta } from '@/lib/seo';
@@ -11,6 +12,7 @@ type Tool = {
     url: string | null;
     description: string | null;
     icon: string;
+    clicks: number;
 };
 
 type ToolCategoryData = {
@@ -38,6 +40,12 @@ const iconMap: Record<string, string> = {
     Clock: '⏱',
     Wrench: '🔧',
     Calculator: '🧮',
+    FileText: 'MD',
+    KeyRound: '🔑',
+    Palette: '🎨',
+    Image: '🖼',
+    Fingerprint: 'ID',
+    KeySquare: '🔐',
     Globe: '🌐',
     Terminal: '⌨',
 };
@@ -124,6 +132,10 @@ export default function Index({ toolCategories }: Props) {
                                             <p className="text-footnote mt-1 line-clamp-2 text-muted-foreground">
                                                 {tool.description}
                                             </p>
+                                            <p className="text-footnote mt-2 flex items-center gap-1 text-muted-foreground/70">
+                                                <MousePointerClick className="h-3 w-3" />
+                                                {formatCount(tool.clicks ?? 0)} 次使用
+                                            </p>
                                         </div>
                                         {isExternal && (
                                             <ExternalLink className="h-3.5 w-3.5 shrink-0 self-start text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
@@ -132,9 +144,10 @@ export default function Index({ toolCategories }: Props) {
                                 );
 
                                 return isExternal ? (
+                                    // 外链工具经服务器跳转以统计点击量
                                     <a
                                         key={tool.id}
-                                        href={tool.url ?? '#'}
+                                        href={`/tools/${tool.slug}/go`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="apple-card apple-press hover-glow group flex items-start gap-4 p-5"

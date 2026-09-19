@@ -134,7 +134,11 @@ export default function Login({ status, canResetPassword, captchaEnabled, captch
                                                     : undefined
                                             }
                                             className="flex-1 font-mono tracking-[0.3em] uppercase"
-                                            placeholder={t('auth.login.captchaPlaceholder')}
+                                            placeholder={
+                                                captcha.type === 'image_math'
+                                                    ? t('auth.login.mathCaptchaPlaceholder')
+                                                    : t('auth.login.captchaPlaceholder')
+                                            }
                                         />
                                         <button
                                             type="button"

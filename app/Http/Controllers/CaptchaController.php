@@ -8,8 +8,9 @@ use Illuminate\Http\Response;
 
 /**
  * 图形验证码图片接口：输出 PNG 并写入会话答案。
- * - GET /captcha          登录用（按 login_captcha_type 渲染字符/算式图；math 或未开启时 404）
- * - GET /comment-captcha  评论用（按 comment_captcha_type 渲染；math 时 404）
+ * - GET /captcha           登录用（按 login_captcha_type 渲染字符/算式图；math 或未开启时 404）
+ * - GET /comment-captcha   评论用（按 comment_captcha_type 渲染；math 时 404）
+ * - GET /register-captcha  注册用（按 register_captcha_type 渲染；math 或未开启时 404）
  */
 class CaptchaController extends Controller
 {
@@ -42,6 +43,22 @@ class CaptchaController extends Controller
 
         return $this->imageResponse(
             $captcha->generateImage(CaptchaService::SCOPE_COMMENT, $type),
+        );
+    }
+
+    /**
+     * 注册验证码图片（PNG；未开启或简单计算方式时 404）。
+     */
+    public function registerShow(Request $request, CaptchaService $captcha): Response
+    {
+        $type = $captcha->registerType();
+
+        if (! $captcha->registerEnabled() || $type === CaptchaService::TYPE_MATH) {
+            abort(404);
+        }
+
+        return $this->imageResponse(
+            $captcha->generateImage(CaptchaService::SCOPE_REGISTER, $type),
         );
     }
 

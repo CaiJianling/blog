@@ -39,13 +39,25 @@ interface AiGenerateDialogProps {
     onOpenChange: (open: boolean) => void;
     /** 生成成功后回调，把结果交给编辑器填充。 */
     onApply: (result: AiArticleResult) => void;
+    /** 后端 AI 生成接口地址（默认文章接口，页面可传自己的）。 */
+    endpoint?: string;
+    /** i18n 命名空间前缀（如 'articles' / 'pages'），决定提示文案。 */
+    i18nBase?: string;
 }
 
 /**
  * AI 写作弹窗：输入写作提示 → 后端生成标题/摘要/Markdown → 回调填入编辑器，
  * 作者检查确认后再手动保存录入。
+ *
+ * 通过 endpoint + i18nBase 复用于不同对象（文章 / 页面），默认即文章。
  */
-export default function AiGenerateDialog({ open, onOpenChange, onApply }: AiGenerateDialogProps) {
+export default function AiGenerateDialog({
+    open,
+    onOpenChange,
+    onApply,
+    endpoint = '/articles/ai-generate',
+    i18nBase = 'articles',
+}: AiGenerateDialogProps) {
     const { t } = useTranslation();
     const [prompt, setPrompt] = useState('');
     const [generating, setGenerating] = useState(false);
@@ -62,7 +74,7 @@ export default function AiGenerateDialog({ open, onOpenChange, onApply }: AiGene
 
         try {
             const doFetch = (csrf: Record<string, string>): Promise<Response> =>
-                fetch('/articles/ai-generate', {
+                fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',
@@ -96,14 +108,14 @@ export default function AiGenerateDialog({ open, onOpenChange, onApply }: AiGene
             if (!response.ok) {
                 // 419 = CSRF 校验失败（通常是会话过期/被轮换），提示刷新页面可恢复
                 const message = response.status === 419
-                    ? t('articles.ai.csrfFailed')
-                    : data?.message ?? t('articles.ai.failed');
+                    ? t(`${i18nBase}.ai.csrfFailed`)
+                    : data?.message ?? t(`${i18nBase}.ai.failed`);
 
                 // toast 上提供"查看详情"入口，点开可见接口真实返回
                 toast.error(message, {
-                    description: t('articles.ai.detailHint'),
+                    description: t(`${i18nBase}.ai.detailHint`),
                     action: {
-                        label: t('articles.ai.viewDetail'),
+                        label: t(`${i18nBase}.ai.viewDetail`),
                         onClick: () => setErrorDetail({ message, debug: data?.debug }),
                     },
                 });
@@ -113,9 +125,9 @@ export default function AiGenerateDialog({ open, onOpenChange, onApply }: AiGene
 
             onOpenChange(false);
             onApply(data as AiArticleResult);
-            toast.success(t('articles.ai.success'));
+            toast.success(t(`${i18nBase}.ai.success`));
         } catch {
-            toast.error(t('articles.ai.failed'));
+            toast.error(t(`${i18nBase}.ai.failed`));
         } finally {
             setGenerating(false);
         }
@@ -126,17 +138,17 @@ export default function AiGenerateDialog({ open, onOpenChange, onApply }: AiGene
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
+                        <DialogTitle className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-primary" />
-                        {t('articles.ai.dialogTitle')}
+                        {t(`${i18nBase}.ai.dialogTitle`)}
                     </DialogTitle>
-                    <DialogDescription>{t('articles.ai.dialogDescription')}</DialogDescription>
+                    <DialogDescription>{t(`${i18nBase}.ai.dialogDescription`)}</DialogDescription>
                 </DialogHeader>
 
                 <Textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder={t('articles.ai.promptPlaceholder')}
+                    placeholder={t(`${i18nBase}.ai.promptPlaceholder`)}
                     className="min-h-[140px] resize-y"
                     disabled={generating}
                 />
@@ -150,13 +162,13 @@ export default function AiGenerateDialog({ open, onOpenChange, onApply }: AiGene
                             ? (
                                 <>
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                    {t('articles.ai.generating')}
+                                    {t(`${i18nBase}.ai.generating`)}
                                 </>
                             )
                             : (
                                 <>
                                     <Sparkles className="h-4 w-4" />
-                                    {t('articles.ai.generate')}
+                                    {t(`${i18nBase}.ai.generate`)}
                                 </>
                             )}
                     </Button>

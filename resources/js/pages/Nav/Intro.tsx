@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, MousePointerClick } from 'lucide-react';
+import { formatCount } from '@/lib/utils';
 import { BlockNoteEditor } from '@/components/blocknote-editor';
 import type { BlockNoteDocument } from '@/components/blocknote-editor';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ type NavLinkIntro = {
     description: string | null;
     color: string;
     intro_content: BlockNoteDocument | null;
+    clicks: number;
 };
 
 type Props = {
@@ -47,9 +49,13 @@ export default function Intro({ link }: Props) {
                             <p className="mt-1 text-body text-muted-foreground">{link.description}</p>
                         )}
                         <p className="mt-1 truncate text-footnote text-muted-foreground">{link.url}</p>
+                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground/70">
+                            <MousePointerClick className="h-3 w-3" />
+                            {formatCount(link.clicks ?? 0)} 次点击
+                        </p>
                     </div>
                     <Button
-                        onClick={() => window.open(link.url, '_blank', 'noopener,noreferrer')}
+                        onClick={() => window.open(`/nav/links/${link.id}/go`, '_blank', 'noopener,noreferrer')}
                         className="shrink-0"
                     >
                         <ExternalLink className="h-4 w-4" />

@@ -257,6 +257,7 @@ class ToolSettingController extends Controller
             'description' => $tool->description,
             'icon' => $tool->icon,
             'sort_order' => $tool->sort_order,
+            'clicks' => (int) $tool->clicks,
             'is_external' => $tool->isExternal(),
         ];
     }

@@ -45,8 +45,10 @@ Route::middleware('track.pageviews')->group(function () {
     Route::get('/moments/{moment}', [MomentController::class, 'show'])->name('moments.show');
     Route::get('/archive', [ArchiveController::class, 'index'])->name('archive.index');
     Route::get('/tools', [ToolController::class, 'index'])->name('tools.index');
+    Route::get('/tools/{slug}/go', [ToolController::class, 'go'])->name('tools.go');
     Route::get('/tools/{slug}', [ToolController::class, 'show'])->name('tools.show');
     Route::get('/nav', [NavController::class, 'index'])->name('nav.index');
+    Route::get('/nav/links/{link}/go', [NavController::class, 'go'])->name('nav.links.go');
     Route::get('/nav/links/{link}', [NavController::class, 'show'])->name('nav.show');
     Route::get('/links', [LinksController::class, 'index'])->name('links.index');
 });
@@ -77,6 +79,11 @@ Route::get('/captcha', [CaptchaController::class, 'show'])
 Route::get('/comment-captcha', [CaptchaController::class, 'commentShow'])
     ->middleware('throttle:30,1')
     ->name('captcha.comment');
+
+// 注册图形验证码图片（未开启或简单计算方式时 404，按 IP 限流）
+Route::get('/register-captcha', [CaptchaController::class, 'registerShow'])
+    ->middleware('throttle:30,1')
+    ->name('captcha.register');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -117,6 +124,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/create', [PageController::class, 'create'])->name('pages.create');
         Route::post('/', [PageController::class, 'store'])->name('pages.store');
         Route::post('/batch', [PageController::class, 'batchUpdate'])->name('pages.batch');
+        Route::post('/ai-generate', [PageController::class, 'aiGenerate'])->name('pages.ai-generate');
         Route::get('/{page}/edit', [PageController::class, 'edit'])->name('pages.edit');
         Route::put('/{page}', [PageController::class, 'update'])->name('pages.update');
         Route::put('/{page}/trash', [PageController::class, 'trash'])->name('pages.trash');

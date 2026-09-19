@@ -299,6 +299,12 @@ function ToolIcon({ name }: { name: string }) {
         CaseSensitive: <span className="text-lg font-bold">Aa</span>,
         Ruler: <span className="text-lg font-bold">📏</span>,
         Clock: <span className="text-lg font-bold">⏱</span>,
+        FileText: <span className="text-lg font-bold">MD</span>,
+        KeyRound: <span className="text-lg">🔑</span>,
+        Palette: <span className="text-lg">🎨</span>,
+        Image: <span className="text-lg">🖼</span>,
+        Fingerprint: <span className="text-lg font-bold">ID</span>,
+        KeySquare: <span className="text-lg">🔐</span>,
     };
 
     return <>{icons[name] ?? <span className="text-lg">⚙</span>}</>;

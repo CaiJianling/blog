@@ -1,5 +1,6 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { BookOpen, ExternalLink } from 'lucide-react';
+import { BookOpen, ExternalLink, MousePointerClick } from 'lucide-react';
+import { formatCount } from '@/lib/utils';
 import { useState } from 'react';
 import PageSearch from '@/components/page-search';
 import { buildSeoMeta } from '@/lib/seo';
@@ -12,6 +13,7 @@ type NavLink = {
     color: string;
     icon_url: string | null;
     has_intro: boolean;
+    clicks: number;
 };
 
 type NavCategoryData = {
@@ -96,7 +98,7 @@ export default function Index({ navigationCategories }: Props) {
                                 {category.links.map((link) => (
                                     <a
                                         key={link.id}
-                                        href={link.url}
+                                        href={`/nav/links/${link.id}/go`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="apple-card apple-press hover-glow group flex items-start gap-3 p-4"
@@ -127,6 +129,10 @@ export default function Index({ navigationCategories }: Props) {
                                             </div>
                                             <p className="text-footnote mt-0.5 line-clamp-2 text-muted-foreground">
                                                 {link.description}
+                                            </p>
+                                            <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground/70">
+                                                <MousePointerClick className="h-3 w-3" />
+                                                {formatCount(link.clicks ?? 0)} 次点击
                                             </p>
                                             {link.has_intro && (
                                                 <button
