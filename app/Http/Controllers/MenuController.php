@@ -46,6 +46,7 @@ class MenuController extends Controller
             ]);
 
         $articles = Article::where('status', '!=', 'trash')
+            ->ofType(Article::TYPE_POST)
             ->orderByDesc('updated_at')
             ->take(50)
             ->get(['id', 'title', 'slug', 'updated_at'])

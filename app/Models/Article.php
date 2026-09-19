@@ -11,6 +11,12 @@ class Article extends Model
 {
     use HasFactory;
 
+    /** 普通文章。 */
+    public const TYPE_POST = 'post';
+
+    /** 说说（短内容动态，无标题）。 */
+    public const TYPE_MOMENT = 'moment';
+
     protected $fillable = [
         'author_id',
         'title',
@@ -21,6 +27,7 @@ class Article extends Model
         'content',
         'post_password',
         'status',
+        'post_type',
         'comment_status',
         'views',
         'likes',
@@ -35,6 +42,19 @@ class Article extends Model
     protected $casts = [
         'content' => 'array',
     ];
+
+    /**
+     * 按类型过滤（post = 普通文章，moment = 说说）。
+     */
+    public function scopeOfType($query, string $type)
+    {
+        return $query->where('post_type', $type);
+    }
+
+    public function isMoment(): bool
+    {
+        return $this->post_type === self::TYPE_MOMENT;
+    }
 
     public function author(): BelongsTo
     {

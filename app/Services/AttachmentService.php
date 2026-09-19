@@ -95,6 +95,8 @@ class AttachmentService
         'nav_link_icon',
         'link_image',
         'user_avatar',
+        'page_background_custom',
+        'page_background_bing',
     ];
 
     /**
@@ -107,6 +109,8 @@ class AttachmentService
         'nav_link_icon' => '导航图标',
         'link_image' => '友链图片',
         'user_avatar' => '用户头像',
+        'page_background_custom' => '前台壁纸',
+        'page_background_bing' => '必应每日壁纸',
     ];
 
     /**

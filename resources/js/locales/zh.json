@@ -180,6 +180,9 @@
             "adminEmailDescription": "此地址用于管理目的。如果您更改此设置，系统将向您的新地址发送一封邮件进行确认。新地址在得到确认之前不会生效。",
             "membership": "成员资格",
             "membershipLabel": "任何人都可以注册",
+            "timeline": "归档时间轴",
+            "timelineLabel": "时间轴中显示说说",
+            "timelineHint": "开启后，前台「归档」页的时间轴会连同说说一起按时间列出。",
             "defaultRole": "新用户默认角色",
             "seo": "SEO 设置",
             "seoDescription": "站点描述",
@@ -226,7 +229,24 @@
             "reset": "恢复默认",
             "preview": "效果预览",
             "save": "保存更改",
-            "saved": "主题颜色已保存。"
+            "saved": "主题颜色已保存。",
+            "background": "背景设置",
+            "backgroundHint": "为前台网页设置背景壁纸：可用本地上传壁纸或必应每日壁纸，也可不使用；壁纸透明度可自由调节。更换或移除壁纸时会自动删除上一张存储的壁纸。",
+            "bgModeNone": "不使用壁纸",
+            "bgModeCustom": "自定义壁纸",
+            "bgModeBing": "必应每日壁纸",
+            "bgOpacity": "壁纸透明度",
+            "bgOpacityHint": "0% 完全透明（不可见），100% 完全不透明。",
+            "bgUpload": "上传壁纸",
+            "bgReplace": "更换壁纸",
+            "bgRemove": "移除壁纸",
+            "bgEmpty": "尚未上传壁纸",
+            "bgCustomHint": "支持 jpg/png/gif/webp，最大 10MB；上传后自动切换为自定义模式并删除旧壁纸。",
+            "bgBingHint": "每日自动获取必应首页当日壁纸并替换本地存储（旧壁纸自动删除）。",
+            "bgBingPending": "暂无必应壁纸，保存后将自动获取当日壁纸",
+            "bgUploadSuccess": "壁纸已更新，上一张存储的壁纸已删除。",
+            "bgUploadFailed": "壁纸操作失败，请重试。",
+            "bgRemoveSuccess": "壁纸已移除，存储文件已删除。"
         },
         "smilies": {
             "title": "表情管理",
@@ -1130,6 +1150,8 @@
     "publicNav": {
         "home": "首页",
         "blog": "博客",
+        "moments": "说说",
+        "archive": "归档",
         "tools": "工具",
         "nav": "导航",
         "links": "友链",
@@ -1138,5 +1160,23 @@
         "register": "注册",
         "toggleTheme": "切换主题",
         "menu": "菜单"
+    },
+    "moments": {
+        "title": "说说",
+        "description": "发布短内容动态，与访客分享此刻的想法与日常",
+        "allMoments": "全部说说",
+        "create": "写说说",
+        "edit": "编辑",
+        "view": "查看",
+        "empty": "还没有发布说说",
+        "emptyHint": "点击右上角「写说说」，记录第一段动态吧",
+        "createHint": "说说无需标题，支持图片与富文本，发布后展示在前台「说说」时间流中。",
+        "stats": {
+            "all": "全部说说",
+            "likes": "收到的赞",
+            "comments": "收到评论"
+        },
+        "deleteConfirmTitle": "永久删除这条说说？",
+        "deleteConfirmDescription": "删除后无法恢复，说说下的评论也会一并丢失。"
     }
 }

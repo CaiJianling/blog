@@ -16,6 +16,7 @@ use App\Http\Controllers\ThemeSettingController;
 use App\Models\Attachment;
 use App\Models\Option;
 use App\Services\MenuService;
+use App\Services\PageBackgroundService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -26,6 +27,7 @@ class HandleInertiaRequests extends Middleware
 {
     public function __construct(
         protected MenuService $menuService,
+        protected PageBackgroundService $pageBackgrounds,
     ) {}
 
     /**
@@ -67,6 +69,7 @@ class HandleInertiaRequests extends Middleware
             'assistant' => $this->assistantProps(),
             'seo' => $this->seoProps(),
             'theme' => $this->themeProps(),
+            'pageBackground' => $this->pageBackgrounds->configProps(),
             'footer' => [
                 'resources' => FooterSettingController::resources(),
                 'contacts' => FooterSettingController::contacts(),

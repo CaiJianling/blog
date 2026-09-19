@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Article;
 use App\Models\Comment;
 use App\Models\Smiley;
+use App\Models\SmileyGroup;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -169,5 +170,95 @@ class CommentService
     public function flushSmileyCache(): void
     {
         Cache::forget('smileys.map');
+    }
+
+    /**
+     * 组装某对象（文章/说说/页面）的两级评论树，含悄悄话过滤。
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function threadTree(string $objectType, int $objectId, ?User $user, Article $owner): array
+    {
+        $allComments = Comment::where('object_id', $objectId)
+            ->where('object_type', $objectType)
+            ->where('status', '1')
+            ->orderBy('created_at')
+            ->get();
+
+        // 过滤无权查看的悄悄话评论
+        $visible = $allComments->filter(fn (Comment $c) => $this->canView($c, $user, $owner));
+
+        $commentItems = $visible->map(fn (Comment $c) => $this->formatComment($c, $user));
+
+        // 组装两级评论树：顶层 + 回复
+        return $commentItems
+            ->filter(fn ($c) => (int) $c['parent_id'] === 0)
+            ->map(function ($c) use ($commentItems) {
+                $c['replies'] = $commentItems
+                    ->filter(fn ($r) => (int) $r['parent_id'] === (int) $c['comment_id'])
+                    ->values();
+
+                return $c;
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * 前台评论表单所需数据：游客验证码（登录用户免）与表情分组。
+     *
+     * @return array{captcha: array{question: string, token: string}|null, smileyGroups: array}
+     */
+    public function discussionExtras(?User $user): array
+    {
+        $smileyGroups = SmileyGroup::orderBy('sort')->with('smileys')->get()->map(function ($group) {
+            return [
+                'id' => $group->id,
+                'name' => $group->name,
+                'smileys' => $group->smileys->map(fn ($s) => [
+                    'code' => $s->code,
+                    'url' => str_starts_with((string) $s->image, 'http')
+                        ? $s->image
+                        : \Storage::url((string) $s->image),
+                ])->values(),
+            ];
+        })->values()->all();
+
+        return [
+            'captcha' => $user === null ? $this->generateCaptcha() : null,
+            'smileyGroups' => $smileyGroups,
+        ];
+    }
+
+    /**
+     * 格式化单条评论数据。
+     *
+     * @return array<string, mixed>
+     */
+    private function formatComment(Comment $comment, ?User $user): array
+    {
+        $isOwn = $user !== null && (int) $comment->user_id === (int) $user->id;
+
+        return [
+            'comment_id' => $comment->comment_id,
+            'parent_id' => $comment->parent_id,
+            'author_name' => $comment->user?->nickname ?: ($comment->user?->name ?? $comment->author_name),
+            'author_url' => $comment->author_url,
+            'author_qq' => $comment->author_qq,
+            'avatar' => $comment->avatar_url,
+            'html' => $this->renderContent($comment),
+            // 原文（未渲染），供本人编辑时回填编辑器
+            'content' => $comment->content,
+            'user_id' => $comment->user_id,
+            'is_private' => $comment->is_private,
+            'is_markdown' => $comment->is_markdown,
+            'is_own' => $isOwn,
+            // 本人评论是否有待审批的编辑修订
+            'has_pending_edit' => $isOwn && $comment->hasPendingEdit(),
+            // 待审修订原文（本人评论编辑时回填；无则为 null）
+            'pending_edit' => $isOwn ? $comment->edited_content : null,
+            'edited_at' => $comment->edited_at?->format('Y-m-d H:i'),
+            'created_at' => $comment->created_at?->format('Y-m-d H:i'),
+        ];
     }
 }

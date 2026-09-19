@@ -101,7 +101,11 @@ return [
     |
     */
 
-    'middleware' => ['web'],
+    'middleware' => [
+        'web',
+        // 登录图形验证码：内部仅拦截 POST /login，其余 Fortify 路由直接放行
+        \App\Http\Middleware\VerifyLoginCaptcha::class,
+    ],
 
     /*
     |--------------------------------------------------------------------------

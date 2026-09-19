@@ -180,6 +180,9 @@
             "adminEmailDescription": "This address is used for admin purposes. If you change this, an email will be sent to your new address to confirm it. The new address will not become active until confirmed.",
             "membership": "Membership",
             "membershipLabel": "Anyone can register",
+            "timeline": "Archive Timeline",
+            "timelineLabel": "Show moments in the timeline",
+            "timelineHint": "When enabled, published moments are listed together with posts on the front-end archive timeline.",
             "defaultRole": "New User Default Role",
             "seo": "SEO Settings",
             "seoDescription": "Site Description",
@@ -226,7 +229,24 @@
             "reset": "Reset",
             "preview": "Preview",
             "save": "Save Changes",
-            "saved": "Theme color saved."
+            "saved": "Theme color saved.",
+            "background": "Page Background",
+            "backgroundHint": "Set a wallpaper for the public site: upload your own, use Bing’s daily image, or none at all — with adjustable wallpaper opacity. The previous stored wallpaper is deleted automatically on replace or removal.",
+            "bgModeNone": "None",
+            "bgModeCustom": "Custom",
+            "bgModeBing": "Bing Daily",
+            "bgOpacity": "Wallpaper opacity",
+            "bgOpacityHint": "0% fully transparent (invisible), 100% fully opaque.",
+            "bgUpload": "Upload wallpaper",
+            "bgReplace": "Replace wallpaper",
+            "bgRemove": "Remove wallpaper",
+            "bgEmpty": "No wallpaper uploaded yet",
+            "bgCustomHint": "Supports jpg/png/gif/webp up to 10MB. Uploading switches to custom mode and deletes the previous wallpaper.",
+            "bgBingHint": "Fetches Bing’s daily homepage image every day and replaces the stored file (the previous one is deleted).",
+            "bgBingPending": "No Bing wallpaper yet — it will be fetched after saving",
+            "bgUploadSuccess": "Wallpaper updated; the previous stored wallpaper was deleted.",
+            "bgUploadFailed": "Wallpaper action failed, please retry.",
+            "bgRemoveSuccess": "Wallpaper removed and its stored file deleted."
         },
         "smilies": {
             "title": "Smiley Management",
@@ -1130,6 +1150,8 @@
     "publicNav": {
         "home": "Home",
         "blog": "Blog",
+        "moments": "Moments",
+        "archive": "Archive",
         "tools": "Tools",
         "nav": "Navigation",
         "links": "Friend Links",
@@ -1138,5 +1160,23 @@
         "register": "Register",
         "toggleTheme": "Toggle theme",
         "menu": "Menu"
+    },
+    "moments": {
+        "title": "Moments",
+        "description": "Share short updates and everyday thoughts with your visitors",
+        "allMoments": "All Moments",
+        "create": "New Moment",
+        "edit": "Edit",
+        "view": "View",
+        "empty": "No moments yet",
+        "emptyHint": "Click \"New Moment\" to share your first update",
+        "createHint": "Moments need no title. Rich text and images supported. Published moments appear in the front-end moments stream.",
+        "stats": {
+            "all": "Total Moments",
+            "likes": "Likes Received",
+            "comments": "Comments Received"
+        },
+        "deleteConfirmTitle": "Permanently delete this moment?",
+        "deleteConfirmDescription": "This cannot be undone. Comments on this moment will be lost as well."
     }
 }

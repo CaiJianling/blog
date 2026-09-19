@@ -25,7 +25,9 @@ class ArticleController extends Controller
     {
         $status = $request->query('status', 'all');
 
-        $query = Article::with('author')->orderBy('created_at', 'desc');
+        $query = Article::ofType(Article::TYPE_POST)
+            ->with('author')
+            ->orderBy('created_at', 'desc');
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -64,11 +66,11 @@ class ArticleController extends Controller
             });
 
         $statusCounts = [
-            'all' => Article::count(),
-            'publish' => Article::where('status', 'publish')->count(),
-            'pending' => Article::where('status', 'pending')->count(),
-            'draft' => Article::where('status', 'draft')->count(),
-            'trash' => Article::where('status', 'trash')->count(),
+            'all' => Article::ofType(Article::TYPE_POST)->count(),
+            'publish' => Article::ofType(Article::TYPE_POST)->where('status', 'publish')->count(),
+            'pending' => Article::ofType(Article::TYPE_POST)->where('status', 'pending')->count(),
+            'draft' => Article::ofType(Article::TYPE_POST)->where('status', 'draft')->count(),
+            'trash' => Article::ofType(Article::TYPE_POST)->where('status', 'trash')->count(),
         ];
 
         return Inertia::render('Article/Index', [
@@ -132,6 +134,7 @@ class ArticleController extends Controller
             'content' => $validated['content'] ?? [],
             'post_password' => $validated['post_password'] ?? '',
             'status' => $validated['status'],
+            'post_type' => Article::TYPE_POST,
             'comment_status' => $validated['comment_status'],
         ]);
 

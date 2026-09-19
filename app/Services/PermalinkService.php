@@ -112,7 +112,8 @@ class PermalinkService
             return null;
         }
 
-        $query = Article::where('status', 'publish');
+        $query = Article::where('status', 'publish')
+            ->ofType(Article::TYPE_POST);
 
         if (isset($matches['post_id']) && $matches['post_id'] !== '') {
             $query->where('id', (int) $matches['post_id']);

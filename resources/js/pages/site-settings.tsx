@@ -114,6 +114,9 @@ export default function Site({
         isInitialTimeCustom ? initialTimeFormat : '',
     );
     const [membership, setMembership] = useState(options.membership === '1');
+    const [timelineIncludeMoments, setTimelineIncludeMoments] = useState(
+        options.timeline_include_moments === '1',
+    );
     const [defaultRole, setDefaultRole] = useState(
         options.default_role ?? 'subscriber',
     );
@@ -287,6 +290,11 @@ export default function Site({
                                 type="hidden"
                                 name="membership"
                                 value={membership ? '1' : '0'}
+                            />
+                            <input
+                                type="hidden"
+                                name="timeline_include_moments"
+                                value={timelineIncludeMoments ? '1' : '0'}
                             />
                             <input
                                 type="hidden"
@@ -527,6 +535,34 @@ export default function Site({
                                             className="mt-2"
                                             message={errors.membership}
                                         />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label>
+                                            {t('settings.site.timeline')}
+                                        </Label>
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id="timeline_include_moments"
+                                                checked={timelineIncludeMoments}
+                                                onCheckedChange={(checked) =>
+                                                    setTimelineIncludeMoments(
+                                                        checked === true,
+                                                    )
+                                                }
+                                            />
+                                            <Label
+                                                htmlFor="timeline_include_moments"
+                                                className="cursor-pointer font-normal"
+                                            >
+                                                {t(
+                                                    'settings.site.timelineLabel',
+                                                )}
+                                            </Label>
+                                        </div>
+                                        <p className="text-footnote text-muted-foreground">
+                                            {t('settings.site.timelineHint')}
+                                        </p>
                                     </div>
 
                                     <div className="grid gap-2">

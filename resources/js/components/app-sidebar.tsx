@@ -7,6 +7,7 @@ import {
     FileText,
     FileStack,
     Image,
+    MessageCircle,
     MessageSquare,
     FolderTree,
     BarChart3,
@@ -113,6 +114,21 @@ export function AppSidebar() {
                 {
                     title: 'comments.title',
                     href: '/comments',
+                },
+            ],
+        },
+        {
+            title: 'moments.title',
+            href: '/moments-admin',
+            icon: MessageCircle,
+            children: [
+                {
+                    title: 'moments.allMoments',
+                    href: '/moments-admin',
+                },
+                {
+                    title: 'moments.create',
+                    href: '/moments-admin/create',
                 },
             ],
         },

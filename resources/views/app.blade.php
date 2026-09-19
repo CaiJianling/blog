@@ -34,6 +34,8 @@
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        {{-- RSS 订阅发现：浏览器/阅读器可自动识别 /feed --}}
+        <link rel="alternate" type="application/rss+xml" title="{{ config('app.name', 'Laravel') }} RSS" href="{{ url('/feed') }}">
 
         @fonts
 

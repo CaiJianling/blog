@@ -25,6 +25,7 @@ class HomeController extends Controller
         }
 
         $latestArticles = Article::where('status', 'publish')
+            ->ofType(Article::TYPE_POST)
             ->with('author')
             ->orderBy('created_at', 'desc')
             ->take(6)

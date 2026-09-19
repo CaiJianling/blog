@@ -1,20 +1,25 @@
 <?php
 
 use App\Http\Controllers\AiSettingController;
+use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleLikeController;
 use App\Http\Controllers\AssistantChatController;
 use App\Http\Controllers\AssistantSettingController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\CaptchaController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CommentPublicController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FooterSettingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HomeSettingController;
 use App\Http\Controllers\LinksController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\MomentController;
+use App\Http\Controllers\MomentsController;
 use App\Http\Controllers\NavController;
 use App\Http\Controllers\NavigationSettingController;
 use App\Http\Controllers\OptionController;
@@ -36,12 +41,18 @@ Route::middleware('track.pageviews')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
     Route::get('/blog/{article:slug}', [BlogController::class, 'show'])->name('blog.show');
+    Route::get('/moments', [MomentController::class, 'index'])->name('moments.index');
+    Route::get('/moments/{moment}', [MomentController::class, 'show'])->name('moments.show');
+    Route::get('/archive', [ArchiveController::class, 'index'])->name('archive.index');
     Route::get('/tools', [ToolController::class, 'index'])->name('tools.index');
     Route::get('/tools/{slug}', [ToolController::class, 'show'])->name('tools.show');
     Route::get('/nav', [NavController::class, 'index'])->name('nav.index');
     Route::get('/nav/links/{link}', [NavController::class, 'show'])->name('nav.show');
     Route::get('/links', [LinksController::class, 'index'])->name('links.index');
 });
+
+// RSS 订阅（不做访问跟踪）
+Route::get('/feed', [FeedController::class, 'index'])->name('feed');
 
 Route::post('/comments', [CommentPublicController::class, 'store'])->name('comments.public.store');
 Route::put('/comments/{comment}', [CommentPublicController::class, 'update'])->name('comments.public.update');
@@ -56,6 +67,11 @@ Route::post('/articles/{article}/like', [ArticleLikeController::class, '__invoke
 Route::post('/assistant/chat', [AssistantChatController::class, 'store'])
     ->middleware('throttle:20,1')
     ->name('assistant.chat');
+
+// 登录图形验证码图片（未开启时 404，按 IP 限流）
+Route::get('/captcha', [CaptchaController::class, 'show'])
+    ->middleware('throttle:30,1')
+    ->name('captcha.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -76,6 +92,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/taxonomies', [TermTaxonomyController::class, 'store'])->name('taxonomies.store');
         Route::put('/taxonomies/{termTaxonomy}', [TermTaxonomyController::class, 'update'])->name('taxonomies.update');
         Route::delete('/taxonomies/{termTaxonomy}', [TermTaxonomyController::class, 'destroy'])->name('taxonomies.destroy');
+    });
+
+    // 说说管理（articles 表 post_type=moment；前台展示走 /moments，管理走 /moments-admin 避免路由冲突）
+    Route::prefix('moments-admin')->group(function () {
+        Route::get('/', [MomentsController::class, 'index'])->name('moments.admin.index');
+        Route::get('/create', [MomentsController::class, 'create'])->name('moments.admin.create');
+        Route::post('/', [MomentsController::class, 'store'])->name('moments.admin.store');
+        Route::post('/batch', [MomentsController::class, 'batchUpdate'])->name('moments.admin.batch');
+        Route::get('/{moment}/edit', [MomentsController::class, 'edit'])->name('moments.admin.edit');
+        Route::put('/{moment}', [MomentsController::class, 'update'])->name('moments.admin.update');
+        Route::put('/{moment}/trash', [MomentsController::class, 'trash'])->name('moments.admin.trash');
+        Route::put('/{moment}/restore', [MomentsController::class, 'restore'])->name('moments.admin.restore');
+        Route::delete('/{moment}', [MomentsController::class, 'destroy'])->name('moments.admin.destroy');
     });
 
     Route::prefix('pages')->group(function () {
@@ -134,9 +163,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('settings/permalink', [PermalinkController::class, 'edit'])->name('permalink.edit');
         Route::put('settings/permalink', [PermalinkController::class, 'update'])->name('permalink.update');
 
-        // 主题设置（站点主色）
+        // 主题设置（站点主色 + 前台网页背景）
         Route::get('settings/theme', [ThemeSettingController::class, 'edit'])->name('theme.edit');
         Route::put('settings/theme', [ThemeSettingController::class, 'update'])->name('theme.update');
+        Route::post('settings/theme/background', [ThemeSettingController::class, 'uploadBackground'])->name('theme.background.store');
+        Route::delete('settings/theme/background', [ThemeSettingController::class, 'destroyBackground'])->name('theme.background.destroy');
 
         Route::get('smilies', [SmileyController::class, 'index'])->name('smilies.index');
         Route::post('smiley-groups', [SmileyController::class, 'storeGroup'])->name('smilies.groups.store');

@@ -105,6 +105,18 @@ export default function PublicNavbar() {
             children: [],
         },
         {
+            label: t('publicNav.moments'),
+            url: '/moments',
+            target: '',
+            children: [],
+        },
+        {
+            label: t('publicNav.archive'),
+            url: '/archive',
+            target: '',
+            children: [],
+        },
+        {
             label: t('publicNav.tools'),
             url: tools.index(),
             target: '',

@@ -38,7 +38,13 @@ initPromise.then(() => {
             switch (true) {
                 case name === 'welcome':
                     return null;
-                case name === 'Home' || name.startsWith('Blog/') || name.startsWith('Tools/') || name.startsWith('Nav/'):
+                case name === 'Home' ||
+                    name.startsWith('Blog/') ||
+                    name.startsWith('Tools/') ||
+                    name.startsWith('Nav/') ||
+                    name.startsWith('Links/') ||
+                    name.startsWith('Moment/') ||
+                    name.startsWith('Archive/'):
                     return PublicLayout;
                 case name.startsWith('auth/'):
                     return AuthLayout;

@@ -5,11 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\ArticleLike;
 use App\Models\Attachment;
-use App\Models\Comment;
 use App\Models\Option;
-use App\Models\SmileyGroup;
 use App\Models\TermTaxonomy;
-use App\Models\User;
 use App\Services\CommentService;
 use App\Services\PermalinkService;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,6 +30,7 @@ class BlogController extends Controller
         $scope = in_array($scope, ['title', 'content', 'title_content'], true) ? $scope : 'title';
 
         $query = Article::where('status', 'publish')
+            ->ofType(Article::TYPE_POST)
             ->with('author')
             ->orderBy('created_at', 'desc');
 
@@ -151,9 +149,9 @@ class BlogController extends Controller
                 'intro' => (string) Option::get('sidebar_blogger_intro', ''),
             ],
             'stats' => [
-                'articles' => Article::where('status', 'publish')->count(),
-                'views' => (int) Article::where('status', 'publish')->sum('views'),
-                'comments' => (int) Article::where('status', 'publish')->sum('comment_count'),
+                'articles' => Article::where('status', 'publish')->ofType(Article::TYPE_POST)->count(),
+                'views' => (int) Article::where('status', 'publish')->ofType(Article::TYPE_POST)->sum('views'),
+                'comments' => (int) Article::where('status', 'publish')->ofType(Article::TYPE_POST)->sum('comment_count'),
             ],
             'menus' => SidebarSettingController::menus(),
         ];
@@ -164,53 +162,22 @@ class BlogController extends Controller
      */
     private function renderArticle(Article $article, Request $request)
     {
+        // 说说走独立的 /moments 展示，不占用文章详情路由
+        abort_if($article->isMoment(), 404);
+
         $article->increment('views');
         $article->refresh();
 
         $categories = $this->getArticleTaxonomies($article->id, 'category');
         $tags = $this->getArticleTaxonomies($article->id, 'tag');
 
-        $allComments = Comment::where('object_id', $article->id)
-            ->where('object_type', 'article')
-            ->where('status', '1')
-            ->orderBy('created_at')
-            ->get();
-
         $user = $request->user();
 
-        // 过滤无权查看的悄悄话评论
-        $visible = $allComments->filter(fn (Comment $c) => $this->commentService->canView($c, $user, $article));
-
-        $commentItems = $visible->map(fn (Comment $c) => $this->formatComment($c, $user));
-
-        // 组装两级评论树：顶层 + 回复
-        $commentTree = $commentItems
-            ->filter(fn ($c) => (int) $c['parent_id'] === 0)
-            ->map(function ($c) use ($commentItems) {
-                $c['replies'] = $commentItems
-                    ->filter(fn ($r) => (int) $r['parent_id'] === (int) $c['comment_id'])
-                    ->values();
-
-                return $c;
-            })
-            ->values();
-
-        $captcha = $user === null ? $this->commentService->generateCaptcha() : null;
-
-        $smileyGroups = SmileyGroup::orderBy('sort')->with('smileys')->get()->map(function ($group) {
-            return [
-                'id' => $group->id,
-                'name' => $group->name,
-                'smileys' => $group->smileys->map(fn ($s) => [
-                    'code' => $s->code,
-                    'url' => str_starts_with((string) $s->image, 'http')
-                        ? $s->image
-                        : Storage::url((string) $s->image),
-                ])->values(),
-            ];
-        })->values();
+        $commentTree = $this->commentService->threadTree('article', $article->id, $user, $article);
+        $extras = $this->commentService->discussionExtras($user);
 
         $related = Article::where('status', 'publish')
+            ->ofType(Article::TYPE_POST)
             ->where('id', '!=', $article->id)
             ->orderBy('views', 'desc')
             ->take(5)
@@ -224,11 +191,13 @@ class BlogController extends Controller
             ]);
 
         $previous = Article::where('status', 'publish')
+            ->ofType(Article::TYPE_POST)
             ->where('id', '<', $article->id)
             ->orderBy('id', 'desc')
             ->first();
 
         $next = Article::where('status', 'publish')
+            ->ofType(Article::TYPE_POST)
             ->where('id', '>', $article->id)
             ->orderBy('id')
             ->first();
@@ -257,8 +226,8 @@ class BlogController extends Controller
                     : null,
             ],
             'comments' => $commentTree,
-            'captcha' => $captcha,
-            'smileyGroups' => $smileyGroups,
+            'captcha' => $extras['captcha'],
+            'smileyGroups' => $extras['smileyGroups'],
             'relatedArticles' => $related,
             'prevArticle' => $previous ? [
                 'title' => $previous->title,
@@ -269,38 +238,6 @@ class BlogController extends Controller
                 'permalink' => $this->permalinks->articlePath($next),
             ] : null,
         ]);
-    }
-
-    /**
-     * 格式化单条评论数据。
-     *
-     * @return array<string, mixed>
-     */
-    private function formatComment(Comment $comment, ?User $user): array
-    {
-        $isOwn = $user !== null && (int) $comment->user_id === (int) $user->id;
-
-        return [
-            'comment_id' => $comment->comment_id,
-            'parent_id' => $comment->parent_id,
-            'author_name' => $comment->user?->nickname ?: ($comment->user?->name ?? $comment->author_name),
-            'author_url' => $comment->author_url,
-            'author_qq' => $comment->author_qq,
-            'avatar' => $comment->avatar_url,
-            'html' => $this->commentService->renderContent($comment),
-            // 原文（未渲染），供本人编辑时回填编辑器
-            'content' => $comment->content,
-            'user_id' => $comment->user_id,
-            'is_private' => $comment->is_private,
-            'is_markdown' => $comment->is_markdown,
-            'is_own' => $isOwn,
-            // 本人评论是否有待审批的编辑修订
-            'has_pending_edit' => $isOwn && $comment->hasPendingEdit(),
-            // 待审修订原文（本人评论编辑时回填；无则为 null）
-            'pending_edit' => $isOwn ? $comment->edited_content : null,
-            'edited_at' => $comment->edited_at?->format('Y-m-d H:i'),
-            'created_at' => $comment->created_at?->format('Y-m-d H:i'),
-        ];
     }
 
     /**

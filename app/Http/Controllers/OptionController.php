@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 use App\Models\Option;
 use App\Services\AttachmentService;
+use App\Services\CaptchaService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -36,6 +37,9 @@ class OptionController extends Controller
         'date_format',
         'time_format',
         'start_of_week',
+        'timeline_include_moments',
+        'login_captcha_enabled',
+        'login_captcha_complexity',
     ];
 
     /**
@@ -45,6 +49,10 @@ class OptionController extends Controller
     {
         $options = Option::whereIn('option_name', self::SITE_OPTION_KEYS)
             ->pluck('option_value', 'option_name');
+
+        // 验证码设置默认值：默认关闭、中等复杂度
+        $options->put('login_captcha_enabled', $options->get('login_captcha_enabled', '0'));
+        $options->put('login_captcha_complexity', $options->get('login_captcha_complexity', CaptchaService::COMPLEXITY_MEDIUM));
 
         $siteIconId = (int) $options->get('site_icon', '');
         $siteIcon = null;
@@ -94,6 +102,11 @@ class OptionController extends Controller
                 ['value' => 'ag:i', 'example' => now()->format('g:i A')],
                 ['value' => 'H:i', 'example' => now()->format('H:i')],
             ],
+            'captchaComplexities' => [
+                ['value' => CaptchaService::COMPLEXITY_EASY, 'label' => '简单（4 位，轻度干扰）'],
+                ['value' => CaptchaService::COMPLEXITY_MEDIUM, 'label' => '中等（4 位，中等干扰）'],
+                ['value' => CaptchaService::COMPLEXITY_HARD, 'label' => '困难（5 位，强干扰）'],
+            ],
         ]);
     }
 
@@ -106,6 +119,11 @@ class OptionController extends Controller
         $request->merge([
             'site_icon' => $request->input('site_icon') ?: null,
             'membership' => $request->input('membership', '0') === '1' ? '1' : '0',
+            'timeline_include_moments' => $request->input('timeline_include_moments', '0') === '1' ? '1' : '0',
+            'login_captcha_enabled' => $request->input('login_captcha_enabled', '0') === '1' ? '1' : '0',
+            'login_captcha_complexity' => in_array($request->input('login_captcha_complexity'), [CaptchaService::COMPLEXITY_EASY, CaptchaService::COMPLEXITY_MEDIUM, CaptchaService::COMPLEXITY_HARD], true)
+                ? $request->input('login_captcha_complexity')
+                : CaptchaService::COMPLEXITY_MEDIUM,
         ]);
 
         $validated = $request->validate([
@@ -118,6 +136,9 @@ class OptionController extends Controller
             'site_url' => ['required', 'string', 'url', 'max:255'],
             'admin_email' => ['required', 'string', 'email', 'max:255'],
             'membership' => ['nullable', 'in:0,1'],
+            'timeline_include_moments' => ['nullable', 'in:0,1'],
+            'login_captcha_enabled' => ['nullable', 'in:0,1'],
+            'login_captcha_complexity' => ['nullable', 'in:easy,medium,hard'],
             'default_role' => ['required', 'in:subscriber,contributor,author'],
             'site_language' => ['required', 'in:zh,en'],
             'timezone' => ['required', 'string', 'timezone'],

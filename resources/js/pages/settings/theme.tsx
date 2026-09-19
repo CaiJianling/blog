@@ -1,7 +1,8 @@
 import { Form, Head } from '@inertiajs/react';
-import { Palette } from 'lucide-react';
-import { useState } from 'react';
+import { Image as ImageIcon, Palette, Trash2, Upload } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import * as themeActions from '@/actions/App/Http/Controllers/ThemeSettingController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -18,13 +19,29 @@ import {
 } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
+interface BackgroundSettings {
+    mode: string;
+    opacity: number;
+    url: string | null;
+    customUrl: string | null;
+    bingUrl: string | null;
+}
+
 interface Props {
     themeColor: string;
     defaultColor: string;
     presets: string[];
+    background: BackgroundSettings;
 }
 
 const HEX_RE = /^#?[0-9a-fA-F]{6}$/;
+
+/** 背景模式选项：不使用 / 自定义壁纸 / 必应每日壁纸。 */
+const BG_MODES = [
+    { value: '', labelKey: 'settings.theme.bgModeNone' },
+    { value: 'custom', labelKey: 'settings.theme.bgModeCustom' },
+    { value: 'bing', labelKey: 'settings.theme.bgModeBing' },
+] as const;
 
 /** 归一化为 #rrggbb 小写；不合法返回 null。 */
 const normalizeHex = (raw: string): string | null => {
@@ -43,7 +60,28 @@ const normalizeHex = (raw: string): string | null => {
     return HEX_RE.test(value) ? value : null;
 };
 
-export default function Theme({ themeColor, defaultColor, presets }: Props) {
+function getCsrfToken(): { headerName: string; value: string } | null {
+    const meta = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
+
+    if (meta) {
+        return { headerName: 'X-CSRF-TOKEN', value: meta };
+    }
+
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+
+    if (match?.[1]) {
+        return {
+            headerName: 'X-XSRF-TOKEN',
+            value: decodeURIComponent(match[1]),
+        };
+    }
+
+    return null;
+}
+
+export default function Theme({ themeColor, defaultColor, presets, background }: Props) {
     const { t } = useTranslation();
     const { resolvedAppearance } = useAppearance();
 
@@ -51,6 +89,101 @@ export default function Theme({ themeColor, defaultColor, presets }: Props) {
     const [color, setColor] = useState(themeColor || defaultColor);
     const [hexText, setHexText] = useState(themeColor || defaultColor);
     const [isDefault, setIsDefault] = useState(themeColor === '');
+
+    // 背景设置：模式 / 透明度 / 两类壁纸的预览地址（保存或上传后由服务端 props 同步回来）
+    const [bgMode, setBgMode] = useState(background?.mode ?? '');
+    const [bgOpacity, setBgOpacity] = useState(background?.opacity ?? 100);
+    const [customUrl, setCustomUrl] = useState<string | null>(background?.customUrl ?? null);
+    const [bingUrl, setBingUrl] = useState<string | null>(background?.bingUrl ?? null);
+    const [uploading, setUploading] = useState(false);
+    const wallpaperInputRef = useRef<HTMLInputElement>(null);
+
+    // 保存（Inertia 回跳）后用服务端最新背景状态同步本地预览
+    useEffect(() => {
+        if (!background) {
+            return;
+        }
+
+        setBgMode(background.mode);
+        setBgOpacity(background.opacity);
+        setCustomUrl(background.customUrl);
+        setBingUrl(background.bingUrl);
+    }, [background]);
+
+    const uploadWallpaper = (file: File) => {
+        const csrf = getCsrfToken();
+
+        if (!csrf) {
+            toast.error(t('settings.theme.bgUploadFailed'));
+
+            return;
+        }
+
+        setUploading(true);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/settings/theme/background', {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                [csrf.headerName]: csrf.value,
+            },
+            body: formData,
+        })
+            .then(async (response) => {
+                const data = await response.json().catch(() => null);
+
+                if (!response.ok) {
+                    toast.error(data?.message ?? t('settings.theme.bgUploadFailed'));
+
+                    return;
+                }
+
+                setCustomUrl(data.url);
+                setBgMode('custom');
+                toast.success(t('settings.theme.bgUploadSuccess'));
+            })
+            .catch(() => toast.error(t('settings.theme.bgUploadFailed')))
+            .finally(() => setUploading(false));
+    };
+
+    const removeWallpaper = () => {
+        const csrf = getCsrfToken();
+
+        if (!csrf) {
+            toast.error(t('settings.theme.bgUploadFailed'));
+
+            return;
+        }
+
+        setUploading(true);
+
+        fetch('/settings/theme/background', {
+            method: 'DELETE',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                [csrf.headerName]: csrf.value,
+            },
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    toast.error(t('settings.theme.bgUploadFailed'));
+
+                    return;
+                }
+
+                setCustomUrl(null);
+
+                setBgMode((prev) => (prev === 'custom' ? '' : prev));
+                toast.success(t('settings.theme.bgRemoveSuccess'));
+            })
+            .catch(() => toast.error(t('settings.theme.bgUploadFailed')))
+            .finally(() => setUploading(false));
+    };
 
     // 预览按当前外观取实际使用的主色（浅色较深、深色较浅），与全站一致。
     const previewColor = themePrimary(color, resolvedAppearance);
@@ -105,6 +238,16 @@ export default function Theme({ themeColor, defaultColor, presets }: Props) {
                                 type="hidden"
                                 name="theme_color"
                                 value={isDefault ? '' : color}
+                            />
+                            <input
+                                type="hidden"
+                                name="background_mode"
+                                value={bgMode}
+                            />
+                            <input
+                                type="hidden"
+                                name="background_opacity"
+                                value={bgOpacity}
                             />
 
                             <Card className="gap-0 overflow-hidden py-0">
@@ -224,6 +367,158 @@ export default function Theme({ themeColor, defaultColor, presets }: Props) {
                                             </span>
                                         </div>
                                     </div>
+
+                                    <div className="flex items-center justify-end border-t border-border/40 pt-4">
+                                        <Button type="submit" disabled={processing}>
+                                            {processing
+                                                ? t('common.saving')
+                                                : t('settings.theme.save')}
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="gap-0 overflow-hidden py-0">
+                                {cardHeader(
+                                    <ImageIcon className="h-4 w-4" />,
+                                    t('settings.theme.background'),
+                                )}
+                                <CardContent className="space-y-5 px-6 py-5">
+                                    <p className="text-sm text-muted-foreground">
+                                        {t('settings.theme.backgroundHint')}
+                                    </p>
+
+                                    {/* 模式三选：不使用 / 自定义壁纸 / 必应每日壁纸 */}
+                                    <div className="inline-flex w-fit items-center gap-1 rounded-2xl bg-muted p-1">
+                                        {BG_MODES.map((mode) => (
+                                            <button
+                                                key={mode.value}
+                                                type="button"
+                                                onClick={() => setBgMode(mode.value)}
+                                                className={cn(
+                                                    'rounded-xl px-4 py-1.5 text-sm font-medium transition-all',
+                                                    bgMode === mode.value
+                                                        ? 'bg-background text-foreground shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                                        : 'text-muted-foreground hover:text-foreground',
+                                                )}
+                                            >
+                                                {t(mode.labelKey)}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* 壁纸透明度 */}
+                                    {bgMode !== '' && (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor="bg-opacity">
+                                                    {t('settings.theme.bgOpacity')}
+                                                </Label>
+                                                <span className="text-sm tabular-nums text-muted-foreground">
+                                                    {bgOpacity}%
+                                                </span>
+                                            </div>
+                                            <input
+                                                id="bg-opacity"
+                                                type="range"
+                                                min={0}
+                                                max={100}
+                                                step={1}
+                                                value={bgOpacity}
+                                                onChange={(e) => setBgOpacity(Number(e.target.value))}
+                                                className="w-full accent-[var(--primary)]"
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                {t('settings.theme.bgOpacityHint')}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* 自定义壁纸：预览 + 上传/更换/移除 */}
+                                    {bgMode === 'custom' && (
+                                        <div className="space-y-3">
+                                            {customUrl ? (
+                                                <div className="overflow-hidden rounded-xl border border-border/50">
+                                                    <img
+                                                        src={customUrl}
+                                                        alt={t('settings.theme.background')}
+                                                        className="h-36 w-full object-cover"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
+                                                    {t('settings.theme.bgEmpty')}
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    disabled={uploading}
+                                                    onClick={() => wallpaperInputRef.current?.click()}
+                                                >
+                                                    <Upload className="h-4 w-4" />
+                                                    {customUrl
+                                                        ? t('settings.theme.bgReplace')
+                                                        : t('settings.theme.bgUpload')}
+                                                </Button>
+                                                {customUrl && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-destructive hover:text-destructive"
+                                                        disabled={uploading}
+                                                        onClick={removeWallpaper}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        {t('settings.theme.bgRemove')}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            <input
+                                                ref={wallpaperInputRef}
+                                                type="file"
+                                                accept="image/jpeg,image/png,image/gif,image/webp"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+
+                                                    if (file) {
+                                                        uploadWallpaper(file);
+                                                    }
+
+                                                    e.target.value = '';
+                                                }}
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                {t('settings.theme.bgCustomHint')}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* 必应每日壁纸：预览 + 说明 */}
+                                    {bgMode === 'bing' && (
+                                        <div className="space-y-3">
+                                            {bingUrl ? (
+                                                <div className="overflow-hidden rounded-xl border border-border/50">
+                                                    <img
+                                                        src={bingUrl}
+                                                        alt={t('settings.theme.bgModeBing')}
+                                                        className="h-36 w-full object-cover"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
+                                                    {t('settings.theme.bgBingPending')}
+                                                </div>
+                                            )}
+                                            <p className="text-xs text-muted-foreground">
+                                                {t('settings.theme.bgBingHint')}
+                                            </p>
+                                        </div>
+                                    )}
 
                                     <div className="flex items-center justify-end border-t border-border/40 pt-4">
                                         <Button type="submit" disabled={processing}>

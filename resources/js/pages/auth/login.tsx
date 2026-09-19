@@ -1,4 +1,5 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import InputError from '@/components/input-error';
 import PasskeyVerify from '@/components/passkey-verify';
@@ -16,11 +17,34 @@ import { request } from '@/routes/password';
 type Props = {
     status?: string;
     canResetPassword: boolean;
+    captchaEnabled?: boolean;
 };
 
-export default function Login({ status, canResetPassword }: Props) {
+export default function Login({ status, canResetPassword, captchaEnabled }: Props) {
     const { t } = useTranslation();
-    const { canRegister } = usePage().props as { canRegister?: boolean };
+    const { canRegister, errors: pageErrors } = usePage().props as {
+        canRegister?: boolean;
+        errors?: Record<string, string>;
+    };
+
+    // 图形验证码：登录 POST 会消费会话中的验证码（无论对错），
+    // 因此首次挂载与每次登录失败（验证码错误/密码错误）后都必须换一张新的。
+    const [captchaSrc, setCaptchaSrc] = useState('');
+    const refreshCaptcha = useCallback(() => {
+        setCaptchaSrc(`/captcha?t=${Date.now()}`);
+    }, []);
+
+    useEffect(() => {
+        if (captchaEnabled) {
+            refreshCaptcha();
+        }
+    }, [captchaEnabled, refreshCaptcha]);
+
+    useEffect(() => {
+        if (captchaEnabled && pageErrors && Object.keys(pageErrors).length > 0) {
+            refreshCaptcha();
+        }
+    }, [captchaEnabled, pageErrors, refreshCaptcha]);
 
     return (
         <>
@@ -75,11 +99,51 @@ export default function Login({ status, canResetPassword }: Props) {
                                 <InputError message={errors.password} />
                             </div>
 
+                            {captchaEnabled && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="captcha">{t('auth.login.captcha')}</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            id="captcha"
+                                            name="captcha"
+                                            required
+                                            tabIndex={3}
+                                            autoComplete="off"
+                                            spellCheck={false}
+                                            maxLength={6}
+                                            className="flex-1 font-mono tracking-[0.3em] uppercase"
+                                            placeholder={t('auth.login.captchaPlaceholder')}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={refreshCaptcha}
+                                            title={t('auth.login.captchaRefresh')}
+                                            aria-label={t('auth.login.captchaRefresh')}
+                                            className="shrink-0 overflow-hidden rounded-lg border border-border/70 transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        >
+                                            {captchaSrc ? (
+                                                <img
+                                                    src={captchaSrc}
+                                                    alt={t('auth.login.captcha')}
+                                                    className="block h-10 w-[9rem] bg-background"
+                                                />
+                                            ) : (
+                                                <span className="block h-10 w-[9rem] animate-pulse bg-muted" />
+                                            )}
+                                        </button>
+                                    </div>
+                                    <InputError message={errors.captcha} />
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('auth.login.captchaHint')}
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="flex items-center space-x-3">
                                 <Checkbox
                                     id="remember"
                                     name="remember"
-                                    tabIndex={3}
+                                    tabIndex={4}
                                 />
                                 <Label htmlFor="remember">{t('auth.login.remember')}</Label>
                             </div>
@@ -87,7 +151,7 @@ export default function Login({ status, canResetPassword }: Props) {
                             <Button
                                 type="submit"
                                 className="mt-4 w-full"
-                                tabIndex={4}
+                                tabIndex={5}
                                 disabled={processing}
                                 data-test="login-button"
                             >
@@ -99,7 +163,7 @@ export default function Login({ status, canResetPassword }: Props) {
                         {canRegister && (
                             <div className="text-center text-sm text-muted-foreground">
                                 {t('auth.login.noAccount')}{' '}
-                                <TextLink href={register()} tabIndex={5}>
+                                <TextLink href={register()} tabIndex={6}>
                                     {t('auth.login.signUp')}
                                 </TextLink>
                             </div>

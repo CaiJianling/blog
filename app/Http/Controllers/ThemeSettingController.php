@@ -3,15 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Option;
+use App\Services\PageBackgroundService;
+use Illuminate\Contracts\Filesystem\Filesystem as FilesystemAdapter;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * 主题设置：站点主色。强调色、选中环、侧边栏高亮与图表首色均由主色自动派生。
+ * 主题设置：站点主色 + 前台网页背景（壁纸模式/透明度）。
+ * 强调色、选中环、侧边栏高亮与图表首色均由主色自动派生。
  */
 class ThemeSettingController extends Controller
 {
+    public function __construct(protected PageBackgroundService $backgrounds) {}
+
     /**
      * 内置默认主色（浅色）。theme_color 为空时页面回退到 CSS 内置值。
      */
@@ -243,15 +250,22 @@ CSS;
      */
     public function edit(): Response
     {
+        // 必应模式下顺带刷新当日壁纸（后台路径触发，前台请求零外网依赖）
+        if ($this->backgrounds->mode() === PageBackgroundService::MODE_BING) {
+            $this->backgrounds->refreshBingWallpaper();
+        }
+
         return Inertia::render('settings/theme', [
             'themeColor' => self::color(),
             'defaultColor' => self::DEFAULT_COLOR,
             'presets' => self::presets(),
+            'background' => $this->backgrounds->settingsProps(),
         ]);
     }
 
     /**
-     * 保存主题色。空值 = 恢复内置默认。
+     * 保存主题色与背景设置。主色空值 = 恢复内置默认；背景模式空值 = 不使用壁纸。
+     * 模式切换会清理不再使用的存储壁纸（更换/移除语义）。
      */
     public function update(Request $request)
     {
@@ -259,14 +273,78 @@ CSS;
 
         $validated = $request->validate([
             'theme_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'background_mode' => ['nullable', 'in:custom,bing'],
+            'background_opacity' => ['nullable', 'integer', 'min:0', 'max:100'],
         ], [
             'theme_color.regex' => '主题颜色格式不正确，应为 #rrggbb。',
+            'background_mode.in' => '背景模式不正确。',
+            'background_opacity.min' => '壁纸透明度范围为 0-100。',
+            'background_opacity.max' => '壁纸透明度范围为 0-100。',
         ]);
 
         Option::set('theme_color', $validated['theme_color'] ?? '');
 
+        $mode = (string) ($validated['background_mode'] ?? '');
+        $this->backgrounds->changeMode($mode);
+
+        if (array_key_exists('background_opacity', $validated) && $validated['background_opacity'] !== null) {
+            Option::set('page_background_opacity', (string) $validated['background_opacity']);
+        }
+
+        // 切到必应模式后立即拉取当日壁纸；失败保留旧图，不影响保存
+        if ($mode === PageBackgroundService::MODE_BING) {
+            $this->backgrounds->refreshBingWallpaper();
+        }
+
         return to_route('theme.edit')
-            ->with('toast', ['type' => 'success', 'message' => '主题颜色已保存。']);
+            ->with('toast', ['type' => 'success', 'message' => '主题设置已保存。']);
+    }
+
+    /**
+     * 上传自定义壁纸：替换语义（旧壁纸先删除），并切到自定义模式。
+     */
+    public function uploadBackground(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'max:10240',
+                'mimes:jpg,jpeg,png,gif,webp',
+            ],
+        ], [
+            'file.required' => '请选择一个图片文件。',
+            'file.max' => '壁纸不能超过 10 MB。',
+            'file.mimes' => '仅支持 jpg/jpeg/png/gif/webp 格式。',
+        ]);
+
+        try {
+            $attachment = $this->backgrounds->storeCustom($validated['file']);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
+        Option::set('page_background_mode', PageBackgroundService::MODE_CUSTOM);
+
+        /** @var FilesystemAdapter $publicDisk */
+        $publicDisk = Storage::disk('public');
+
+        return response()->json([
+            'id' => $attachment->id,
+            'url' => $publicDisk->url($attachment->file_path),
+        ]);
+    }
+
+    /**
+     * 移除自定义壁纸（删除存储的文件与记录），模式切回"不使用"。
+     */
+    public function destroyBackground(): JsonResponse
+    {
+        $this->backgrounds->removeCustom();
+
+        return response()->json(['ok' => true]);
     }
 
     /**
