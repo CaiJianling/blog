@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { ImagePlus, Plus, Tag, Trash2 } from 'lucide-react';
+import { FolderArchive, ImagePlus, Plus, Tag, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AdminSettingsShell from '@/components/admin-settings-shell';
@@ -36,8 +36,24 @@ export default function Smilies({ groups }: Props) {
     const [newCode, setNewCode] = useState('');
     const [newImage, setNewImage] = useState('');
     const fileRef = useRef<HTMLInputElement>(null);
+    const packRef = useRef<HTMLInputElement>(null);
+    const [uploadingPack, setUploadingPack] = useState(false);
 
     const active = groups.find((g) => g.id === activeId) ?? null;
+
+    // 上传表情包：一个 zip（内含表情配置 json + 图片），后端解压后自动匹配建新分组
+    const uploadPack = (file: File): void => {
+        setUploadingPack(true);
+
+        router.post(
+            '/admin/smileys/pack',
+            { pack: file } as never,
+            {
+                preserveScroll: true,
+                onFinish: () => setUploadingPack(false),
+            },
+        );
+    };
 
     const submit = (route: string, data: Record<string, unknown>) => {
         router.post(route, data as never, {
@@ -106,7 +122,7 @@ export default function Smilies({ groups }: Props) {
                                                 )
                                             ) {
                                                 router.delete(
-                                                    `/smiley-groups/${g.id}`,
+                                                    `/admin/smiley-groups/${g.id}`,
                                                     { preserveScroll: true },
                                                 );
                                             }
@@ -128,7 +144,7 @@ export default function Smilies({ groups }: Props) {
                                 e.preventDefault();
 
                                 if (newGroupName.trim()) {
-                                    submit('/smiley-groups', {
+                                    submit('/admin/smiley-groups', {
                                         name: newGroupName.trim(),
                                     });
                                 }
@@ -156,13 +172,46 @@ export default function Smilies({ groups }: Props) {
 
                     {/* 表情列表 */}
                     <div className="apple-card p-4">
-                        <h3 className="text-callout font-medium">
-                            {active
-                                ? t('settings.smilies.groupSmileys', {
-                                      name: active.name,
-                                  })
-                                : t('settings.smilies.selectGroup')}
-                        </h3>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h3 className="text-callout font-medium">
+                                {active
+                                    ? t('settings.smilies.groupSmileys', {
+                                          name: active.name,
+                                      })
+                                    : t('settings.smilies.selectGroup')}
+                            </h3>
+                            <input
+                                ref={packRef}
+                                type="file"
+                                accept=".zip,application/zip"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+
+                                    e.target.value = '';
+
+                                    if (file) {
+                                        uploadPack(file);
+                                    }
+                                }}
+                                className="hidden"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-9"
+                                disabled={uploadingPack}
+                                onClick={() => packRef.current?.click()}
+                            >
+                                <FolderArchive className="h-4 w-4" />
+                                {uploadingPack
+                                    ? t('settings.smilies.uploadingPack')
+                                    : t('settings.smilies.uploadPack')}
+                            </Button>
+                        </div>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                            {t('settings.smilies.packHint')}
+                        </p>
 
                         {active && (
                             <>
@@ -185,7 +234,7 @@ export default function Smilies({ groups }: Props) {
                                                 type="button"
                                                 onClick={() =>
                                                     router.delete(
-                                                        `/smileys/${s.id}`,
+                                                        `/admin/smileys/${s.id}`,
                                                         {
                                                             preserveScroll: true,
                                                         },
@@ -220,7 +269,7 @@ export default function Smilies({ groups }: Props) {
                                             data.image = '';
                                         }
 
-                                        submit('/smileys', data);
+                                        submit('/admin/smileys', data);
                                     }}
                                     className="mt-5 flex flex-wrap items-center gap-2 border-t border-border/40 pt-4"
                                 >

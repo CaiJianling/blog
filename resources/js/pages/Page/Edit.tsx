@@ -131,7 +131,7 @@ export default function EditPage({ page }: Props) {
         };
 
         router.put(
-            `/pages/${page.id}`,
+            `/admin/pages/${page.id}`,
             data as unknown as Parameters<typeof router.put>[1],
         );
     };
@@ -177,7 +177,7 @@ export default function EditPage({ page }: Props) {
     };
 
     const handleTrash = (id: number) => {
-        router.put(`/pages/${id}/trash`, {}, { preserveScroll: true });
+        router.put(`/admin/pages/${id}/trash`, {}, { preserveScroll: true });
     };
 
     return (
@@ -428,7 +428,7 @@ export default function EditPage({ page }: Props) {
                 open={aiDialogOpen}
                 onOpenChange={setAiDialogOpen}
                 onApply={applyAiResult}
-                endpoint="/pages/ai-generate"
+                endpoint="/admin/pages/ai-generate"
                 i18nBase="pages"
             />
         </>

@@ -38,7 +38,7 @@ function articleIndexRows(TestResponse $response): Collection
 }
 
 test('article index payload includes each article permalink', function () {
-    $response = $this->actingAs($this->admin)->get('/articles');
+    $response = $this->actingAs($this->admin)->get('/admin/articles');
 
     $response->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('Article/Index')
@@ -56,7 +56,7 @@ test('article index payload includes each article permalink', function () {
 test('article index permalink follows the permalink structure option', function () {
     Option::set('permalink_structure', '/%postname%/');
 
-    $response = $this->actingAs($this->admin)->get('/articles');
+    $response = $this->actingAs($this->admin)->get('/admin/articles');
 
     $response->assertOk();
 

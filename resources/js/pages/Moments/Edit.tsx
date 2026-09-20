@@ -62,7 +62,7 @@ export default function MomentsEdit({ moment }: Props) {
         }
 
         router.delete(momentActions.destroy.url(moment.id), {
-            onSuccess: () => router.visit('/moments-admin'),
+            onSuccess: () => router.visit('/admin/moments'),
         });
     };
 
@@ -76,7 +76,7 @@ export default function MomentsEdit({ moment }: Props) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => router.visit('/moments-admin')}
+                            onClick={() => router.visit('/admin/moments')}
                         >
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
@@ -212,7 +212,7 @@ MomentsEdit.layout = {
     breadcrumbs: [
         {
             title: 'moments.title',
-            href: '/moments-admin',
+            href: '/admin/moments',
         },
     ],
 };

@@ -103,7 +103,7 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
     }, [selectedIds]);
 
     const handleFilterChange = (status: string) => {
-        const url = status === 'all' ? '/pages' : `/pages?status=${status}`;
+        const url = status === 'all' ? '/admin/pages' : `/admin/pages?status=${status}`;
         router.visit(url, { preserveScroll: true });
     };
 
@@ -125,7 +125,7 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
     };
 
     const handleBatchAction = (status: 'publish' | 'draft' | 'trash') => {
-        router.post('/pages/batch', {
+        router.post('/admin/pages/batch', {
             ids: selectedIds,
             status,
         }, {
@@ -135,11 +135,11 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
     };
 
     const handleTrash = (id: number) => {
-        router.put(`/pages/${id}/trash`, {}, { preserveScroll: true });
+        router.put(`/admin/pages/${id}/trash`, {}, { preserveScroll: true });
     };
 
     const handleRestore = (id: number) => {
-        router.put(`/pages/${id}/restore`, {}, { preserveScroll: true });
+        router.put(`/admin/pages/${id}/restore`, {}, { preserveScroll: true });
     };
 
     const [forceDeleteTarget, setForceDeleteTarget] = useState<{ id: number; title: string } | null>(null);
@@ -153,7 +153,7 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
             return;
         }
 
-        router.delete(`/pages/${forceDeleteTarget.id}`, {
+        router.delete(`/admin/pages/${forceDeleteTarget.id}`, {
             preserveScroll: true,
             onFinish: () => setForceDeleteTarget(null),
         });
@@ -487,7 +487,7 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => router.visit(`/pages/${page.id}/edit`)}
+                                                            onClick={() => router.visit(`/admin/pages/${page.id}/edit`)}
                                                             className="h-8 gap-1.5 pl-2 pr-3"
                                                         >
                                                             <Pencil className="h-4 w-4" />
@@ -550,7 +550,7 @@ export default function PageIndex({ pages: pagePages, statusCounts, currentStatu
                         }
 
                         params.set('page', String(page));
-                        router.visit(`/pages?${params.toString()}`, { preserveScroll: true });
+                        router.visit(`/admin/pages?${params.toString()}`, { preserveScroll: true });
                     }}
                 />
             </div>

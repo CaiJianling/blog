@@ -111,7 +111,7 @@ export default function MediaCreate() {
         try {
             await new Promise<void>((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
-                xhr.open('POST', '/attachments');
+                xhr.open('POST', '/admin/attachments');
                 xhr.withCredentials = true; // 携带 session cookie
 
                 xhr.upload.addEventListener('progress', (e) => {
@@ -255,7 +255,7 @@ export default function MediaCreate() {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => router.visit('/attachments')}
+                                onClick={() => router.visit('/admin/attachments')}
                                 className="h-8 w-8 p-0"
                             >
                                 <ArrowLeft className="h-4 w-4" />
@@ -279,7 +279,7 @@ export default function MediaCreate() {
                         </Button>
                         <Button
                             variant="ghost"
-                            onClick={() => router.visit('/attachments')}
+                            onClick={() => router.visit('/admin/attachments')}
                             disabled={isProcessing}
                         >
                             {t('media.cancel')}

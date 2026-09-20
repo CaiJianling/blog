@@ -149,9 +149,9 @@ export default function Links({ links }: Props) {
         };
 
         if (editing) {
-            router.put(`/settings/links/${editing.id}`, data, { preserveScroll: true });
+            router.put(`/admin/settings/links/${editing.id}`, data, { preserveScroll: true });
         } else {
-            router.post('/settings/links', data, { preserveScroll: true });
+            router.post('/admin/settings/links', data, { preserveScroll: true });
         }
 
         setDialogOpen(false);
@@ -169,7 +169,7 @@ export default function Links({ links }: Props) {
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch(`/settings/links/${linkId}/image`, {
+        fetch(`/admin/settings/links/${linkId}/image`, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -205,7 +205,7 @@ export default function Links({ links }: Props) {
             return;
         }
 
-        fetch(`/settings/links/${link.id}/image`, {
+        fetch(`/admin/settings/links/${link.id}/image`, {
             method: 'DELETE',
             headers: {
                 Accept: 'application/json',
@@ -259,7 +259,7 @@ export default function Links({ links }: Props) {
         setOverId(null);
         setDropPos(null);
 
-        router.put('/settings/links/reorder', { ids: allIds }, { preserveScroll: true });
+        router.put('/admin/settings/links/reorder', { ids: allIds }, { preserveScroll: true });
     };
 
     return (
@@ -429,7 +429,7 @@ export default function Links({ links }: Props) {
                                         type="button"
                                         onClick={() => {
                                             if (window.confirm(t('settings.links.deleteConfirm', { name: link.link_name }))) {
-                                                router.delete(`/settings/links/${link.id}`, {
+                                                router.delete(`/admin/settings/links/${link.id}`, {
                                                     preserveScroll: true,
                                                 });
                                             }

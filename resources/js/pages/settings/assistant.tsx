@@ -76,7 +76,7 @@ export default function AssistantSettings({
         setSaving(true);
 
         router.put(
-            '/settings/assistant',
+            '/admin/settings/assistant',
             {
                 assistant_enabled: enabled ? '1' : '0',
                 assistant_name: name,
@@ -110,7 +110,7 @@ export default function AssistantSettings({
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch('/settings/assistant/avatar', {
+        fetch('/admin/settings/assistant/avatar', {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -136,7 +136,7 @@ export default function AssistantSettings({
     };
 
     const removeAvatar = () => {
-        router.delete('/settings/assistant/avatar', { preserveScroll: true });
+        router.delete('/admin/settings/assistant/avatar', { preserveScroll: true });
         setAvatar(null);
     };
 

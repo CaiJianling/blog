@@ -106,7 +106,7 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
     }, [selectedIds]);
 
     const handleFilterChange = (status: string) => {
-        const url = status === 'all' ? '/articles' : `/articles?status=${status}`;
+        const url = status === 'all' ? '/admin/articles' : `/admin/articles?status=${status}`;
         router.visit(url, { preserveScroll: true });
     };
 
@@ -128,7 +128,7 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
     };
 
     const handleBatchAction = (status: 'publish' | 'pending' | 'draft' | 'trash') => {
-        router.post('/articles/batch', {
+        router.post('/admin/articles/batch', {
             ids: selectedIds,
             status,
         }, {
@@ -138,11 +138,11 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
     };
 
     const handleTrash = (id: number) => {
-        router.put(`/articles/${id}/trash`, {}, { preserveScroll: true });
+        router.put(`/admin/articles/${id}/trash`, {}, { preserveScroll: true });
     };
 
     const handleRestore = (id: number) => {
-        router.put(`/articles/${id}/restore`, {}, { preserveScroll: true });
+        router.put(`/admin/articles/${id}/restore`, {}, { preserveScroll: true });
     };
 
     const [forceDeleteTarget, setForceDeleteTarget] = useState<{ id: number; title: string } | null>(null);
@@ -156,7 +156,7 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
 return;
 }
 
-        router.delete(`/articles/${forceDeleteTarget.id}`, {
+        router.delete(`/admin/articles/${forceDeleteTarget.id}`, {
             preserveScroll: true,
             onFinish: () => setForceDeleteTarget(null),
         });
@@ -529,7 +529,7 @@ return;
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => router.visit(`/articles/${article.id}/edit`)}
+                                                            onClick={() => router.visit(`/admin/articles/${article.id}/edit`)}
                                                             className="h-8 gap-1.5 pl-2 pr-3"
                                                         >
                                                             <Pencil className="h-4 w-4" />
@@ -592,7 +592,7 @@ return;
                         }
 
                         params.set('page', String(page));
-                        router.visit(`/articles?${params.toString()}`, { preserveScroll: true });
+                        router.visit(`/admin/articles?${params.toString()}`, { preserveScroll: true });
                     }}
                 />
             </div>

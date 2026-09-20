@@ -123,7 +123,7 @@ export default function CreatePage() {
         };
 
         router.post(
-            '/pages',
+            '/admin/pages',
             data as unknown as Parameters<typeof router.post>[1],
         );
     };
@@ -405,7 +405,7 @@ export default function CreatePage() {
                 open={aiDialogOpen}
                 onOpenChange={setAiDialogOpen}
                 onApply={applyAiResult}
-                endpoint="/pages/ai-generate"
+                endpoint="/admin/pages/ai-generate"
                 i18nBase="pages"
             />
         </>

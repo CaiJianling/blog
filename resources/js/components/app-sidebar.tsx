@@ -55,80 +55,80 @@ export function AppSidebar() {
         },
         {
             title: 'articles.title',
-            href: '/articles',
+            href: '/admin/articles',
             icon: FileText,
             children: [
                 {
                     title: 'articles.allArticles',
-                    href: '/articles',
+                    href: '/admin/articles',
                 },
                 {
                     title: 'articles.create',
-                    href: '/articles/create',
+                    href: '/admin/articles/create',
                 },
                 {
                     title: 'articles.categories',
-                    href: '/articles/categories',
+                    href: '/admin/articles/categories',
                 },
                 {
                     title: 'articles.tags',
-                    href: '/articles/tags',
+                    href: '/admin/articles/tags',
                 },
             ],
         },
         {
             title: 'pages.title',
-            href: '/pages',
+            href: '/admin/pages',
             icon: FileStack,
             children: [
                 {
                     title: 'pages.allPages',
-                    href: '/pages',
+                    href: '/admin/pages',
                 },
                 {
                     title: 'pages.create',
-                    href: '/pages/create',
+                    href: '/admin/pages/create',
                 },
             ],
         },
         {
             title: 'media.title',
-            href: '/attachments',
+            href: '/admin/attachments',
             icon: Image,
             children: [
                 {
                     title: 'media.library',
-                    href: '/attachments',
+                    href: '/admin/attachments',
                 },
                 {
                     title: 'media.addNew',
-                    href: '/attachments/create',
+                    href: '/admin/attachments/create',
                 },
             ],
         },
         {
             title: 'commentManagement.title',
-            href: '/comments',
+            href: '/admin/comments',
             icon: MessageSquare,
             children: [
                 {
                     title: 'comments.title',
-                    href: '/comments',
+                    href: '/admin/comments',
                 },
             ],
         },
         {
             title: 'moments.title',
-            href: '/moments-admin',
+            href: '/admin/moments',
             icon: MessageCircle,
             children: [
                 {
                     title: 'moments.allMoments',
-                    href: '/moments-admin',
+                    href: '/admin/moments',
                 },
                 {
                     title: 'moments.create',
-                    href: '/moments-admin/create',
+                    href: '/admin/moments/create',
                 },
             ],
         },
@@ -176,12 +176,12 @@ export function AppSidebar() {
 
         mainNavItems.push({
             title: 'siteStats.title',
-            href: '/site-stats',
+            href: '/admin/site-stats',
             icon: BarChart3,
         });
         mainNavItems.push({
             title: 'userManagement.title',
-            href: '/users',
+            href: '/admin/users',
             icon: Users,
         });
         mainNavItems.push({

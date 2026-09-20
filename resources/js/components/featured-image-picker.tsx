@@ -56,7 +56,7 @@ export default function FeaturedImagePicker({
         setLoading(true);
 
         try {
-            const res = await fetch('/attachments?type=image&per_page=60', {
+            const res = await fetch('/admin/attachments?type=image&per_page=60', {
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -99,7 +99,7 @@ export default function FeaturedImagePicker({
                 form.append('parent_id', String(parentId));
             }
 
-            const res = await fetch('/attachments', {
+            const res = await fetch('/admin/attachments', {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',

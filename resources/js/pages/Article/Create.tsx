@@ -182,7 +182,7 @@ export default function CreateArticle({ categories, tags }: Props) {
         };
 
         router.post(
-            '/articles',
+            '/admin/articles',
             data as unknown as Parameters<typeof router.post>[1],
         );
     };

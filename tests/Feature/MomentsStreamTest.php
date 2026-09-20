@@ -124,7 +124,7 @@ test('moment comment appears in the admin comment list', function () {
     ]);
 
     $this->actingAs($this->user)
-        ->get('/comments')
+        ->get('/admin/comments')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Comment/Index'));

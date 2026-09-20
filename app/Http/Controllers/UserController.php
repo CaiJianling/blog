@@ -18,7 +18,7 @@ class UserController extends Controller
         return Inertia::render('User/Index', [
             'users' => $users,
             'breadcrumbs' => [
-                ['title' => 'userManagement.title', 'href' => '/users'],
+                ['title' => 'userManagement.title', 'href' => '/admin/users'],
             ],
         ]);
     }

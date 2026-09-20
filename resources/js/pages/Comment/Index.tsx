@@ -78,7 +78,7 @@ interface Comment {
     object_id: number;
     object_type: string;
     related_title: string | null;
-    related_slug: string | null;
+    related_permalink: string | null;
     created_at: string;
     created_at_human: string;
     is_author: boolean;
@@ -184,7 +184,7 @@ params.set('page', String(page));
 
         const qs = params.toString();
 
-        return `/comments${qs ? `?${qs}` : ''}`;
+        return `/admin/comments${qs ? `?${qs}` : ''}`;
     };
 
     const handleFilterChange = (status: string) => {
@@ -536,14 +536,20 @@ params.set('page', String(page));
                                                             <Badge variant="outline" className="w-fit font-normal">
                                                                 {comment.object_type === 'article' ? t('comments.typeArticle') : t('comments.typePage')}
                                                             </Badge>
-                                                            <a
-                                                                href={`/${comment.object_type === 'article' ? 'articles' : 'pages'}/${comment.object_id}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-callout font-medium text-primary hover:underline"
-                                                            >
-                                                                {comment.related_title}
-                                                            </a>
+                                                            {comment.related_permalink ? (
+                                                                <a
+                                                                    href={comment.related_permalink}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-callout font-medium text-primary hover:underline"
+                                                                >
+                                                                    {comment.related_title}
+                                                                </a>
+                                                            ) : (
+                                                                <span className="text-callout font-medium">
+                                                                    {comment.related_title}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     ) : (
                                                         <span className="text-callout text-muted-foreground">-</span>

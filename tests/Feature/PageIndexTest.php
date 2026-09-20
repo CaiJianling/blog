@@ -65,7 +65,7 @@ beforeEach(function () {
 });
 
 test('page index payload includes per-page comment counts', function () {
-    $response = $this->actingAs($this->admin)->get('/pages');
+    $response = $this->actingAs($this->admin)->get('/admin/pages');
 
     $response->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('Page/Index')
@@ -78,7 +78,7 @@ test('page index payload includes per-page comment counts', function () {
 });
 
 test('page index counts only comments of the matching page', function () {
-    $response = $this->actingAs($this->admin)->get('/pages');
+    $response = $this->actingAs($this->admin)->get('/admin/pages');
 
     $rows = collect(json_decode(json_encode($response->viewData('page')), true)['props']['pages']['data'])
         ->keyBy('id');
@@ -89,7 +89,7 @@ test('page index counts only comments of the matching page', function () {
 });
 
 test('page index payload includes the permalink generated from the structure', function () {
-    $response = $this->actingAs($this->admin)->get('/pages');
+    $response = $this->actingAs($this->admin)->get('/admin/pages');
 
     $rows = collect(json_decode(json_encode($response->viewData('page')), true)['props']['pages']['data'])
         ->keyBy('id');

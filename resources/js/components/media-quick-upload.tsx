@@ -71,7 +71,7 @@ export default function MediaQuickUpload({ parentType, parentId }: MediaQuickUpl
 
                 params.set('per_page', '50');
 
-                const response = await fetch(`/attachments?${params.toString()}`, {
+                const response = await fetch(`/admin/attachments?${params.toString()}`, {
                     headers: {
                         Accept: 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
@@ -189,7 +189,7 @@ return;
             try {
                 await new Promise<void>((resolve, reject) => {
                     const xhr = new XMLHttpRequest();
-                    xhr.open('POST', '/attachments');
+                    xhr.open('POST', '/admin/attachments');
                     xhr.withCredentials = true;
 
                     xhr.onload = () => {

@@ -180,7 +180,7 @@ params.set('date', date);
 }
 
         const query = params.toString();
-        router.visit(`/attachments${query ? `?${query}` : ''}`, { preserveScroll: true });
+        router.visit(`/admin/attachments${query ? `?${query}` : ''}`, { preserveScroll: true });
     };
 
     const handleDateChange = (date: string) => {
@@ -193,7 +193,7 @@ return;
 }
 
         setIsDeleting(true);
-        router.delete(`/attachments/${deleteAttachment.id}`, {
+        router.delete(`/admin/attachments/${deleteAttachment.id}`, {
             preserveScroll: true,
             onFinish: () => {
                 setIsDeleting(false);
@@ -253,7 +253,7 @@ return;
 
     const handleBulkDelete = () => {
         setIsBulkDeleting(true);
-        router.delete('/attachments/bulk', {
+        router.delete('/admin/attachments/bulk', {
             data: { ids: Array.from(selectedIds) },
             preserveScroll: true,
             onFinish: () => {
@@ -379,7 +379,7 @@ return;
                                     <CheckSquare className="h-3.5 w-3.5" />
                                     {t('media.manage')}
                                 </Button>
-                                <Button onClick={() => router.visit('/attachments/create')}>
+                                <Button onClick={() => router.visit('/admin/attachments/create')}>
                                     <Plus className="h-4 w-4" />
                                     {t('media.addMedia')}
                                 </Button>
@@ -472,7 +472,7 @@ return;
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => router.visit('/attachments/create')}
+                                onClick={() => router.visit('/admin/attachments/create')}
                             >
                                 <Plus className="h-3.5 w-3.5" />
                                 {t('media.addMedia')}
@@ -762,7 +762,7 @@ return;
                         }
 
                         params.set('page', String(page));
-                        router.visit(`/attachments?${params.toString()}`, { preserveScroll: true });
+                        router.visit(`/admin/attachments?${params.toString()}`, { preserveScroll: true });
                     }}
                 />
             </div>

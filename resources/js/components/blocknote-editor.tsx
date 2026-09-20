@@ -63,7 +63,7 @@ async function uploadAttachment(file: File): Promise<string> {
         throw new Error('CSRF token not found.');
     }
 
-    const response = await fetch('/attachments', {
+    const response = await fetch('/admin/attachments', {
         method: 'POST',
         headers: {
             Accept: 'application/json',

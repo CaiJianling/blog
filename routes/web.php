@@ -88,7 +88,9 @@ Route::get('/register-captcha', [CaptchaController::class, 'registerShow'])
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::prefix('articles')->group(function () {
+    // 后台页面统一挂在 /admin 下，与前台公开路径（含兜底固定链接）彻底分开；
+    // 路由名保持不变，前端仍用 route('articles.index') 一类名字引用。
+    Route::prefix('admin/articles')->group(function () {
         Route::get('/', [ArticleController::class, 'index'])->name('articles.index');
         Route::get('/create', [ArticleController::class, 'create'])->name('articles.create');
         Route::post('/', [ArticleController::class, 'store'])->name('articles.store');
@@ -106,8 +108,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/taxonomies/{termTaxonomy}', [TermTaxonomyController::class, 'destroy'])->name('taxonomies.destroy');
     });
 
-    // 说说管理（articles 表 post_type=moment；前台展示走 /moments，管理走 /moments-admin 避免路由冲突）
-    Route::prefix('moments-admin')->group(function () {
+    // 说说管理（articles 表 post_type=moment；前台展示走 /moments，管理走 /admin/moments）
+    Route::prefix('admin/moments')->group(function () {
         Route::get('/', [MomentsController::class, 'index'])->name('moments.admin.index');
         Route::get('/create', [MomentsController::class, 'create'])->name('moments.admin.create');
         Route::post('/', [MomentsController::class, 'store'])->name('moments.admin.store');
@@ -119,7 +121,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{moment}', [MomentsController::class, 'destroy'])->name('moments.admin.destroy');
     });
 
-    Route::prefix('pages')->group(function () {
+    Route::prefix('admin/pages')->group(function () {
         Route::get('/', [PageController::class, 'index'])->name('pages.index');
         Route::get('/create', [PageController::class, 'create'])->name('pages.create');
         Route::post('/', [PageController::class, 'store'])->name('pages.store');
@@ -132,7 +134,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{page}', [PageController::class, 'destroy'])->name('pages.destroy');
     });
 
-    Route::prefix('attachments')->group(function () {
+    Route::prefix('admin/attachments')->group(function () {
         Route::get('/', [AttachmentController::class, 'index'])->name('attachments.index');
         Route::get('/create', [AttachmentController::class, 'create'])->name('attachments.create');
         Route::post('/', [AttachmentController::class, 'store'])->name('attachments.store');
@@ -140,7 +142,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
     });
 
-    Route::prefix('comments')->group(function () {
+    Route::prefix('admin/comments')->group(function () {
         Route::get('/', [CommentController::class, 'index'])->name('comments.index');
         Route::post('/batch', [CommentController::class, 'batchUpdate'])->name('comments.batch');
         Route::put('/{comment}/approve', [CommentController::class, 'approve'])->name('comments.approve');
@@ -154,7 +156,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
     });
 
-    Route::middleware([AdminMiddleware::class])->group(function () {
+    Route::middleware([AdminMiddleware::class])->prefix('admin')->group(function () {
         // 站点统计（访问趋势、流量来源、用户画像、访问途径）
         Route::get('site-stats', [StatsController::class, 'index'])->name('stats.index');
 
@@ -184,6 +186,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('smilies', [SmileyController::class, 'index'])->name('smilies.index');
         Route::post('smiley-groups', [SmileyController::class, 'storeGroup'])->name('smilies.groups.store');
+        Route::post('smileys/pack', [SmileyController::class, 'storePack'])->name('smilies.pack.store');
         Route::put('smiley-groups/{group}', [SmileyController::class, 'updateGroup'])->name('smilies.groups.update');
         Route::delete('smiley-groups/{group}', [SmileyController::class, 'destroyGroup'])->name('smilies.groups.destroy');
         Route::post('smileys', [SmileyController::class, 'storeSmiley'])->name('smileys.store');
@@ -236,7 +239,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('settings/assistant', [AssistantSettingController::class, 'update'])->name('assistant.update');
         Route::post('settings/assistant/avatar', [AssistantSettingController::class, 'uploadAvatar'])->name('assistant.avatar.store');
         Route::delete('settings/assistant/avatar', [AssistantSettingController::class, 'removeAvatar'])->name('assistant.avatar.destroy');
-        Route::get('settings/assistant', fn () => to_route('settings/ai'))->name('assistant.edit');
+        Route::get('settings/assistant', fn () => to_route('ai.edit'))->name('assistant.edit');
 
         // 博客侧边栏设置（博主信息、自定义菜单）
         Route::put('settings/sidebar', [SidebarSettingController::class, 'update'])->name('sidebar.update');
@@ -256,8 +259,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 require __DIR__.'/settings.php';
 
-// 按固定链接结构在站点根路径解析文章，必须注册在所有具体路由之后
+// 按固定链接结构在站点根路径解析文章，必须注册在所有具体路由之后；
+// admin/ 已整体归后台命名空间，兜底路由不再匹配它（否则误拼的后台地址会被当成文章）
 Route::get('/{permalink}', [BlogController::class, 'permalink'])
-    ->where('permalink', '(?!api/|build/|storage/|vendor/).*')
+    ->where('permalink', '(?!admin/|api/|build/|storage/|vendor/).*')
     ->middleware('track.pageviews')
     ->name('blog.permalink');

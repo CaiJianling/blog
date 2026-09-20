@@ -167,15 +167,13 @@ class CommentPublicController extends Controller
 
         // 邮件提醒：被回复的评论人勾选过提醒且非悄悄话场景
         if ($parent !== null && $parent->notify_mail && ! $comment->is_private && $parent->author_email) {
-            $objectUrl = $objectType === 'page'
-                ? $this->permalinks->pagePath($object)
-                : '/'.$object->id.'.html';
+            $objectUrl = url($this->permalinks->objectPath($object).'#comment-'.$parent->comment_id);
 
             Mail::to($parent->author_email)->queue(new CommentReplyMail(
                 $comment,
                 $parent,
                 $object->title,
-                url($objectUrl.'#comment-'.$parent->comment_id),
+                $objectUrl,
             ));
         }
 

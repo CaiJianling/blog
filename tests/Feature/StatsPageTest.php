@@ -32,7 +32,7 @@ test('admin can open the site stats page with aggregates', function () {
     makePageView(['referrer_class' => 'search', 'referrer' => 'https://www.baidu.com/s?wd=blog', 'path' => '/blog']);
 
     $this->actingAs($this->admin)
-        ->get('/site-stats')
+        ->get('/admin/site-stats')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Stats/Index')
@@ -49,7 +49,7 @@ test('stats respect the range query parameter', function () {
 
     // 默认 30 天范围内无记录
     $this->actingAs($this->admin)
-        ->get('/site-stats')
+        ->get('/admin/site-stats')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('isEmpty', true)
@@ -57,7 +57,7 @@ test('stats respect the range query parameter', function () {
 
     // 90 天范围内可见
     $this->actingAs($this->admin)
-        ->get('/site-stats?range=90')
+        ->get('/admin/site-stats?range=90')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('range', 90)
@@ -72,7 +72,7 @@ test('source class percentages and access paths are aggregated', function () {
     makePageView(['path' => '/blog', 'referrer_class' => 'internal', 'referrer' => 'https://blog.local.host/']);
 
     $this->actingAs($this->admin)
-        ->get('/site-stats')
+        ->get('/admin/site-stats')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('sources.byClass.0.name', 'direct')
@@ -87,7 +87,7 @@ test('source class percentages and access paths are aggregated', function () {
 
 test('non admin users cannot open the site stats page', function () {
     $this->actingAs($this->editor)
-        ->get('/site-stats')
+        ->get('/admin/site-stats')
         ->assertRedirect(route('dashboard'));
 });
 
@@ -97,7 +97,7 @@ test('profile columns are aggregated for audiences', function () {
     makePageView(['browser' => 'Safari', 'os' => 'iOS', 'device' => 'mobile']);
 
     $this->actingAs($this->admin)
-        ->get('/site-stats')
+        ->get('/admin/site-stats')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('profiles.browsers.0.name', 'Chrome')

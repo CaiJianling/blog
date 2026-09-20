@@ -5,12 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\Comment;
 use App\Models\Page;
+use App\Services\PermalinkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class CommentController extends Controller
 {
+    public function __construct(
+        protected PermalinkService $permalinks,
+    ) {}
+
     public function index(Request $request)
     {
         $status = $request->query('status', 'all');
@@ -35,18 +40,11 @@ class CommentController extends Controller
 
         $comments = $query->paginate(10)
             ->through(function ($comment) {
-                $relatedTitle = null;
-                $relatedSlug = null;
-
-                if ($comment->object_type === 'article') {
-                    $article = Article::find($comment->object_id);
-                    $relatedTitle = $article?->title;
-                    $relatedSlug = $article?->slug;
-                } elseif ($comment->object_type === 'page') {
-                    $page = Page::find($comment->object_id);
-                    $relatedTitle = $page?->title;
-                    $relatedSlug = $page?->slug;
-                }
+                $related = match ($comment->object_type) {
+                    'article' => Article::find($comment->object_id),
+                    'page' => Page::find($comment->object_id),
+                    default => null,
+                };
 
                 return [
                     'comment_id' => $comment->comment_id,
@@ -64,8 +62,8 @@ class CommentController extends Controller
                     'parent_id' => $comment->parent_id,
                     'object_id' => $comment->object_id,
                     'object_type' => $comment->object_type,
-                    'related_title' => $relatedTitle,
-                    'related_slug' => $relatedSlug,
+                    'related_title' => $related?->title,
+                    'related_permalink' => $this->relatedPermalink($related),
                     'created_at' => $comment->created_at?->format('Y-m-d H:i'),
                     'created_at_human' => $comment->created_at?->diffForHumans(),
                     'is_author' => $comment->user_id === Auth::id(),
@@ -88,6 +86,14 @@ class CommentController extends Controller
             'currentObjectType' => $objectType,
             'currentSearch' => $search,
         ]);
+    }
+
+    /**
+     * 评论所挂内容的实际前台地址（跟随固定链接设置）；内容已删除时为 null。
+     */
+    protected function relatedPermalink(Article|Page|null $related): ?string
+    {
+        return $related ? $this->permalinks->objectPath($related) : null;
     }
 
     public function approve(Comment $comment)

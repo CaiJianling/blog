@@ -172,7 +172,7 @@ export default function EditArticle({
         };
 
         router.put(
-            `/articles/${article.id}`,
+            `/admin/articles/${article.id}`,
             data as unknown as Parameters<typeof router.put>[1],
         );
     };

@@ -125,14 +125,14 @@ test('回收站中的评论不能编辑', function () {
 
 test('后台编辑：非管理员进入待审，管理员直接生效', function () {
     $this->actingAs($this->author)
-        ->put("/comments/{$this->comment->comment_id}/update", ['content' => '后台修改']);
+        ->put("/admin/comments/{$this->comment->comment_id}/update", ['content' => '后台修改']);
 
     $this->comment->refresh();
     expect($this->comment->content)->toBe('原始内容')
         ->and($this->comment->edited_content)->toBe('后台修改');
 
     $this->actingAs($this->admin)
-        ->put("/comments/{$this->comment->comment_id}/update", ['content' => '管理员后台修改']);
+        ->put("/admin/comments/{$this->comment->comment_id}/update", ['content' => '管理员后台修改']);
 
     $this->comment->refresh();
     expect($this->comment->content)->toBe('管理员后台修改')
@@ -144,7 +144,7 @@ test('通过修订：待审内容替换正文并记录最后编辑时间', funct
     $this->comment->update(['edited_content' => '待审新内容']);
 
     $this->actingAs($this->admin)
-        ->put("/comments/{$this->comment->comment_id}/approve-edit")
+        ->put("/admin/comments/{$this->comment->comment_id}/approve-edit")
         ->assertRedirect();
 
     $this->comment->refresh();
@@ -155,7 +155,7 @@ test('通过修订：待审内容替换正文并记录最后编辑时间', funct
 
 test('无待审修订时不能通过修订', function () {
     $this->actingAs($this->admin)
-        ->put("/comments/{$this->comment->comment_id}/approve-edit")
+        ->put("/admin/comments/{$this->comment->comment_id}/approve-edit")
         ->assertNotFound();
 });
 
@@ -163,7 +163,7 @@ test('拒绝修订：丢弃待审内容，正文保持不变', function () {
     $this->comment->update(['edited_content' => '待审新内容']);
 
     $this->actingAs($this->admin)
-        ->put("/comments/{$this->comment->comment_id}/reject-edit")
+        ->put("/admin/comments/{$this->comment->comment_id}/reject-edit")
         ->assertRedirect();
 
     $this->comment->refresh();

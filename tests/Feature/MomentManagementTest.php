@@ -27,7 +27,7 @@ function makeMoment(User $user, array $attrs = []): Article
 test('admin can view the moments management page', function () {
     makeMoment($this->user);
 
-    $this->get('/moments-admin')
+    $this->get('/admin/moments')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Moments/Index')
@@ -36,7 +36,7 @@ test('admin can view the moments management page', function () {
 });
 
 test('admin can create a moment', function () {
-    $this->post('/moments-admin', [
+    $this->post('/admin/moments', [
         'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => '第一条说说']]]],
         'status' => 'publish',
         'comment_status' => 'open',
@@ -51,7 +51,7 @@ test('admin can create a moment', function () {
 test('admin can update a moment', function () {
     $moment = makeMoment($this->user);
 
-    $this->put("/moments-admin/{$moment->id}", [
+    $this->put("/admin/moments/{$moment->id}", [
         'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => '修改后的说说']]]],
         'status' => 'draft',
         'comment_status' => 'close',
@@ -65,13 +65,13 @@ test('admin can update a moment', function () {
 test('moments can be trashed restored and force deleted', function () {
     $moment = makeMoment($this->user);
 
-    $this->put("/moments-admin/{$moment->id}/trash")->assertRedirect();
+    $this->put("/admin/moments/{$moment->id}/trash")->assertRedirect();
     expect($moment->fresh()->status)->toBe('trash');
 
-    $this->put("/moments-admin/{$moment->id}/restore")->assertRedirect();
+    $this->put("/admin/moments/{$moment->id}/restore")->assertRedirect();
     expect($moment->fresh()->status)->toBe('draft');
 
-    $this->delete("/moments-admin/{$moment->id}")->assertRedirect();
+    $this->delete("/admin/moments/{$moment->id}")->assertRedirect();
     expect(Article::find($moment->id))->toBeNull();
 });
 
@@ -87,7 +87,7 @@ test('regular articles are not listed on the moments page', function () {
     ]);
     makeMoment($this->user);
 
-    $this->get('/moments-admin')
+    $this->get('/admin/moments')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('statusCounts.all', 1)
@@ -105,5 +105,5 @@ test('moment edit page rejects regular articles', function () {
         'post_type' => 'post',
     ]);
 
-    $this->get("/moments-admin/{$article->id}/edit")->assertNotFound();
+    $this->get("/admin/moments/{$article->id}/edit")->assertNotFound();
 });

@@ -108,7 +108,7 @@ export default function StatsIndex({
     const formatNumber = (value: number): string => value.toLocaleString();
 
     const changeRange = (value: string) => {
-        router.visit(`/site-stats?range=${value}`, { preserveScroll: true });
+        router.visit(`/admin/site-stats?range=${value}`, { preserveScroll: true });
     };
 
     const overviewCards = [
@@ -454,7 +454,7 @@ StatsIndex.layout = {
     breadcrumbs: [
         {
             title: 'siteStats.title',
-            href: '/site-stats',
+            href: '/admin/site-stats',
         },
     ],
 };

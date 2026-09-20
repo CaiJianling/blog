@@ -153,7 +153,7 @@ MomentsCreate.layout = {
     breadcrumbs: [
         {
             title: 'moments.title',
-            href: '/moments-admin',
+            href: '/admin/moments',
         },
     ],
 };

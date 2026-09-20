@@ -308,7 +308,10 @@
             "imageSelected": "Image selected",
             "addSmiley": "Add smiley",
             "deleteSmiley": "Delete smiley {{code}}",
-            "urlHint": "You may also fill in a remote URL for the image (applies when no file is selected). Type :code: in a comment to insert."
+            "urlHint": "You may also fill in a remote URL for the image (applies when no file is selected). Type :code: in a comment to insert.",
+            "uploadPack": "Upload smiley pack",
+            "uploadingPack": "Extracting…",
+            "packHint": "Upload one zip containing a smiley config json (smileys.json / config.json …) plus the images. The json looks like {\"name\":\"Group name\",\"smileys\":[{\"code\":\"smile\",\"image\":\"smile.png\"}]}. Omit image to match by \"code.extension\" automatically; with no json in the pack every image is imported using its file name as the code."
         },
         "password": {
             "title": "Password settings",

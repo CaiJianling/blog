@@ -140,7 +140,7 @@ export default function AiSettings({
                 throw new Error('CSRF token not found.');
             }
 
-            const response = await fetch('/settings/ai/models', {
+            const response = await fetch('/admin/settings/ai/models', {
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -194,7 +194,7 @@ export default function AiSettings({
         setSaving(true);
 
         router.put(
-            '/settings/ai',
+            '/admin/settings/ai',
             {
                 ai_api_format: format,
                 ai_api_url: apiUrl,
@@ -215,7 +215,7 @@ export default function AiSettings({
         setAssistantSaving(true);
 
         router.put(
-            '/settings/assistant',
+            '/admin/settings/assistant',
             {
                 assistant_enabled: assistantEnabled ? '1' : '0',
                 assistant_name: assistantName,
@@ -249,7 +249,7 @@ export default function AiSettings({
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch('/settings/assistant/avatar', {
+        fetch('/admin/settings/assistant/avatar', {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -277,7 +277,7 @@ export default function AiSettings({
     };
 
     const removeAvatar = () => {
-        router.delete('/settings/assistant/avatar', { preserveScroll: true });
+        router.delete('/admin/settings/assistant/avatar', { preserveScroll: true });
         setAssistantAvatar(null);
     };
 

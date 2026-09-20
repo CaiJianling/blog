@@ -114,8 +114,8 @@ export default function MomentsIndex({
     const handleFilterChange = (status: string) => {
         const url =
             status === 'all'
-                ? '/moments-admin'
-                : `/moments-admin?status=${status}`;
+                ? '/admin/moments'
+                : `/admin/moments?status=${status}`;
         router.visit(url, { preserveScroll: true });
     };
 
@@ -533,7 +533,7 @@ export default function MomentsIndex({
 
                             params.set('page', String(page));
                             router.visit(
-                                `/moments-admin?${params.toString()}`,
+                                `/admin/moments?${params.toString()}`,
                                 { preserveScroll: true },
                             );
                         }}
@@ -579,7 +579,7 @@ MomentsIndex.layout = {
     breadcrumbs: [
         {
             title: 'moments.title',
-            href: '/moments-admin',
+            href: '/admin/moments',
         },
     ],
 };

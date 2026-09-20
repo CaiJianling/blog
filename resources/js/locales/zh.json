@@ -308,7 +308,10 @@
             "imageSelected": "已选图片",
             "addSmiley": "添加表情",
             "deleteSmiley": "删除表情 {{code}}",
-            "urlHint": "也可在图片字段填入远程 URL（不选文件时生效）。评论中输入 :表情代码: 即可插入。"
+            "urlHint": "也可在图片字段填入远程 URL（不选文件时生效）。评论中输入 :表情代码: 即可插入。",
+            "uploadPack": "上传表情包",
+            "uploadingPack": "解压导入中…",
+            "packHint": "上传一个 zip 压缩包：内含一个表情配置 json（smileys.json / config.json 等）与图片文件。json 形如 {\"name\":\"分组名\",\"smileys\":[{\"code\":\"smile\",\"image\":\"smile.png\"}]}；省略 image 时按「代码.扩展名」自动匹配，包里只有图片没有 json 时按文件名作为代码导入。"
         },
         "password": {
             "title": "密码设置",

@@ -3,6 +3,7 @@
 use App\Mail\CommentReplyMail;
 use App\Models\Article;
 use App\Models\Comment;
+use App\Models\Option;
 use App\Models\Smiley;
 use App\Models\SmileyGroup;
 use App\Models\User;
@@ -215,6 +216,8 @@ test('smiley codes are replaced with images', function () {
 test('reply notification email is queued when enabled', function () {
     Mail::fake();
 
+    Option::set('permalink_structure', '/%postname%/');
+
     $parent = Comment::create([
         'object_id' => $this->article->id,
         'object_type' => 'article',
@@ -239,7 +242,11 @@ test('reply notification email is queued when enabled', function () {
         'notify_mail' => true,
     ]);
 
-    Mail::assertQueued(CommentReplyMail::class, fn ($mail) => $mail->hasTo('parent@example.com'));
+    Mail::assertQueued(
+        CommentReplyMail::class,
+        fn ($mail) => $mail->hasTo('parent@example.com')
+            && str_ends_with($mail->articleUrl, '/comment-test#comment-'.$parent->comment_id),
+    );
 });
 
 test('no notification for private replies', function () {
@@ -273,14 +280,14 @@ test('no notification for private replies', function () {
 });
 
 test('admin can manage smiley groups', function () {
-    $this->actingAs($this->admin)->post('/smiley-groups', ['name' => '新手组'])
+    $this->actingAs($this->admin)->post('/admin/smiley-groups', ['name' => '新手组'])
         ->assertRedirect();
 
     expect(SmileyGroup::where('name', '新手组')->exists())->toBeTrue();
 
     $group = SmileyGroup::where('name', '新手组')->first();
 
-    $this->actingAs($this->admin)->post('/smileys', [
+    $this->actingAs($this->admin)->post('/admin/smileys', [
         'group_id' => $group->id,
         'code' => 'hi',
         'image' => 'smileys/hi.png',
@@ -294,7 +301,7 @@ test('admin can manage smiley groups', function () {
 test('non-admin cannot manage smileys', function () {
     $user = User::factory()->create(['role' => 'subscriber']);
 
-    $this->actingAs($user)->post('/smiley-groups', ['name' => '越权组'])
+    $this->actingAs($user)->post('/admin/smiley-groups', ['name' => '越权组'])
         ->assertRedirect();
 
     expect(SmileyGroup::where('name', '越权组')->exists())->toBeFalse();

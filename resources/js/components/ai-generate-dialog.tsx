@@ -55,7 +55,7 @@ export default function AiGenerateDialog({
     open,
     onOpenChange,
     onApply,
-    endpoint = '/articles/ai-generate',
+    endpoint = '/admin/articles/ai-generate',
     i18nBase = 'articles',
 }: AiGenerateDialogProps) {
     const { t } = useTranslation();

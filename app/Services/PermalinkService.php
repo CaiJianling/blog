@@ -68,6 +68,21 @@ class PermalinkService
     }
 
     /**
+     * 评论所挂内容的实际前台路径：文章与页面共用固定链接结构，
+     * 说说是独立的时间流路由（不参与固定链接解析），故单独映射。
+     */
+    public function objectPath(Article|Page $object): string
+    {
+        if ($object instanceof Article && $object->isMoment()) {
+            return '/moments/'.$object->id;
+        }
+
+        return $object instanceof Article
+            ? $this->articlePath($object)
+            : $this->pagePath($object);
+    }
+
+    /**
      * 生成文章的固定链接路径（以 / 开头，如 /3178.html）。
      */
     public function articlePath(Article $article): string

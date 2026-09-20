@@ -31,7 +31,7 @@ export default function NavigationIntro({ link }: Props) {
         setSaving(true);
 
         router.put(
-            `/settings/navigation/links/${link.id}/intro`,
+            `/admin/settings/navigation/links/${link.id}/intro`,
             { intro_content: contentRef.current ?? [] },
             {
                 preserveScroll: true,
@@ -53,7 +53,7 @@ export default function NavigationIntro({ link }: Props) {
         contentRef.current = [];
 
         router.put(
-            `/settings/navigation/links/${link.id}/intro`,
+            `/admin/settings/navigation/links/${link.id}/intro`,
             { intro_content: [] },
             { preserveScroll: true },
         );
@@ -77,7 +77,7 @@ export default function NavigationIntro({ link }: Props) {
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => router.visit('/settings/navigation')}
+                            onClick={() => router.visit('/admin/settings/navigation')}
                         >
                             <ArrowLeft className="h-4 w-4" />
                             {t('settings.navigation.backToNav')}

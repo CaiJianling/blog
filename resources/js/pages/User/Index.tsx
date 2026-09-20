@@ -149,7 +149,7 @@ export default function UserIndex({
 
     const confirmDelete = () => {
         if (deletingUserId) {
-            router.delete(`/users/${deletingUserId}`, {
+            router.delete(`/admin/users/${deletingUserId}`, {
                 onSuccess: () => {
                     setIsDeleteDialogOpen(false);
                     setDeletingUserId(null);
@@ -229,7 +229,7 @@ export default function UserIndex({
 
         if (editingUser) {
             setEditErrors({});
-            router.put(`/users/${editingUser.id}`, form, {
+            router.put(`/admin/users/${editingUser.id}`, form, {
                 onStart: () => setIsEditSubmitting(true),
                 onFinish: () => setIsEditSubmitting(false),
                 onSuccess: () => closeEditDialog(),
@@ -243,7 +243,7 @@ export default function UserIndex({
     const handleCreateSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setCreateErrors({});
-        router.post('/users', form, {
+        router.post('/admin/users', form, {
             onStart: () => setIsCreateSubmitting(true),
             onFinish: () => setIsCreateSubmitting(false),
             onSuccess: () => closeCreateDialog(),
@@ -570,7 +570,7 @@ export default function UserIndex({
                     total={serverUsers.total}
                     perPage={serverUsers.per_page}
                     onPageChange={(page) => {
-                        router.visit(page === 1 ? '/users' : `/users?page=${page}`, { preserveScroll: true });
+                        router.visit(page === 1 ? '/admin/users' : `/admin/users?page=${page}`, { preserveScroll: true });
                     }}
                 />
             </div>

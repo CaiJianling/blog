@@ -138,7 +138,7 @@ export default function Theme({
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch('/settings/theme/background', {
+        fetch('/admin/settings/theme/background', {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -175,7 +175,7 @@ export default function Theme({
 
         setUploading(true);
 
-        fetch('/settings/theme/background', {
+        fetch('/admin/settings/theme/background', {
             method: 'DELETE',
             headers: {
                 Accept: 'application/json',

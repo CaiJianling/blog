@@ -147,13 +147,13 @@ export default function Tools({ categories }: Props) {
 
         if (editingCategory) {
             router.put(
-                `/settings/tools/categories/${editingCategory.id}`,
+                `/admin/settings/tools/categories/${editingCategory.id}`,
                 { name },
                 { preserveScroll: true },
             );
         } else {
             router.post(
-                '/settings/tools/categories',
+                '/admin/settings/tools/categories',
                 { name },
                 { preserveScroll: true },
             );
@@ -189,11 +189,11 @@ export default function Tools({ categories }: Props) {
         };
 
         if (editingTool) {
-            router.put(`/settings/tools/items/${editingTool.id}`, data, {
+            router.put(`/admin/settings/tools/items/${editingTool.id}`, data, {
                 preserveScroll: true,
             });
         } else {
-            router.post('/settings/tools/items', data, {
+            router.post('/admin/settings/tools/items', data, {
                 preserveScroll: true,
             });
         }
@@ -217,7 +217,7 @@ export default function Tools({ categories }: Props) {
         [next[index], next[target]] = [next[target], next[index]];
 
         router.put(
-            '/settings/tools/reorder',
+            '/admin/settings/tools/reorder',
             { type, ids: next.map((item) => item.id) },
             { preserveScroll: true },
         );
@@ -325,7 +325,7 @@ export default function Tools({ categories }: Props) {
                                                     )
                                                 ) {
                                                     router.delete(
-                                                        `/settings/tools/categories/${category.id}`,
+                                                        `/admin/settings/tools/categories/${category.id}`,
                                                         {
                                                             preserveScroll: true,
                                                             onSuccess: () =>
@@ -357,7 +357,7 @@ export default function Tools({ categories }: Props) {
 
                                     lastCreatedRef.current = name;
                                     router.post(
-                                        '/settings/tools/categories',
+                                        '/admin/settings/tools/categories',
                                         { name },
                                         {
                                             preserveScroll: true,
@@ -512,7 +512,7 @@ export default function Tools({ categories }: Props) {
                                                         )
                                                     ) {
                                                         router.delete(
-                                                            `/settings/tools/items/${tool.id}`,
+                                                            `/admin/settings/tools/items/${tool.id}`,
                                                             {
                                                                 preserveScroll: true,
                                                             },

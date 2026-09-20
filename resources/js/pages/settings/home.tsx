@@ -106,7 +106,7 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
     const submitHome = (e: React.FormEvent) => {
         e.preventDefault();
         setHomeSaving(true);
-        router.put('/settings/home', homeValues, {
+        router.put('/admin/settings/home', homeValues, {
             onFinish: () => setHomeSaving(false),
         });
     };
@@ -116,7 +116,7 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
         setSidebarSaving(true);
 
         router.put(
-            '/settings/sidebar',
+            '/admin/settings/sidebar',
             {
                 sidebar_blogger_name: bloggerName,
                 sidebar_blogger_intro: bloggerIntro,
@@ -134,7 +134,7 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
         setFooterSaving(true);
 
         router.put(
-            '/settings/footer',
+            '/admin/settings/footer',
             {
                 resources: resourceList.map((item) => ({
                     name: item.name.trim(),
@@ -164,7 +164,7 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch('/settings/sidebar/avatar', {
+        fetch('/admin/settings/sidebar/avatar', {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -192,7 +192,7 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
     };
 
     const removeAvatar = () => {
-        router.delete('/settings/sidebar/avatar', { preserveScroll: true });
+        router.delete('/admin/settings/sidebar/avatar', { preserveScroll: true });
         setBloggerAvatar(null);
     };
 

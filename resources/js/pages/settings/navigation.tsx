@@ -137,7 +137,7 @@ export default function Navigation({ categories }: Props) {
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch(`/settings/navigation/links/${linkId}/icon`, {
+        fetch(`/admin/settings/navigation/links/${linkId}/icon`, {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -173,7 +173,7 @@ export default function Navigation({ categories }: Props) {
             return;
         }
 
-        fetch(`/settings/navigation/links/${linkId}/icon`, {
+        fetch(`/admin/settings/navigation/links/${linkId}/icon`, {
             method: 'DELETE',
             headers: {
                 Accept: 'application/json',
@@ -210,13 +210,13 @@ export default function Navigation({ categories }: Props) {
 
         if (editingCategory) {
             router.put(
-                `/settings/navigation/categories/${editingCategory.id}`,
+                `/admin/settings/navigation/categories/${editingCategory.id}`,
                 { name },
                 { preserveScroll: true },
             );
         } else {
             router.post(
-                '/settings/navigation/categories',
+                '/admin/settings/navigation/categories',
                 { name },
                 { preserveScroll: true },
             );
@@ -239,11 +239,11 @@ export default function Navigation({ categories }: Props) {
         };
 
         if (editingLink) {
-            router.put(`/settings/navigation/links/${editingLink.id}`, data, {
+            router.put(`/admin/settings/navigation/links/${editingLink.id}`, data, {
                 preserveScroll: true,
             });
         } else {
-            router.post('/settings/navigation/links', data, {
+            router.post('/admin/settings/navigation/links', data, {
                 preserveScroll: true,
             });
         }
@@ -275,7 +275,7 @@ export default function Navigation({ categories }: Props) {
         [next[index - 1], next[index]] = [next[index], next[index - 1]];
 
         router.put(
-            '/settings/navigation/reorder',
+            '/admin/settings/navigation/reorder',
             { type, ids: next.map((item) => item.id) },
             { preserveScroll: true },
         );
@@ -362,7 +362,7 @@ export default function Navigation({ categories }: Props) {
                                                     )
                                                 ) {
                                                     router.delete(
-                                                        `/settings/navigation/categories/${category.id}`,
+                                                        `/admin/settings/navigation/categories/${category.id}`,
                                                         {
                                                             preserveScroll: true,
                                                             onSuccess: () =>
@@ -391,7 +391,7 @@ export default function Navigation({ categories }: Props) {
 
                                 if (newCategoryName.trim()) {
                                     router.post(
-                                        '/settings/navigation/categories',
+                                        '/admin/settings/navigation/categories',
                                         { name: newCategoryName.trim() },
                                         {
                                             preserveScroll: true,
@@ -490,7 +490,7 @@ export default function Navigation({ categories }: Props) {
                                                 className="h-8 gap-1 text-xs"
                                                 onClick={() =>
                                                     router.visit(
-                                                        `/settings/navigation/links/${link.id}/intro`,
+                                                        `/admin/settings/navigation/links/${link.id}/intro`,
                                                     )
                                                 }
                                             >
@@ -534,7 +534,7 @@ export default function Navigation({ categories }: Props) {
                                                         next[index],
                                                     ];
                                                     router.put(
-                                                        '/settings/navigation/reorder',
+                                                        '/admin/settings/navigation/reorder',
                                                         {
                                                             type: 'link',
                                                             ids: next.map(
@@ -584,7 +584,7 @@ export default function Navigation({ categories }: Props) {
                                                         )
                                                     ) {
                                                         router.delete(
-                                                            `/settings/navigation/links/${link.id}`,
+                                                            `/admin/settings/navigation/links/${link.id}`,
                                                             {
                                                                 preserveScroll: true,
                                                             },
