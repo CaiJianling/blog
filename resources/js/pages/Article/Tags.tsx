@@ -38,7 +38,7 @@ export default function Tags({ tags }: Props) {
     return (
         <>
             <Head title="标签" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex min-h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">标签</h1>
                 </div>

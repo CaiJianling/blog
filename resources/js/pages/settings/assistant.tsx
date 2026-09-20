@@ -144,7 +144,7 @@ export default function AssistantSettings({
         <>
             <Head title={t('settings.assistant.title')} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex min-h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="mx-auto w-full max-w-2xl space-y-6">
                     <Heading
                         variant="small"

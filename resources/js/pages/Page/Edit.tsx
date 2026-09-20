@@ -183,7 +183,7 @@ export default function EditPage({ page }: Props) {
     return (
         <>
             <Head title={t('pages.editPage')} />
-            <div className="flex h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
+            <div className="flex min-h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
                 {/* Page header with sticky actions */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col gap-1">

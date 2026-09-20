@@ -46,7 +46,7 @@ export default function MomentsCreate() {
     return (
         <>
             <Head title={t('moments.create')} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4 sm:p-6">
+            <div className="flex min-h-full flex-1 flex-col gap-4 overflow-x-auto p-4 sm:p-6">
                 {/* 页头 */}
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">

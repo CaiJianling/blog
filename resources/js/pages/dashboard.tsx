@@ -135,7 +135,7 @@ export default function Dashboard({ stats, activities }: Props) {
     return (
         <>
             <Head title={t('dashboard.title')} />
-            <div className="flex h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
+            <div className="flex min-h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
                 {/* Welcome */}
                 <div className="flex flex-col gap-1">
                     <h1 className="text-title-1 font-semibold text-foreground tracking-tight">

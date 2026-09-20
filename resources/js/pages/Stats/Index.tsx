@@ -145,7 +145,7 @@ export default function StatsIndex({
     return (
         <>
             <Head title={t('siteStats.title')} />
-            <div className="flex h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
+            <div className="flex min-h-full flex-1 flex-col gap-5 overflow-x-auto p-6">
                 {/* Page header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col gap-1">

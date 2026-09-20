@@ -22,7 +22,7 @@ export default function AdminSettingsShell({
     children,
 }: AdminSettingsShellProps) {
     return (
-        <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+        <div className="flex min-h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             <Heading variant="small" title={title} description={description} />
 
             <div
