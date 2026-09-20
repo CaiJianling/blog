@@ -72,6 +72,14 @@ const readStoredLevel = (): EffectLevel => {
         : EFFECT_LEVEL.off;
 };
 
+// 模块加载即从浏览器本地存储同步档位，使首次客户端渲染就落在正确档位：
+// 否则硬刷新后台页时，顶栏玻璃要等 createInertiaApp 之后的 initializeEffects()
+// 才补齐，首帧会先以 material-thin 渲染再闪变成玻璃。
+// 仅客户端执行；SSR/服务端保持 off（本应用未启用 Inertia SSR，不影响）。
+if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    currentLevel = readStoredLevel();
+}
+
 const subscribe = (callback: () => void) => {
     listeners.add(callback);
 

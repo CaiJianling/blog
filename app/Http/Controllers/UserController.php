@@ -25,7 +25,9 @@ class UserController extends Controller
 
     public function create()
     {
-        return Inertia::render('User/Create');
+        // 新建用户走用户列表页内的 Dialog（POST /admin/users），无独立 Inertia 页面；
+        // 直接访问此资源路由时回落到列表，避免渲染不存在的 User/Create 页面导致 500。
+        return redirect()->route('users.index');
     }
 
     public function store(Request $request)
@@ -43,9 +45,18 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'User created successfully');
     }
 
+    public function show(User $user)
+    {
+        // 用户详情没有独立 Inertia 页面（查看/编辑均在用户列表页 Dialog 内完成）；
+        // 直接访问此资源路由时回落到列表，避免因缺失 show 方法导致 500。
+        return redirect()->route('users.index');
+    }
+
     public function edit(User $user)
     {
-        return Inertia::render('User/Edit', compact('user'));
+        // 编辑用户走用户列表页内的 Dialog（PUT /admin/users/{id}），无独立 Inertia 页面；
+        // 直接访问此资源路由时回落到列表，避免渲染不存在的 User/Edit 页面导致 500。
+        return redirect()->route('users.index');
     }
 
     public function update(Request $request, User $user)

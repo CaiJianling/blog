@@ -65,3 +65,28 @@ test('non admin users cannot access user store route', function () {
 
     $response->assertRedirect(route('dashboard'));
 });
+
+// 用户管理的新建 / 编辑 / 详情均在用户列表页的 Dialog 内完成（POST/PUT），
+// 无独立 Inertia 页面。直接访问这些资源 GET 路由时须回落列表，而非 500。
+test('users create route redirects to the index', function () {
+    $admin = User::factory()->create(['role' => 'administrator']);
+
+    $this->actingAs($admin)->get(route('users.create'))
+        ->assertRedirect(route('users.index'));
+});
+
+test('users edit route redirects to the index', function () {
+    $admin = User::factory()->create(['role' => 'administrator']);
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)->get(route('users.edit', $target))
+        ->assertRedirect(route('users.index'));
+});
+
+test('users show route redirects to the index', function () {
+    $admin = User::factory()->create(['role' => 'administrator']);
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)->get(route('users.show', $target))
+        ->assertRedirect(route('users.index'));
+});
