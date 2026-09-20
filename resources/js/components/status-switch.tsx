@@ -1,9 +1,9 @@
 import { LiquidSwitch } from '@/components/LiquidGlass/LiquidSwitch';
 import { Switch } from '@/components/ui/switch';
-import { useEffects } from '@/hooks/use-effects';
+import { EFFECT_LEVEL, useEffectsAtLeast } from '@/hooks/use-effects';
 
 /**
- * 状态快捷开关：开启特效时渲染液态玻璃开关，否则渲染普通开关。
+ * 状态快捷开关：特效达到「开启」档时渲染液态玻璃开关，否则渲染普通开关。
  */
 export default function StatusSwitch({
     checked,
@@ -14,9 +14,9 @@ export default function StatusSwitch({
     onCheckedChange: (checked: boolean) => void;
     disabled?: boolean;
 }) {
-    const { effectsEnabled } = useEffects();
+    const liquidSwitch = useEffectsAtLeast(EFFECT_LEVEL.on);
 
-    if (effectsEnabled) {
+    if (liquidSwitch) {
         return (
             <LiquidSwitch
                 checked={checked}

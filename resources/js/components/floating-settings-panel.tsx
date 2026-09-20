@@ -9,7 +9,8 @@ import GlassEdgeRing from '@/components/LiquidGlass/glass-edge-ring';
 import LiquidGlassPanel from '@/components/LiquidGlass/LiquidGlassPanel';
 import LiquidSlider from '@/components/LiquidGlass/LiquidSlider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useEffects, updateEffectsEnabled } from '@/hooks/use-effects';
+import { EFFECT_LEVEL, EFFECT_LEVEL_OPTIONS, useEffects } from '@/hooks/use-effects';
+import type { EffectLevel } from '@/hooks/use-effects';
 import {
     GLASS_FROST_LIMITS,
     getGlassFrostDefault,
@@ -31,14 +32,14 @@ import { show as userSettingsShow, update as userSettingsUpdate } from '@/routes
 
 type UserPreferences = {
     locale: Locale;
-    effectsEnabled: boolean;
+    effectsLevel: EffectLevel;
     filterSaturation: number;
     filterBrightness: number;
 };
 
 /**
  * 前台右下角悬浮设置入口：
- * - 界面特效开关（液态玻璃 / 半透明磨砂）
+ * - 界面特效档位（关闭 / 开启 / 进阶 / 极致）
  * - 界面语言切换
  * - 页面滤镜调整（饱和度 / 亮度，CSS filter 作用于页面内容）
  *
@@ -65,7 +66,11 @@ export default function FloatingSettingsPanel() {
     const popoverRef = useRef<HTMLDivElement>(null);
     const popoverBodyRef = useRef<HTMLDivElement>(null);
     const filterId = useId();
-    const { effectsEnabled } = useEffects();
+    const { effectsLevel, updateEffectsLevel } = useEffects();
+    // 「进阶」档起：设置弹窗与齿轮按钮改用液态玻璃面板
+    const panelGlass = effectsLevel >= EFFECT_LEVEL.pro;
+    const currentOption =
+        EFFECT_LEVEL_OPTIONS.find(({ level }) => level === effectsLevel) ?? EFFECT_LEVEL_OPTIONS[0];
     const locale = useLocale();
     const themeColor = useThemeColor().themeColor;
     const { saturation, brightness, resetPageFilter } = usePageFilter();
@@ -171,7 +176,7 @@ export default function FloatingSettingsPanel() {
 
             lastSynced.current = data;
             updateLocale(data.locale);
-            updateEffectsEnabled(data.effectsEnabled);
+            updateEffectsLevel(data.effectsLevel);
             updatePageFilter(data.filterSaturation, data.filterBrightness);
         };
 
@@ -193,7 +198,7 @@ export default function FloatingSettingsPanel() {
 
         const changed =
             locale !== last.locale ||
-            effectsEnabled !== last.effectsEnabled ||
+            effectsLevel !== last.effectsLevel ||
             saturation !== last.filterSaturation ||
             brightness !== last.filterBrightness;
 
@@ -202,12 +207,12 @@ export default function FloatingSettingsPanel() {
         }
 
         const timer = setTimeout(() => {
-            lastSynced.current = { locale, effectsEnabled, filterSaturation: saturation, filterBrightness: brightness };
+            lastSynced.current = { locale, effectsLevel, filterSaturation: saturation, filterBrightness: brightness };
             void request<UserPreferences>(userSettingsUpdate.url(), {
                 method: 'PUT',
                 body: JSON.stringify({
                     locale,
-                    effects_enabled: effectsEnabled,
+                    effects_level: effectsLevel,
                     filter_saturation: saturation,
                     filter_brightness: brightness,
                 }),
@@ -215,7 +220,7 @@ export default function FloatingSettingsPanel() {
         }, 1200);
 
         return () => clearTimeout(timer);
-    }, [isAuthed, locale, effectsEnabled, saturation, brightness]);
+    }, [isAuthed, locale, effectsLevel, saturation, brightness]);
 
     return (
         <>
@@ -238,11 +243,11 @@ export default function FloatingSettingsPanel() {
                                     style={{ transformOrigin: 'bottom right' }}
                                     className={cn(
                                         'relative overflow-hidden rounded-3xl border border-white/50 dark:border-white/10 p-3 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]',
-                                        !effectsEnabled && 'bg-popover/90 backdrop-blur-xl',
+                                        !panelGlass && 'bg-popover/90 backdrop-blur-xl',
                                     )}
                                 >
-                                    {/* 液态玻璃背景（特效开启），关闭时为磨砂底 */}
-                                    {effectsEnabled && glassSize.width > 0 && glassSize.height > 0 && (
+                                    {/* 液态玻璃背景（进阶档起），未达档位时为磨砂底 */}
+                                    {panelGlass && glassSize.width > 0 && glassSize.height > 0 && (
                                         <LiquidGlassPanel id={filterId} width={glassSize.width} height={glassSize.height} />
                                     )}
 
@@ -288,28 +293,26 @@ export default function FloatingSettingsPanel() {
                                             <Sparkles className="h-3.5 w-3.5" />
                                             {t('settings.floating.effects')}
                                         </p>
-                                        <div className="flex gap-1 rounded-lg bg-muted p-0.5">
-                                            <button
-                                                type="button"
-                                                onClick={() => updateEffectsEnabled(false)}
-                                                className={cn(
-                                                    'flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
-                                                    !effectsEnabled ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground',
-                                                )}
-                                            >
-                                                {t('settings.floating.disabled')}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => updateEffectsEnabled(true)}
-                                                className={cn(
-                                                    'flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
-                                                    effectsEnabled ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground',
-                                                )}
-                                            >
-                                                {t('settings.floating.enabled')}
-                                            </button>
+                                        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-0.5">
+                                            {EFFECT_LEVEL_OPTIONS.map(({ level, labelKey }) => (
+                                                <button
+                                                    key={level}
+                                                    type="button"
+                                                    onClick={() => updateEffectsLevel(level)}
+                                                    className={cn(
+                                                        'truncate rounded-md px-1.5 py-1 text-xs font-medium transition-colors',
+                                                        effectsLevel === level
+                                                            ? 'bg-background shadow-sm'
+                                                            : 'text-muted-foreground hover:text-foreground',
+                                                    )}
+                                                >
+                                                    {t(`effects.levels.${labelKey}`)}
+                                                </button>
+                                            ))}
                                         </div>
+                                        <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                                            {t(`effects.hints.${currentOption.labelKey}`)}
+                                        </p>
                                     </div>
 
                                     <div className="mt-3">
@@ -457,7 +460,7 @@ export default function FloatingSettingsPanel() {
                                 </motion.div>
                             )}
                             {/* 外缘暗线环（iOS 27）：与弹窗同动画的外层 1px 渐淡暗线兄弟节点 */}
-                            {open && effectsEnabled && (
+                            {open && panelGlass && (
                                 <motion.div
                                     key="settings-popover-edge"
                                     initial={{ y: 8, scale: 0.96 }}
@@ -490,7 +493,7 @@ export default function FloatingSettingsPanel() {
                             onPointerLeave={() => release(pressGear)}
                             className={cn(
                                 'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
-                                !effectsEnabled && 'bg-popover',
+                                !panelGlass && 'bg-popover',
                                 open && 'text-primary',
                             )}
                             aria-label={t('settings.floating.open')}
@@ -498,7 +501,7 @@ export default function FloatingSettingsPanel() {
                             <GlassButtonBackground size={40} />
                             <Settings className="relative h-4 w-4" />
                         </button>
-                        {effectsEnabled && <GlassEdgeRing variant="circle" />}
+                        {panelGlass && <GlassEdgeRing variant="circle" />}
                     </motion.span>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="tooltip-dark">

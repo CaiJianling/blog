@@ -131,6 +131,27 @@ test('tolerates unescaped quotes inside json string values', function () {
             && str_contains($markdown, '留意"豆子产地"这类细节。'));
 });
 
+test('relaxed parsing stops the body before the trailing meta fields', function () {
+    Option::set('ai_api_key', 'sk-test');
+    Option::set('ai_model', 'test-model');
+
+    // 模拟模型输出：markdown 值内部含未转义引号导致整体 JSON 非法，
+    // 且 markdown 之后还跟着 meta_title / meta_description / tags / categories 字段
+    $content = '{"title":"普通人如何逆袭","excerpt":"慢慢沉淀，悄悄拔尖。","markdown":"真正的逆袭是"慢慢沉淀、悄悄拔尖"的过程。\n\n## 写在最后\n\n愿我们都能活成自己喜欢的模样。","meta_title":"普通人如何逆袭：慢慢沉淀，悄悄拔尖","meta_description":"探讨普通人如何通过慢慢沉淀实现逆袭。","tags":["个人成长","生活哲学"],"categories":["博客"]}';
+
+    Http::fake([
+        '*/chat/completions' => Http::response([
+            'choices' => [['message' => ['content' => $content]]],
+        ]),
+    ]);
+
+    $this->actingAs($this->author)
+        ->postJson(route('articles.ai-generate'), ['prompt' => '写点什么'])
+        ->assertOk()
+        ->assertJsonPath('title', '普通人如何逆袭')
+        ->assertJsonPath('markdown', '真正的逆袭是"慢慢沉淀、悄悄拔尖"的过程。'."\n\n".'## 写在最后'."\n\n".'愿我们都能活成自己喜欢的模样。');
+});
+
 test('tolerates json fields in non-standard order', function () {
     Option::set('ai_api_key', 'sk-test');
     Option::set('ai_model', 'test-model');

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import GlassEdgeRing from '@/components/LiquidGlass/glass-edge-ring';
 import LiquidGlassPanel from '@/components/LiquidGlass/LiquidGlassPanel';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useEffects } from '@/hooks/use-effects';
+import { EFFECT_LEVEL, useEffectsAtLeast } from '@/hooks/use-effects';
 import type { AssistantConversation, AssistantMessage } from '@/lib/assistant-db';
 import { deleteConversation, listConversations, newConversationId, putConversation } from '@/lib/assistant-db';
 import { getCsrfHeaders } from '@/lib/csrf';
@@ -45,7 +45,7 @@ export default function AiAssistantWidget() {
     const [panelSize, setPanelSize] = useState({ width: 0, height: 0 });
     const filterId = useId();
 
-    const { effectsEnabled } = useEffects();
+    const panelGlass = useEffectsAtLeast(EFFECT_LEVEL.pro);
 
     const name = assistant?.name || 'AI 小助手';
     const welcome = assistant?.welcome || '你好！我是 AI 小助手，有什么可以帮你？';
@@ -238,9 +238,9 @@ export default function AiAssistantWidget() {
                         style={{ transformOrigin: 'bottom right' }}
                         className="fixed right-4 bottom-4 z-50 flex h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-white/50 dark:border-white/10 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
                     >
-                        {/* 面板玻璃背景：特效开启 = 液态玻璃（边缘折射 + 色散），关闭 = 半透明磨砂 */}
+                        {/* 面板玻璃背景：进阶档 = 液态玻璃（边缘折射 + 色散），未达档位 = 半透明磨砂 */}
                         {typeof window !== 'undefined' && panelSize.width > 0 && panelSize.height > 0 && (
-                            effectsEnabled ? (
+                            panelGlass ? (
                                 <LiquidGlassPanel
                                     id={filterId}
                                     width={panelSize.width}
@@ -425,7 +425,7 @@ export default function AiAssistantWidget() {
                 )}
                 {/* 外缘暗线环（iOS 27）：与面板同几何、同动画的外层 1px 渐淡暗线，
                     玻璃容器 overflow-hidden 无法容纳外扩像素，故作为兄弟节点渲染 */}
-                {open && effectsEnabled && (
+                {open && panelGlass && (
                     <motion.div
                         key="assistant-panel-edge"
                         initial={{ scale: 0.92, y: 16 }}

@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppearance } from '@/hooks/use-appearance';
-import { useEffects } from '@/hooks/use-effects';
+import { EFFECT_LEVEL, useEffectsAtLeast } from '@/hooks/use-effects';
 import { GLASS_FROST_LIMITS } from '@/hooks/use-glass-frost';
 import {
     applyThemeStyle,
@@ -94,7 +94,7 @@ export default function Theme({
 }: Props) {
     const { t } = useTranslation();
     const { resolvedAppearance } = useAppearance();
-    const { effectsEnabled } = useEffects();
+    const liquidSlider = useEffectsAtLeast(EFFECT_LEVEL.on);
 
     // 空值 = 使用内置默认蓝（浅/深各自默认），提交时据此决定发 '' 还是具体色值。
     const [color, setColor] = useState(themeColor || defaultColor);
@@ -482,7 +482,7 @@ export default function Theme({
                                                     {bgOpacity}%
                                                 </span>
                                             </div>
-                                            {effectsEnabled ? (
+                                            {liquidSlider ? (
                                                 <LiquidSlider
                                                     fillContainer
                                                     size={0.5}

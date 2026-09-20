@@ -8,11 +8,12 @@ import {
     Sun,
     X,
 } from 'lucide-react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import LiquidGlassPanel from '@/components/LiquidGlass/LiquidGlassPanel';
 import { useAppearance } from '@/hooks/use-appearance';
-import { useEffects } from '@/hooks/use-effects';
+import { EFFECT_LEVEL, useEffectsAtLeast } from '@/hooks/use-effects';
+import { useGlassSurfaceSize } from '@/hooks/use-glass-surface-size';
 import { cn } from '@/lib/utils';
 import { home, dashboard, login, register } from '@/routes';
 import blog from '@/routes/blog';
@@ -54,7 +55,7 @@ export default function PublicNavbar() {
     const { t } = useTranslation();
     const { auth, name, canRegister, top_nav } = usePage().props as PageProps;
     const { appearance, updateAppearance } = useAppearance();
-    const { effectsEnabled } = useEffects();
+    const barGlass = useEffectsAtLeast(EFFECT_LEVEL.ultimate);
     const [mobileOpen, setMobileOpen] = useState(false);
     // 移动端二级菜单展开状态（clientId 用 label 索引即可）
     const [mobileExpanded, setMobileExpanded] = useState<Set<string>>(
@@ -63,37 +64,9 @@ export default function PublicNavbar() {
 
     const glassId = useId();
     const barRef = useRef<HTMLDivElement>(null);
-    const [barSize, setBarSize] = useState({ width: 0, height: 0 });
-
-    // 特效开启时顶栏背景为液态玻璃（磨砂度由「液态玻璃」滑块全局控制）；
-    // 需要实测尺寸生成位移图。立即测量一次，ResizeObserver 管后续，定时器兜底。
-    useEffect(() => {
-        const el = barRef.current;
-
-        if (!effectsEnabled || !el) {
-            setBarSize({ width: 0, height: 0 });
-
-            return;
-        }
-
-        const update = () => {
-            setBarSize({ width: el.offsetWidth, height: el.offsetHeight });
-        };
-
-        update();
-
-        const observer = new ResizeObserver(update);
-
-        observer.observe(el);
-        const fallback1 = window.setTimeout(update, 50);
-        const fallback2 = window.setTimeout(update, 300);
-
-        return () => {
-            observer.disconnect();
-            window.clearTimeout(fallback1);
-            window.clearTimeout(fallback2);
-        };
-    }, [effectsEnabled]);
+    // 「极致」档起顶栏改用液态玻璃面板（磨砂度由「液态玻璃」滑块全局控制），
+    // 位移图按面板尺寸生成，故需要实测顶栏大小
+    const barSize = useGlassSurfaceSize(barRef, barGlass);
 
     // 默认导航（后台未维护 top 菜单或其项全部无效时回退）
     const defaultItems: NavNode[] = [
@@ -213,12 +186,12 @@ export default function PublicNavbar() {
                 ref={barRef}
                 className={cn(
                     'relative overflow-hidden',
-                    // 特效开启 = 液态玻璃背景（由 LiquidGlassPanel 承载）；
-                    // 关闭时回退到原有毛玻璃 material-thin
-                    !effectsEnabled && 'material-thin border-b-0',
+                    // 极致档 = 液态玻璃背景（由 LiquidGlassPanel 承载）；
+                    // 未达档位时回退到原有毛玻璃 material-thin
+                    !barGlass && 'material-thin border-b-0',
                 )}
             >
-                {effectsEnabled && barSize.width > 0 && barSize.height > 0 && (
+                {barGlass && barSize.width > 0 && barSize.height > 0 && (
                     <LiquidGlassPanel
                         id={glassId}
                         width={barSize.width}

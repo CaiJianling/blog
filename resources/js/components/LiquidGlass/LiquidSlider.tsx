@@ -9,7 +9,7 @@ import {
 } from 'framer-motion';
 import type { KeyboardEvent } from 'react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { useEffects } from '@/hooks/use-effects';
+import { EFFECT_LEVEL, useEffectsAtLeast } from '@/hooks/use-effects';
 import { Filter } from './Filter';
 
 type LiquidSliderSize = 'sm' | 'md' | 'lg' | number;
@@ -53,7 +53,7 @@ const SLIDER_HEIGHT = 10;
  * 液态玻璃滑块（移植自 liunnn1994 的 LiquidGlass/LiquidSlider，改用 framer-motion）：
  * - 拖拽带橡皮筋边界与轨道液体形变（越界拉伸），松手时弹簧回弹
  * - 数值在两端 5% 物理区间内加速，贴近端点时松手吸附到 min/max
- * - 「界面特效」开启时拇指使用液态玻璃滤镜；关闭时回退为纯色圆角块
+ * - 特效达到「开启」档时拇指使用液态玻璃滤镜；关闭档回退为纯色圆角块
  */
 export default function LiquidSlider({
     size = 'md',
@@ -67,7 +67,7 @@ export default function LiquidSlider({
     onChangeEnd,
     'aria-label': ariaLabel,
 }: LiquidSliderProps) {
-    const { effectsEnabled } = useEffects();
+    const glassThumb = useEffectsAtLeast(EFFECT_LEVEL.on);
     const filterId = useId();
     const scale = typeof size === 'number' ? size : SIZE_SCALES[size];
     const containerRef = useRef<HTMLDivElement>(null);
@@ -383,8 +383,8 @@ export default function LiquidSlider({
                     </div>
                 </motion.div>
 
-                {/* 液态玻璃拇指（特效开启时渲染滤镜 SVG） */}
-                {effectsEnabled &&
+                {/* 液态玻璃拇指（达到「开启」档时渲染滤镜 SVG） */}
+                {glassThumb &&
                     typeof window !== 'undefined' && (
                         <Filter
                             id={filterId}
@@ -454,14 +454,12 @@ export default function LiquidSlider({
                         width: scaledThumbWidth,
                         top: 0,
                         borderRadius: scaledThumbRadius,
-                        backdropFilter: effectsEnabled ? `url(#${filterId})` : undefined,
+                        backdropFilter: glassThumb ? `url(#${filterId})` : undefined,
                         scaleX: objectScaleX,
                         scaleY: objectScaleY,
                         cursor: 'pointer',
-                        backgroundColor: effectsEnabled
-                            ? backgroundStyle
-                            : 'var(--color-popover)',
-                        boxShadow: effectsEnabled ? boxShadow : undefined,
+                        backgroundColor: glassThumb ? backgroundStyle : 'var(--color-popover)',
+                        boxShadow: glassThumb ? boxShadow : undefined,
                         x,
                     }}
                 />

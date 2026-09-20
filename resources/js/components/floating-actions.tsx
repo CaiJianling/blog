@@ -6,7 +6,7 @@ import FloatingSettingsPanel from '@/components/floating-settings-panel';
 import GlassButtonBackground from '@/components/LiquidGlass/glass-button-background';
 import GlassEdgeRing from '@/components/LiquidGlass/glass-edge-ring';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useEffects } from '@/hooks/use-effects';
+import { EFFECT_LEVEL, useEffectsAtLeast } from '@/hooks/use-effects';
 import { cn } from '@/lib/utils';
 
 /**
@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
  */
 export default function FloatingActions() {
     const { assistant } = usePage().props as unknown as { assistant?: { enabled?: boolean } };
-    const { effectsEnabled } = useEffects();
+    const glassButtons = useEffectsAtLeast(EFFECT_LEVEL.pro);
 
     const [showTop, setShowTop] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -102,14 +102,14 @@ export default function FloatingActions() {
                                 onPointerLeave={() => release(pressComment)}
                                 className={cn(
                                     'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
-                                    !effectsEnabled && 'bg-popover',
+                                    !glassButtons && 'bg-popover',
                                 )}
                                 aria-label="跳转到评论区"
                             >
                                 <GlassButtonBackground size={40} />
                                 <MessageSquare className="relative h-4 w-4" />
                             </button>
-                            {effectsEnabled && <GlassEdgeRing variant="circle" />}
+                            {glassButtons && <GlassEdgeRing variant="circle" />}
                         </motion.span>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="tooltip-dark">
@@ -132,7 +132,7 @@ export default function FloatingActions() {
                                 onPointerLeave={() => release(pressTop)}
                                 className={cn(
                                     'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/60 text-muted-foreground shadow-md transition-colors hover:text-primary',
-                                    !effectsEnabled && 'bg-popover',
+                                    !glassButtons && 'bg-popover',
                                 )}
                                 aria-label="回到顶部"
                             >
@@ -156,7 +156,7 @@ export default function FloatingActions() {
                                 )}
                                 <Rocket className="relative h-4 w-4" />
                             </button>
-                            {effectsEnabled && <GlassEdgeRing variant="circle" />}
+                            {glassButtons && <GlassEdgeRing variant="circle" />}
                         </motion.span>
                     </TooltipTrigger>
                 <TooltipContent side="left" className="tooltip-dark">

@@ -20,6 +20,7 @@ type Article = {
     slug: string;
     permalink: string;
     excerpt: string;
+    featured_image?: string | null;
     author_name: string;
     views: number;
     likes: number;
@@ -152,6 +153,17 @@ export default function Home() {
                             href={article.permalink}
                             className="apple-card apple-press hover-glow group flex flex-col p-6"
                         >
+                            {article.featured_image && (
+                                // 圆角裁剪放在内层，避免卡片 overflow-hidden 切掉 .hover-glow::after 的外发光
+                                <div className="-mx-6 -mt-6 mb-5 overflow-hidden rounded-t-[inherit]">
+                                    <img
+                                        src={article.featured_image}
+                                        alt={article.title}
+                                        className="aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                        loading="lazy"
+                                    />
+                                </div>
+                            )}
                             <h3 className="text-headline line-clamp-2 transition-colors group-hover:text-primary">
                                 {article.title}
                             </h3>

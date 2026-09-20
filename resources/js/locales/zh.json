@@ -330,8 +330,6 @@
             "theme": "主题",
             "language": "语言",
             "effects": "特效",
-            "disabled": "关闭",
-            "enabled": "开启",
             "light": "亮色",
             "dark": "深色",
             "system": "跟随系统",
@@ -589,8 +587,6 @@
             "effects": "界面特效",
             "themeColor": "主题色",
             "themeDefault": "默认（跟随站点主题）",
-            "enabled": "开启",
-            "disabled": "关闭",
             "glassFrost": "液态玻璃",
             "glassFrostClear": "透明",
             "glassFrostFrosted": "模糊",
@@ -1260,5 +1256,19 @@
         },
         "deleteConfirmTitle": "永久删除这条说说？",
         "deleteConfirmDescription": "删除后无法恢复，说说下的评论也会一并丢失。"
+    },
+    "effects": {
+        "levels": {
+            "off": "关闭",
+            "on": "开启",
+            "pro": "进阶",
+            "ultimate": "极致"
+        },
+        "hints": {
+            "off": "不使用液态玻璃，界面为纯色与磨砂底。",
+            "on": "液态玻璃开关、液态玻璃滑块。",
+            "pro": "在「开启」之上：前台右下角悬浮窗（设置弹窗、小助手、悬浮按钮）改用液态玻璃面板。",
+            "ultimate": "在「进阶」之上：前台与后台顶部栏改用液态玻璃面板。"
+        }
     }
 }

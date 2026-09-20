@@ -35,6 +35,33 @@ class AiService
     public const ANTHROPIC_MAX_TOKENS = 4096;
 
     /**
+     * 文章 JSON 可能出现的字段名（含中文键名兼容）。
+     *
+     * 容错切片取字符串值时用作右边界，避免正文吞掉其后的字段。
+     *
+     * @var array<int, string>
+     */
+    protected const RELAXED_FIELD_NAMES = [
+        'title',
+        'excerpt',
+        'markdown',
+        'meta_title',
+        'meta_description',
+        'seo_title',
+        'seo_description',
+        'tags',
+        'categories',
+        '标题',
+        '摘要',
+        '正文',
+        'seo标题',
+        'seo描述',
+        '标签',
+        '分类',
+        '栏目',
+    ];
+
+    /**
      * 当前配置的接口格式：openai | anthropic。
      */
     public function format(): string
@@ -692,9 +719,11 @@ PROMPT;
 
         foreach ($ordered as $index => $marker) {
             $key = array_search($marker, $markers, true);
-            $end = isset($ordered[$index + 1])
-                ? $ordered[$index + 1]['match_start']
-                : strlen($text);
+            // 最后一个值（通常是 markdown）没有后继键名可参照，若直接取到文本末尾，
+            // 会把紧随其后的 "meta_title" / "tags" 等整段 JSON 一起吞进正文，
+            // 故退回到「其后首个已知字段名」处截止。
+            $end = $ordered[$index + 1]['match_start']
+                ?? $this->nextFieldNameOffset($text, $marker['value_start']);
 
             $slice = substr($text, $marker['value_start'], $end - $marker['value_start']);
 
@@ -711,6 +740,25 @@ PROMPT;
         }
 
         return $payload;
+    }
+
+    /**
+     * 自 $from 起向后出现的第一个已知字段名的偏移；此后再无字段名时返回文本末尾。
+     */
+    protected function nextFieldNameOffset(string $text, int $from): int
+    {
+        $earliest = strlen($text);
+
+        foreach (self::RELAXED_FIELD_NAMES as $name) {
+            $pattern = '/"'.preg_quote($name, '/').'"\s*:/';
+
+            if (preg_match($pattern, $text, $matches, PREG_OFFSET_CAPTURE, $from) === 1
+                && $matches[0][1] < $earliest) {
+                $earliest = $matches[0][1];
+            }
+        }
+
+        return $earliest;
     }
 
     /**

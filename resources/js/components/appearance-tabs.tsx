@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import type { HTMLAttributes } from 'react';
 import type { Appearance } from '@/hooks/use-appearance';
 import { useAppearance } from '@/hooks/use-appearance';
-import { useEffects } from '@/hooks/use-effects';
+import { EFFECT_LEVEL_OPTIONS, useEffects } from '@/hooks/use-effects';
 import LanguageToggle from '@/components/language-toggle';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +22,9 @@ export default function AppearanceTabs({
 }: HTMLAttributes<HTMLDivElement>) {
     const { t } = useTranslation();
     const { appearance, updateAppearance } = useAppearance();
-    const { effectsEnabled, updateEffectsEnabled } = useEffects();
+    const { effectsLevel, updateEffectsLevel } = useEffects();
+    const currentOption =
+        EFFECT_LEVEL_OPTIONS.find(({ level }) => level === effectsLevel) ?? EFFECT_LEVEL_OPTIONS[0];
 
     const tabs: { value: Appearance; icon: LucideIcon; label: string }[] = [
         { value: 'light', icon: Sun, label: t('settings.appearance.light') },
@@ -71,29 +73,22 @@ export default function AppearanceTabs({
                 )}
                 {...props}
             >
-                <button
-                    onClick={() => updateEffectsEnabled(false)}
-                    className={cn(
-                        'flex items-center rounded-lg px-3.5 py-1.5 transition-all duration-200',
-                        !effectsEnabled
-                            ? 'bg-white text-neutral-900 shadow-sm ring-1 ring-black/5 dark:bg-neutral-600 dark:text-white dark:ring-white/10'
-                            : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-600/40 dark:hover:text-white',
-                    )}
-                >
-                    <span className="text-sm font-medium">{t('settings.appearance.disabled')}</span>
-                </button>
-                <button
-                    onClick={() => updateEffectsEnabled(true)}
-                    className={cn(
-                        'flex items-center rounded-lg px-3.5 py-1.5 transition-all duration-200',
-                        effectsEnabled
-                            ? 'bg-white text-neutral-900 shadow-sm ring-1 ring-black/5 dark:bg-neutral-600 dark:text-white dark:ring-white/10'
-                            : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-600/40 dark:hover:text-white',
-                    )}
-                >
-                    <span className="text-sm font-medium">{t('settings.appearance.enabled')}</span>
-                </button>
+                {EFFECT_LEVEL_OPTIONS.map(({ level, labelKey }) => (
+                    <button
+                        key={level}
+                        onClick={() => updateEffectsLevel(level)}
+                        className={cn(
+                            'rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-200',
+                            effectsLevel === level
+                                ? 'bg-white text-neutral-900 shadow-sm ring-1 ring-black/5 dark:bg-neutral-600 dark:text-white dark:ring-white/10'
+                                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-600/40 dark:hover:text-white',
+                        )}
+                    >
+                        {t(`effects.levels.${labelKey}`)}
+                    </button>
+                ))}
             </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t(`effects.hints.${currentOption.labelKey}`)}</p>
 
             <div className="flex items-center gap-2 mt-6">
                 <Globe className="h-4 w-4" />

@@ -104,6 +104,42 @@ test('blog waterfall card omits featured image when unset', function () {
         );
 });
 
+test('home latest article card exposes the featured image url', function () {
+    $image = imageAttachment($this->user);
+
+    Article::create([
+        'author_id' => $this->user->id,
+        'title' => '首页带图文章',
+        'slug' => 'home-with-image',
+        'excerpt' => '',
+        'content' => [],
+        'status' => 'publish',
+        'post_type' => Article::TYPE_POST,
+        'featured_image' => $image->id,
+    ]);
+
+    Article::create([
+        'author_id' => $this->user->id,
+        'title' => '首页无图文章',
+        'slug' => 'home-no-image',
+        'excerpt' => '',
+        'content' => [],
+        'status' => 'publish',
+        'post_type' => Article::TYPE_POST,
+    ]);
+
+    Article::where('slug', 'home-no-image')->update(['created_at' => now()->subWeek()]);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Home')
+            ->has('latestArticles', 2)
+            ->where('latestArticles.0.featured_image', fn (?string $url) => $url !== null && str_contains($url, 'uploads/cover.png'))
+            ->where('latestArticles.1.featured_image', null),
+        );
+});
+
 test('article store saves a valid featured image and rejects an unknown one', function () {
     $image = imageAttachment($this->user);
 

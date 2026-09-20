@@ -330,8 +330,6 @@
             "theme": "Theme",
             "language": "Language",
             "effects": "Effects",
-            "disabled": "Disabled",
-            "enabled": "Enabled",
             "light": "Light",
             "dark": "Dark",
             "system": "System",
@@ -589,8 +587,6 @@
             "effects": "UI Effects",
             "themeColor": "Theme color",
             "themeDefault": "Default (site theme)",
-            "enabled": "Enabled",
-            "disabled": "Disabled",
             "glassFrost": "Liquid glass",
             "glassFrostClear": "Clear",
             "glassFrostFrosted": "Frosted",
@@ -1260,5 +1256,19 @@
         },
         "deleteConfirmTitle": "Permanently delete this moment?",
         "deleteConfirmDescription": "This cannot be undone. Comments on this moment will be lost as well."
+    },
+    "effects": {
+        "levels": {
+            "off": "Off",
+            "on": "On",
+            "pro": "Advanced",
+            "ultimate": "Ultimate"
+        },
+        "hints": {
+            "off": "No liquid glass — solid fills and frosted materials only.",
+            "on": "Liquid glass switches and sliders.",
+            "pro": "On top of \"On\": the floating widgets in the bottom-right corner (settings popover, assistant, action buttons) become liquid glass panels.",
+            "ultimate": "On top of \"Advanced\": the front-end and admin top bars become liquid glass panels."
+        }
     }
 }
