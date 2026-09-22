@@ -49,6 +49,9 @@ const THUMB_HEIGHT = 60;
 const THUMB_RADIUS = 30;
 const SLIDER_HEIGHT = 10;
 
+/** 进度两端各这么多百分比只用来钳到 min / max（见组件内 toNorm / fromNorm）。 */
+const PROGRESS_EDGE = 10;
+
 /**
  * 液态玻璃滑块（移植自 liunnn1994 的 LiquidGlass/LiquidSlider，改用 framer-motion）：
  * - 拖拽带橡皮筋边界与轨道液体形变（越界拉伸），松手时弹簧回弹
@@ -75,10 +78,40 @@ export default function LiquidSlider({
 
     const sliderWidth = fillContainer ? containerWidth : width;
 
-    // 数值 <-> 归一化进度（0-100）
-    const toNorm = useCallback((v: number): number => ((v - min) / (max - min)) * 100, [min, max]);
+    /**
+     * 数值 <-> 拇指归一化进度（0-100）。
+     *
+     * 输出值取参考实现里「滑块下方那个大号读数」（LiquidSlider 的 mappedValue）：
+     * 进度两端各 10% 钳到 min / max，中段 10–90 线性铺满整个值域，所以拇指
+     * 稍微离开端点就已经是最小/最大值。反向换算保持端点贴边：值恰为 min / max 时
+     * 拇指仍落在物理端点，不至于「已经 100 了拇指还差一截」。
+     */
+    const toNorm = useCallback(
+        (v: number): number => {
+            if (v <= min) {
+                return 0;
+            }
+
+            if (v >= max) {
+                return 100;
+            }
+
+            return PROGRESS_EDGE + ((v - min) / (max - min)) * (100 - PROGRESS_EDGE * 2);
+        },
+        [min, max],
+    );
+
     const fromNorm = useCallback(
-        (n: number): number => min + (n / 100) * (max - min),
+        (n: number): number => {
+            const mapped =
+                n < PROGRESS_EDGE
+                    ? 0
+                    : n > 100 - PROGRESS_EDGE
+                      ? 100
+                      : ((n - PROGRESS_EDGE) / (100 - PROGRESS_EDGE * 2)) * 100;
+
+            return min + (mapped / 100) * (max - min);
+        },
         [min, max],
     );
 

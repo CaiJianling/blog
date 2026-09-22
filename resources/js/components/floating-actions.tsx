@@ -1,6 +1,6 @@
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { motion, useAnimationControls } from 'framer-motion';
-import { MessageSquare, Rocket } from 'lucide-react';
+import { MessageSquare, Rocket, SquarePen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import FloatingSettingsPanel from '@/components/floating-settings-panel';
 import GlassButtonBackground from '@/components/LiquidGlass/glass-button-background';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * 前台右下角悬浮操作组：
+ * - 编辑本文（仅文章作者本人登录时出现，跳后台编辑页）
  * - 回到顶部（按钮圆环显示文章阅读进度）
  * - 跳转评论区（文章详情页且开启评论，点击后聚焦评论输入框）
  *
@@ -18,7 +19,10 @@ import { cn } from '@/lib/utils';
  * 位置与 AI 小助手按钮协调：启用时悬浮其上方，未启用时贴底。
  */
 export default function FloatingActions() {
-    const { assistant } = usePage().props as unknown as { assistant?: { enabled?: boolean } };
+    const { assistant, article } = usePage().props as unknown as {
+        assistant?: { enabled?: boolean };
+        article?: { id?: number; can_edit?: boolean };
+    };
     const glassButtons = useEffectsAtLeast(EFFECT_LEVEL.pro);
 
     const [showTop, setShowTop] = useState(false);
@@ -27,7 +31,13 @@ export default function FloatingActions() {
     const [hasComments, setHasComments] = useState(false);
     const { url } = usePage();
 
+    // 作者本人的编辑入口：can_edit 由 BlogController 按 author_id 判定后下发
+    const editUrl = article?.can_edit === true && typeof article.id === 'number'
+        ? `/admin/articles/${article.id}/edit`
+        : null;
+
     // 按下缩放反馈（与小助手 FAB 的 whileTap 一致）
+    const pressEdit = useAnimationControls();
     const pressComment = useAnimationControls();
     const pressTop = useAnimationControls();
 
@@ -87,6 +97,35 @@ export default function FloatingActions() {
 
     return (
         <div className={`fixed right-5 z-40 flex flex-col gap-2 ${bottomOffset}`}>
+            {editUrl && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <motion.span
+                            animate={pressEdit}
+                            className="relative block h-10 w-10"
+                        >
+                            <Link
+                                href={editUrl}
+                                onPointerDown={() => press(pressEdit)}
+                                onPointerUp={() => release(pressEdit)}
+                                onPointerLeave={() => release(pressEdit)}
+                                className={cn(
+                                    'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-primary/45 text-primary shadow-md transition-colors hover:bg-primary/10',
+                                    !glassButtons && 'bg-popover',
+                                )}
+                                aria-label="编辑这篇文章"
+                            >
+                                <GlassButtonBackground size={40} />
+                                <SquarePen className="relative h-4 w-4" />
+                            </Link>
+                            {glassButtons && <GlassEdgeRing variant="circle" />}
+                        </motion.span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="tooltip-dark">
+                        编辑这篇文章
+                    </TooltipContent>
+                </Tooltip>
+            )}
             {isArticle && hasComments && (
                 <Tooltip>
                     <TooltipTrigger asChild>

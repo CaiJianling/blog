@@ -281,6 +281,8 @@
             "bgModeBing": "Bing Daily",
             "bgOpacity": "Wallpaper opacity",
             "bgOpacityHint": "0% fully transparent (invisible), 100% fully opaque.",
+            "heroOpacity": "Hero background opacity",
+            "heroOpacityHint": "Applies to the home Hero background only (base colour and particle layers) — texts and buttons stay solid. Lower values let the page background and wallpaper show through.",
             "bgUpload": "Upload wallpaper",
             "bgReplace": "Replace wallpaper",
             "bgRemove": "Remove wallpaper",
@@ -1033,7 +1035,6 @@
         "emptyContent": "Please enter a comment.",
         "views": "{{count}} views",
         "commentsCount": "{{count}} comments",
-        "readTime": "About {{count}} min read",
         "captchaRefresh": "Can't read? Get a new one",
         "captchaPlaceholder": "Enter the characters in the image",
         "mathCaptchaPlaceholder": "Enter the result of the calculation"
@@ -1043,7 +1044,8 @@
         "related": "Related Posts",
         "prev": "Previous",
         "next": "Next",
-        "noContent": "No content yet"
+        "noContent": "No content yet",
+        "readTime": "About {{count}} min read"
     },
     "siteStats": {
         "title": "Site Stats",

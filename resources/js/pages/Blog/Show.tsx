@@ -46,6 +46,7 @@ type Article = {
     comment_status: string;
     likes: number;
     liked_by_me: boolean | null;
+    can_edit: boolean;
 };
 
 type Related = {

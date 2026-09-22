@@ -60,12 +60,13 @@ export default function Home() {
     const { name } = usePage().props;
     const seo = usePage().props.seo;
     const { resolvedAppearance } = useAppearance();
-    const { latestArticles, featuredTools, navigationCategories, texts } =
+    const { latestArticles, featuredTools, navigationCategories, texts, heroOpacity } =
         usePage<{
             latestArticles: Article[];
             featuredTools: Tool[];
             navigationCategories: Record<string, NavSite[]>;
             texts: HomeTexts;
+            heroOpacity: number;
         }>().props;
 
     return (
@@ -74,17 +75,22 @@ export default function Home() {
                 {buildSeoMeta({ site: seo, title: seo.title })}
             </Head>
 
-            {/* Hero：三层粒子背景（流体底色/可扰动网格/首字母点阵）+ 深色文案 */}
+            {/* Hero：三层粒子背景（流体底色/可扰动网格/首字母点阵）+ 深色文案。
+                背景层整体套后台可配的不透明度（0 = 透出页面底色/壁纸，100 = 实心），
+                文案与按钮不受影响，保持实心可读。 */}
             <div className="dark">
-                <section
-                    className="relative flex items-center overflow-hidden"
-                    style={{
-                        backgroundColor: heroFallbackBackground(
-                            resolvedAppearance === 'dark',
-                        ),
-                    }}
-                >
-                    <HeroCanvas name={name ?? 'B'} />
+                <section className="relative flex items-center overflow-hidden">
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            backgroundColor: heroFallbackBackground(
+                                resolvedAppearance === 'dark',
+                            ),
+                            opacity: heroOpacity / 100,
+                        }}
+                    >
+                        <HeroCanvas name={name ?? 'B'} />
+                    </div>
                     <div className="relative mx-auto w-full max-w-6xl px-5 pt-20 pb-16 md:px-8 md:pt-28 md:pb-24">
                         <div className="mx-auto max-w-3xl text-center">
                             <span className="text-footnote inline-flex items-center rounded-full border border-border/60 bg-card/60 px-4 py-1.5 text-muted-foreground backdrop-blur">

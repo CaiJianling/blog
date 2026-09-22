@@ -859,7 +859,10 @@ export default function HeroCanvas({ name = '' }: HeroCanvasProps) {
             characterData: true,
         });
 
-        const heroElement = ambient.parentElement ?? ambient;
+        // 指针事件挂在 Hero 区（section）上：背景层被包进带不透明度的容器后，
+        // 容器本身不再是最外层宿主，直接取 parentElement 会丢掉文案区域的跟随。
+        const heroElement =
+            ambient.closest('section') ?? ambient.parentElement ?? ambient;
 
         heroElement.addEventListener('pointermove', onPointerMove, {
             passive: true,

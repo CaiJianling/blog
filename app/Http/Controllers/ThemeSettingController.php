@@ -30,6 +30,11 @@ class ThemeSettingController extends Controller
     public const DEFAULT_GLASS_FROST = 50;
 
     /**
+     * 首页 Hero 背景不透明度默认值（0 = 完全透明，100 = 实心）。
+     */
+    public const DEFAULT_HERO_OPACITY = 100;
+
+    /**
      * 可选预设色板。
      *
      * @return array<int, string>
@@ -79,6 +84,21 @@ class ThemeSettingController extends Controller
     public static function defaultGlassFrost(): int
     {
         return (int) Option::get('default_glass_frost', self::DEFAULT_GLASS_FROST);
+    }
+
+    /**
+     * 首页 Hero 背景不透明度（0-100，100 = 实心）。只作用于 Hero 背景层，
+     * 文案与按钮不受影响；未配置或值异常时回退/钳位，避免前端 opacity 越界。
+     */
+    public static function heroOpacity(): int
+    {
+        $stored = trim((string) Option::get('hero_opacity', ''));
+
+        if ($stored === '') {
+            return self::DEFAULT_HERO_OPACITY;
+        }
+
+        return (int) clamp((int) $stored, 0, 100);
     }
 
     /**
@@ -274,6 +294,7 @@ CSS;
             'presets' => self::presets(),
             'background' => $this->backgrounds->settingsProps(),
             'defaultGlassFrost' => self::defaultGlassFrost(),
+            'heroOpacity' => self::heroOpacity(),
         ]);
     }
 
@@ -290,6 +311,7 @@ CSS;
             'background_mode' => ['nullable', 'in:custom,bing'],
             'background_opacity' => ['nullable', 'integer', 'min:0', 'max:100'],
             'default_glass_frost' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'hero_opacity' => ['nullable', 'integer', 'min:0', 'max:100'],
         ], [
             'theme_color.regex' => '主题颜色格式不正确，应为 #rrggbb。',
             'background_mode.in' => '背景模式不正确。',
@@ -297,10 +319,13 @@ CSS;
             'background_opacity.max' => '壁纸透明度范围为 0-100。',
             'default_glass_frost.min' => '默认液态玻璃模糊值范围为 0-100。',
             'default_glass_frost.max' => '默认液态玻璃模糊值范围为 0-100。',
+            'hero_opacity.min' => 'Hero 背景不透明度范围为 0-100。',
+            'hero_opacity.max' => 'Hero 背景不透明度范围为 0-100。',
         ]);
 
         Option::set('theme_color', $validated['theme_color'] ?? '');
         Option::set('default_glass_frost', (string) ($validated['default_glass_frost'] ?? self::DEFAULT_GLASS_FROST));
+        Option::set('hero_opacity', (string) ($validated['hero_opacity'] ?? self::DEFAULT_HERO_OPACITY));
 
         $mode = (string) ($validated['background_mode'] ?? '');
         $this->backgrounds->changeMode($mode);

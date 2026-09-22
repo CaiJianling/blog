@@ -234,6 +234,8 @@ class BlogController extends Controller
                 'liked_by_me' => $request->user()
                     ? ArticleLike::where('article_id', $article->id)->where('user_id', $request->user()->id)->exists()
                     : null,
+                // 仅文章作者本人可在前台看到「快捷编辑」悬浮入口
+                'can_edit' => $user !== null && (int) $article->author_id === (int) $user->id,
             ],
             'comments' => $commentTree,
             'captcha' => $extras['captcha'],

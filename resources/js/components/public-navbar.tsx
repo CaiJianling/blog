@@ -51,6 +51,15 @@ const isExternalUrl = (url: Href): boolean => {
     return /^https?:\/\//i.test(value) || value.startsWith('//');
 };
 
+/**
+ * 顶栏控件底衬：亮色半透黑、暗色半透白。
+ *
+ * 极致档下顶栏是液态玻璃（背板随页面内容变化、对比很低），无底色的文字按钮
+ * 和图标按钮会糊在一起，所以链接与主题切换都垫一层中性色底，hover 再压深一档。
+ */
+const navChip =
+    'bg-black/[0.06] text-foreground/90 hover:bg-black/[0.1] hover:text-foreground dark:bg-white/[0.12] dark:text-white/90 dark:hover:bg-white/20';
+
 export default function PublicNavbar() {
     const { t } = useTranslation();
     const { auth, name, canRegister, top_nav } = usePage().props as PageProps;
@@ -231,7 +240,10 @@ export default function PublicNavbar() {
                                                 href={urlOf(item.url)}
                                                 target={item.target === '_blank' ? '_blank' : undefined}
                                                 rel="noopener noreferrer"
-                                                className="apple-press inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+                                                className={cn(
+                                                    'apple-press inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                                                    navChip,
+                                                )}
                                             >
                                                 {item.label}
                                                 <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:rotate-180" />
@@ -240,14 +252,22 @@ export default function PublicNavbar() {
                                             <Link
                                                 href={item.url}
                                                 prefetch
-                                                className="apple-press inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+                                                className={cn(
+                                                    'apple-press inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                                                    navChip,
+                                                )}
                                             >
                                                 {item.label}
                                                 <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:rotate-180" />
                                             </Link>
                                         )
                                     ) : (
-                                        <span className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-foreground/80">
+                                        <span
+                                            className={cn(
+                                                'inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium',
+                                                navChip,
+                                            )}
+                                        >
                                             {item.label}
                                             <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform group-hover:rotate-180" />
                                         </span>
@@ -270,7 +290,7 @@ export default function PublicNavbar() {
                                     </div>
                                 </div>
                             ) : (
-                                <div key={item.label}>{renderLink(item)}</div>
+                                <div key={item.label}>{renderLink(item, navChip)}</div>
                             ),
                         )}
                     </nav>
@@ -280,7 +300,10 @@ export default function PublicNavbar() {
                         <button
                             type="button"
                             onClick={cycleAppearance}
-                            className="apple-press inline-flex h-9 w-9 items-center justify-center rounded-full text-foreground/70 hover:bg-muted hover:text-foreground"
+                            className={cn(
+                                'apple-press inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors',
+                                navChip,
+                            )}
                             aria-label={t('publicNav.toggleTheme')}
                         >
                             <ThemeIcon className="h-[18px] w-[18px]" />
@@ -298,7 +321,10 @@ export default function PublicNavbar() {
                             <>
                                 <Link
                                     href={login()}
-                                    className="apple-press ml-1 rounded-full px-4 py-2 text-sm font-medium text-foreground/80 hover:bg-muted hover:text-foreground"
+                                    className={cn(
+                                        'apple-press ml-1 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                                        navChip,
+                                    )}
                                 >
                                     {t('publicNav.login')}
                                 </Link>
@@ -317,7 +343,10 @@ export default function PublicNavbar() {
                         <button
                             type="button"
                             onClick={() => setMobileOpen(!mobileOpen)}
-                            className="apple-press ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-foreground/70 hover:bg-muted hover:text-foreground md:hidden"
+                            className={cn(
+                                'apple-press ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors md:hidden',
+                                navChip,
+                            )}
                             aria-label={t('publicNav.menu')}
                         >
                             {mobileOpen ? (

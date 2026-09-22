@@ -36,6 +36,8 @@ interface Props {
     presets: string[];
     background: BackgroundSettings;
     defaultGlassFrost: number;
+    /** 首页 Hero 背景不透明度（0-100） */
+    heroOpacity: number;
 }
 
 const HEX_RE = /^#?[0-9a-fA-F]{6}$/;
@@ -91,6 +93,7 @@ export default function Theme({
     presets,
     background,
     defaultGlassFrost,
+    heroOpacity: savedHeroOpacity,
 }: Props) {
     const { t } = useTranslation();
     const { resolvedAppearance } = useAppearance();
@@ -111,6 +114,9 @@ export default function Theme({
 
     // 默认液态玻璃模糊值（0-100）：前台未自定义磨砂度者使用的兜底默认
     const [glassFrost, setGlassFrost] = useState(defaultGlassFrost);
+
+    // 首页 Hero 背景不透明度（0-100）：只作用于 Hero 背景层，文案与按钮不受影响
+    const [heroOpacity, setHeroOpacity] = useState(savedHeroOpacity);
 
     // 保存（Inertia 回跳）后用服务端最新背景状态同步本地预览
     useEffect(() => {
@@ -267,6 +273,11 @@ export default function Theme({
                                 type="hidden"
                                 name="default_glass_frost"
                                 value={glassFrost}
+                            />
+                            <input
+                                type="hidden"
+                                name="hero_opacity"
+                                value={heroOpacity}
                             />
 
                             <Card className="gap-0 overflow-hidden py-0">
@@ -601,6 +612,47 @@ export default function Theme({
                                             </p>
                                         </div>
                                     )}
+
+                                    {/* 首页 Hero 背景不透明度（配合壁纸透明度：调低可透出壁纸） */}
+                                    <div className="space-y-2 border-t border-border/40 pt-4">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="hero-opacity">
+                                                {t('settings.theme.heroOpacity')}
+                                            </Label>
+                                            <span className="text-sm text-muted-foreground tabular-nums">
+                                                {heroOpacity}%
+                                            </span>
+                                        </div>
+                                        {liquidSlider ? (
+                                            <LiquidSlider
+                                                fillContainer
+                                                size={0.5}
+                                                min={0}
+                                                max={100}
+                                                value={heroOpacity}
+                                                onChange={setHeroOpacity}
+                                                aria-label={t('settings.theme.heroOpacity')}
+                                            />
+                                        ) : (
+                                            <input
+                                                id="hero-opacity"
+                                                type="range"
+                                                min={0}
+                                                max={100}
+                                                step={1}
+                                                value={heroOpacity}
+                                                onChange={(e) =>
+                                                    setHeroOpacity(
+                                                        Number(e.target.value),
+                                                    )
+                                                }
+                                                className="w-full accent-[var(--primary)]"
+                                            />
+                                        )}
+                                        <p className="text-xs text-muted-foreground">
+                                            {t('settings.theme.heroOpacityHint')}
+                                        </p>
+                                    </div>
 
                                     <div className="flex items-center justify-end border-t border-border/40 pt-4">
                                         <Button type="submit" disabled={processing}>
