@@ -548,7 +548,9 @@
             "uploadSuccess": "头像已更新。",
             "uploadFailed": "头像上传失败。",
             "enabledBadge": "已启用",
-            "disabledBadge": "未启用"
+            "disabledBadge": "未启用",
+            "usageHint": "配置完成后，前台右下角会出现 AI 小助手入口。",
+            "fetchModelsFastgptHint": "FastGPT 接口通常不提供 /models，获取失败时请手动填写模型名。"
         },
         "footer": {
             "title": "页脚设置",
@@ -725,6 +727,7 @@
         "list": "文章列表",
         "allArticles": "所有文章",
         "viewComments": "查看该文章的评论区",
+        "openArticle": "在新标签页打开该文章",
         "create": "写文章",
         "categories": "分类目录",
         "tags": "标签",
@@ -816,6 +819,14 @@
             "generate": "生成",
             "generating": "生成中…",
             "success": "AI 已生成内容（含 SEO、标签、分类），请检查后再保存录入。",
+            "assist": {
+                "none": "AI 没有给出可用的新内容。",
+                "applied": "已填入 AI 生成内容，可继续修改后再保存。",
+                "pickTitle": "选择要添加的{{name}}",
+                "pickDescription": "勾选后要加入文章的词条；标注「新建」的是本站还没有的词条。",
+                "newTerm": "新建",
+                "addSelected": "添加所选 {{count}} 项"
+            },
             "failed": "AI 生成失败，请稍后重试。",
             "csrfFailed": "会话已失效或过期，请刷新页面后重试。",
             "confirmOverwrite": "当前已有标题或内容，继续将覆盖现有内容。确定继续吗？",
@@ -849,6 +860,7 @@
         "editPage": "编辑页面",
         "managePages": "管理您的页面",
         "viewComments": "查看该页面的评论区",
+        "openPage": "在新标签页打开该页面",
         "pagesCount": "共 {{count}} 个页面",
         "noPages": "暂无页面",
         "writeFirst": "写第一个页面",
@@ -1231,13 +1243,6 @@
         "linkSent": "一个新的验证链接已发送到您的邮箱地址。"
     },
     "publicNav": {
-        "home": "首页",
-        "blog": "博客",
-        "moments": "说说",
-        "archive": "归档",
-        "tools": "工具",
-        "nav": "导航",
-        "links": "友链",
         "dashboard": "仪表盘",
         "login": "登录",
         "register": "注册",

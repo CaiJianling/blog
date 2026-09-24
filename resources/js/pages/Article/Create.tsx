@@ -19,6 +19,13 @@ import {
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import {
+    AiFieldButton,
+    AiTermButton,
+    mergeUniqueIds,
+    mergeUniqueItems,
+} from '@/components/ai-assist';
+import type { AiTermSuggestion, DraftSnapshot } from '@/components/ai-assist';
 import AiGenerateDialog from '@/components/ai-generate-dialog';
 import type { AiArticleResult } from '@/components/ai-generate-dialog';
 import { BlockNoteEditor } from '@/components/blocknote-editor';
@@ -59,23 +66,6 @@ interface Tag {
 interface Props {
     categories: Category[];
     tags: Tag[];
-}
-
-/** 合并两组 id 并去重（保留原有顺序，新 id 追加在后）。 */
-function mergeUniqueIds(base: number[], extra: number[] | undefined): number[] {
-    if (!extra || extra.length === 0) {
-        return base;
-    }
-
-    return Array.from(new Set([...base, ...extra]));
-}
-
-/** 追加不在列表中的词条（按 id 去重），用于把 AI 新建的分类/标签回填进选择器。 */
-function mergeUniqueItems<T extends { id: number; name: string }>(base: T[], extra: T[]): T[] {
-    const existing = new Set(base.map((item) => item.id));
-    const fresh = extra.filter((item) => !existing.has(item.id));
-
-    return fresh.length ? [...base, ...fresh] : base;
 }
 
 function SidebarSection({
@@ -151,18 +141,54 @@ export default function CreateArticle({ categories, tags }: Props) {
     });
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [aiDialogOpen, setAiDialogOpen] = useState(false);
-    const [featuredImage, setFeaturedImage] =
-        useState<FeaturedSelection>(null);
+    const [featuredImage, setFeaturedImage] = useState<FeaturedSelection>(null);
 
     // 本地持有分类/标签列表：AI 生成会新建词条，需要追加进来以便选择器展示
-    const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+    const [localCategories, setLocalCategories] =
+        useState<Category[]>(categories);
     const [localTags, setLocalTags] = useState<Tag[]>(tags);
 
+    // 进入写作页先把光标放进标题开头；延后一拍是为了压过后挂载组件的自动聚焦
     useEffect(() => {
-        if (titleRef.current) {
-            titleRef.current.focus();
-        }
+        const frame = window.requestAnimationFrame(() => {
+            const input = titleRef.current;
+
+            if (input) {
+                input.focus();
+                input.setSelectionRange(0, 0);
+            }
+        });
+
+        return () => window.cancelAnimationFrame(frame);
     }, []);
+
+    // AI 补全始终按编辑器里的实时内容来生成，而不是已保存的文章
+    const getDraft = (): DraftSnapshot => ({
+        title: formData.title,
+        excerpt: formData.excerpt,
+        content: formData.content,
+    });
+
+    /** 把 AI 建议并勾选确认的词条加入已选，并把新建词条补进选择器列表。 */
+    const applyTermSuggestions = (
+        terms: AiTermSuggestion[],
+        key: 'categories' | 'selectedTags',
+        appendTo: (fresh: Array<{ id: number; name: string }>) => void,
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            [key]: mergeUniqueIds(
+                prev[key],
+                terms.map((term) => term.id),
+            ),
+        }));
+
+        appendTo(
+            terms
+                .filter((term) => term.created)
+                .map((term) => ({ id: term.id, name: term.name })),
+        );
+    };
 
     const handleSubmit = (e: React.FormEvent, overrideStatus?: string) => {
         e.preventDefault();
@@ -205,17 +231,27 @@ export default function CreateArticle({ categories, tags }: Props) {
             excerpt: result.excerpt || prev.excerpt,
             meta_title: result.meta_title || prev.meta_title,
             meta_description: result.meta_description || prev.meta_description,
-            categories: mergeUniqueIds(prev.categories, result.category_ids),
-            selectedTags: mergeUniqueIds(prev.selectedTags, result.tag_ids),
+            categories: mergeUniqueIds(
+                prev.categories,
+                result.category_ids ?? [],
+            ),
+            selectedTags: mergeUniqueIds(
+                prev.selectedTags,
+                result.tag_ids ?? [],
+            ),
         }));
 
         // 把 AI 新建的分类/标签追加进本地列表，选择器才能展示它们
         if (result.created_categories?.length) {
-            setLocalCategories((prev) => mergeUniqueItems(prev, result.created_categories ?? []));
+            setLocalCategories((prev) =>
+                mergeUniqueItems(prev, result.created_categories ?? []),
+            );
         }
 
         if (result.created_tags?.length) {
-            setLocalTags((prev) => mergeUniqueItems(prev, result.created_tags ?? []));
+            setLocalTags((prev) =>
+                mergeUniqueItems(prev, result.created_tags ?? []),
+            );
         }
 
         if (!editor || typeof editor.tryParseMarkdownToBlocks !== 'function') {
@@ -390,21 +426,34 @@ export default function CreateArticle({ categories, tags }: Props) {
                             title={t('articles.form.excerpt')}
                             description={t('articles.form.excerptDescription')}
                         >
-                            <Textarea
-                                placeholder={t(
-                                    'articles.form.excerptPlaceholder',
-                                )}
-                                value={formData.excerpt}
-                                onChange={(
-                                    e: React.ChangeEvent<HTMLTextAreaElement>,
-                                ) =>
-                                    setFormData({
-                                        ...formData,
-                                        excerpt: e.target.value,
-                                    })
-                                }
-                                className="min-h-[80px] resize-y"
-                            />
+                            <div className="flex flex-col gap-1.5">
+                                <AiFieldButton
+                                    target="excerpt"
+                                    label={`AI ${t('articles.form.excerpt')}`}
+                                    getDraft={getDraft}
+                                    onApply={({ excerpt }) =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            excerpt: excerpt ?? prev.excerpt,
+                                        }))
+                                    }
+                                />
+                                <Textarea
+                                    placeholder={t(
+                                        'articles.form.excerptPlaceholder',
+                                    )}
+                                    value={formData.excerpt}
+                                    onChange={(
+                                        e: React.ChangeEvent<HTMLTextAreaElement>,
+                                    ) =>
+                                        setFormData({
+                                            ...formData,
+                                            excerpt: e.target.value,
+                                        })
+                                    }
+                                    className="min-h-[80px] resize-y"
+                                />
+                            </div>
                         </SidebarSection>
 
                         <SidebarSection
@@ -413,6 +462,24 @@ export default function CreateArticle({ categories, tags }: Props) {
                             description={t('articles.form.seoDescription')}
                         >
                             <div className="flex flex-col gap-3">
+                                <AiFieldButton
+                                    target="seo"
+                                    label={`AI ${t('articles.form.seo')}`}
+                                    getDraft={getDraft}
+                                    onApply={({
+                                        meta_title,
+                                        meta_description,
+                                    }) =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            meta_title:
+                                                meta_title ?? prev.meta_title,
+                                            meta_description:
+                                                meta_description ??
+                                                prev.meta_description,
+                                        }))
+                                    }
+                                />
                                 <div className="flex flex-col gap-1.5">
                                     <span className="text-tertiary-label text-xs">
                                         {t('articles.form.seoTitleDescription')}
@@ -497,16 +564,38 @@ export default function CreateArticle({ categories, tags }: Props) {
                             title={t('articles.form.categories')}
                             description={`已选 ${formData.categories.length} 个`}
                         >
-                            <CategoryPicker
-                                items={localCategories as CategoryItem[]}
-                                selected={formData.categories}
-                                onChange={(next) =>
-                                    setFormData({
-                                        ...formData,
-                                        categories: next,
-                                    })
-                                }
-                            />
+                            <div className="flex flex-col gap-1.5">
+                                <AiTermButton
+                                    target="categories"
+                                    label={`AI ${t('articles.form.categories')}`}
+                                    taxonomyName={t('articles.form.categories')}
+                                    selectedIds={formData.categories}
+                                    getDraft={getDraft}
+                                    onConfirm={(terms) =>
+                                        applyTermSuggestions(
+                                            terms,
+                                            'categories',
+                                            (fresh) =>
+                                                setLocalCategories((prev) =>
+                                                    mergeUniqueItems(
+                                                        prev,
+                                                        fresh,
+                                                    ),
+                                                ),
+                                        )
+                                    }
+                                />
+                                <CategoryPicker
+                                    items={localCategories as CategoryItem[]}
+                                    selected={formData.categories}
+                                    onChange={(next) =>
+                                        setFormData({
+                                            ...formData,
+                                            categories: next,
+                                        })
+                                    }
+                                />
+                            </div>
                         </SidebarSection>
 
                         <SidebarSection
@@ -514,16 +603,38 @@ export default function CreateArticle({ categories, tags }: Props) {
                             title={t('articles.form.tags')}
                             description={`已选 ${formData.selectedTags.length} 个`}
                         >
-                            <TagPicker
-                                items={localTags as TagItem[]}
-                                selected={formData.selectedTags}
-                                onChange={(next) =>
-                                    setFormData({
-                                        ...formData,
-                                        selectedTags: next,
-                                    })
-                                }
-                            />
+                            <div className="flex flex-col gap-1.5">
+                                <AiTermButton
+                                    target="tags"
+                                    label={`AI ${t('articles.form.tags')}`}
+                                    taxonomyName={t('articles.form.tags')}
+                                    selectedIds={formData.selectedTags}
+                                    getDraft={getDraft}
+                                    onConfirm={(terms) =>
+                                        applyTermSuggestions(
+                                            terms,
+                                            'selectedTags',
+                                            (fresh) =>
+                                                setLocalTags((prev) =>
+                                                    mergeUniqueItems(
+                                                        prev,
+                                                        fresh,
+                                                    ),
+                                                ),
+                                        )
+                                    }
+                                />
+                                <TagPicker
+                                    items={localTags as TagItem[]}
+                                    selected={formData.selectedTags}
+                                    onChange={(next) =>
+                                        setFormData({
+                                            ...formData,
+                                            selectedTags: next,
+                                        })
+                                    }
+                                />
+                            </div>
                         </SidebarSection>
 
                         <SidebarSection

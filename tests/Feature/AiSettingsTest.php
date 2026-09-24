@@ -3,6 +3,7 @@
 use App\Models\Option;
 use App\Models\User;
 use App\Services\AiService;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -183,4 +184,77 @@ test('listModels throws when api returns unexpected format', function () {
         ->assertJsonPath('message', fn (string $message) => str_contains($message, '格式'))
         ->assertJsonPath('debug.status', 200)
         ->assertJsonPath('debug.url', fn (string $url) => str_contains($url, '/models'));
+});
+
+test('assistant models endpoint uses the assistant own credentials', function () {
+    // 全局 AI 配置同时存在，但小助手必须用自己的接口与密钥
+    Option::set('ai_api_key', 'sk-global');
+    Option::set('ai_api_url', 'https://global.example.com/v1');
+    Option::set('assistant_api_url', 'https://assistant.example.com/v1/');
+    Option::set('assistant_api_key', 'sk-assistant');
+
+    Http::fake([
+        'https://assistant.example.com/v1/models' => Http::response([
+            'data' => [['id' => 'qwen-plus'], ['id' => 'gpt-4o-mini'], ['id' => 'qwen-plus']],
+        ]),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->getJson(route('assistant.models'))
+        ->assertOk()
+        ->assertJsonPath('data', ['gpt-4o-mini', 'qwen-plus']);
+
+    Http::assertSent(
+        fn (Request $request) => $request->url() === 'https://assistant.example.com/v1/models'
+            && $request->hasHeader('Authorization', 'Bearer sk-assistant'),
+    );
+});
+
+test('assistant models endpoint requires the assistant own api key', function () {
+    Option::set('ai_api_key', 'sk-global');
+    Option::set('assistant_api_url', 'https://assistant.example.com/v1');
+    Option::set('assistant_api_key', '');
+
+    Http::fake();
+
+    $this->actingAs($this->admin)
+        ->getJson(route('assistant.models'))
+        ->assertStatus(422)
+        ->assertJsonPath('message', fn (string $message) => str_contains($message, '小助手'));
+
+    Http::assertNothingSent();
+});
+
+test('assistant models endpoint reports a missing api url', function () {
+    Option::set('assistant_api_key', 'sk-assistant');
+    Option::set('assistant_api_url', '');
+
+    Http::fake();
+
+    $this->actingAs($this->admin)
+        ->getJson(route('assistant.models'))
+        ->assertStatus(502)
+        ->assertJsonPath('message', fn (string $message) => str_contains($message, '接口地址'));
+
+    Http::assertNothingSent();
+});
+
+test('assistant models endpoint returns 502 when api fails', function () {
+    Option::set('assistant_api_url', 'https://assistant.example.com/v1');
+    Option::set('assistant_api_key', 'sk-assistant');
+
+    Http::fake([
+        '*/models' => Http::response(['error' => ['message' => 'bad key']], 403),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->getJson(route('assistant.models'))
+        ->assertStatus(502)
+        ->assertJsonPath('message', fn (string $message) => str_contains($message, '403'));
+});
+
+test('non-admin cannot fetch assistant models', function () {
+    $this->actingAs($this->regular)
+        ->getJson(route('assistant.models'))
+        ->assertStatus(403);
 });

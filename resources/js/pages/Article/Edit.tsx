@@ -14,8 +14,15 @@ import {
     Search,
     Image as ImageIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    AiFieldButton,
+    AiTermButton,
+    mergeUniqueIds,
+    mergeUniqueItems,
+} from '@/components/ai-assist';
+import type { AiTermSuggestion, DraftSnapshot } from '@/components/ai-assist';
 import { BlockNoteEditor } from '@/components/blocknote-editor';
 import type { BlockNoteDocument } from '@/components/blocknote-editor';
 import type { CategoryItem } from '@/components/category-picker';
@@ -132,6 +139,7 @@ export default function EditArticle({
     selectedTags,
 }: Props) {
     const { t } = useTranslation();
+    const titleRef = useRef<HTMLInputElement>(null);
     const [formData, setFormData] = useState({
         title: article.title,
         slug: article.slug,
@@ -145,6 +153,11 @@ export default function EditArticle({
         selectedTags: selectedTags,
     });
     const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    // 本地持有分类/标签列表：AI 建议会新建词条，需要追加进来以便选择器展示
+    const [localCategories, setLocalCategories] =
+        useState<Category[]>(categories);
+    const [localTags, setLocalTags] = useState<Tag[]>(tags);
     const [featuredImage, setFeaturedImage] = useState<FeaturedSelection>(
         article.featured_image
             ? {
@@ -153,6 +166,48 @@ export default function EditArticle({
               }
             : null,
     );
+
+    // 进入编辑页把光标放进标题开头；延后一拍是为了压过后挂载组件的自动聚焦
+    useEffect(() => {
+        const frame = window.requestAnimationFrame(() => {
+            const input = titleRef.current;
+
+            if (input) {
+                input.focus();
+                input.setSelectionRange(0, 0);
+            }
+        });
+
+        return () => window.cancelAnimationFrame(frame);
+    }, []);
+
+    // AI 补全按编辑器里的实时内容生成，而不是数据库里已保存的版本
+    const getDraft = (): DraftSnapshot => ({
+        title: formData.title,
+        excerpt: formData.excerpt,
+        content: formData.content,
+    });
+
+    /** 把 AI 建议并勾选确认的词条加入已选，并把新建词条补进选择器列表。 */
+    const applyTermSuggestions = (
+        terms: AiTermSuggestion[],
+        key: 'categories' | 'selectedTags',
+        appendTo: (fresh: Array<{ id: number; name: string }>) => void,
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            [key]: mergeUniqueIds(
+                prev[key],
+                terms.map((term) => term.id),
+            ),
+        }));
+
+        appendTo(
+            terms
+                .filter((term) => term.created)
+                .map((term) => ({ id: term.id, name: term.name })),
+        );
+    };
 
     const handleSubmit = (e: React.FormEvent, overrideStatus?: string) => {
         e.preventDefault();
@@ -228,6 +283,7 @@ export default function EditArticle({
                             <CardContent className="!p-0">
                                 <div className="border-b-0 px-8 pt-8 pb-3">
                                     <input
+                                        ref={titleRef}
                                         type="text"
                                         placeholder={t(
                                             'articles.form.titlePlaceholder',
@@ -321,21 +377,34 @@ export default function EditArticle({
                             title={t('articles.form.excerpt')}
                             description={t('articles.form.excerptDescription')}
                         >
-                            <Textarea
-                                placeholder={t(
-                                    'articles.form.excerptPlaceholder',
-                                )}
-                                value={formData.excerpt}
-                                onChange={(
-                                    e: React.ChangeEvent<HTMLTextAreaElement>,
-                                ) =>
-                                    setFormData({
-                                        ...formData,
-                                        excerpt: e.target.value,
-                                    })
-                                }
-                                className="min-h-[80px] resize-y"
-                            />
+                            <div className="flex flex-col gap-1.5">
+                                <AiFieldButton
+                                    target="excerpt"
+                                    label={`AI ${t('articles.form.excerpt')}`}
+                                    getDraft={getDraft}
+                                    onApply={({ excerpt }) =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            excerpt: excerpt ?? prev.excerpt,
+                                        }))
+                                    }
+                                />
+                                <Textarea
+                                    placeholder={t(
+                                        'articles.form.excerptPlaceholder',
+                                    )}
+                                    value={formData.excerpt}
+                                    onChange={(
+                                        e: React.ChangeEvent<HTMLTextAreaElement>,
+                                    ) =>
+                                        setFormData({
+                                            ...formData,
+                                            excerpt: e.target.value,
+                                        })
+                                    }
+                                    className="min-h-[80px] resize-y"
+                                />
+                            </div>
                         </SidebarSection>
 
                         <SidebarSection
@@ -344,6 +413,24 @@ export default function EditArticle({
                             description={t('articles.form.seoDescription')}
                         >
                             <div className="flex flex-col gap-3">
+                                <AiFieldButton
+                                    target="seo"
+                                    label={`AI ${t('articles.form.seo')}`}
+                                    getDraft={getDraft}
+                                    onApply={({
+                                        meta_title,
+                                        meta_description,
+                                    }) =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            meta_title:
+                                                meta_title ?? prev.meta_title,
+                                            meta_description:
+                                                meta_description ??
+                                                prev.meta_description,
+                                        }))
+                                    }
+                                />
                                 <div className="flex flex-col gap-1.5">
                                     <span className="text-tertiary-label text-xs">
                                         {t('articles.form.seoTitleDescription')}
@@ -428,16 +515,38 @@ export default function EditArticle({
                             title={t('articles.form.categories')}
                             description={`已选 ${formData.categories.length} 个`}
                         >
-                            <CategoryPicker
-                                items={categories as CategoryItem[]}
-                                selected={formData.categories}
-                                onChange={(next) =>
-                                    setFormData({
-                                        ...formData,
-                                        categories: next,
-                                    })
-                                }
-                            />
+                            <div className="flex flex-col gap-1.5">
+                                <AiTermButton
+                                    target="categories"
+                                    label={`AI ${t('articles.form.categories')}`}
+                                    taxonomyName={t('articles.form.categories')}
+                                    selectedIds={formData.categories}
+                                    getDraft={getDraft}
+                                    onConfirm={(terms) =>
+                                        applyTermSuggestions(
+                                            terms,
+                                            'categories',
+                                            (fresh) =>
+                                                setLocalCategories((prev) =>
+                                                    mergeUniqueItems(
+                                                        prev,
+                                                        fresh,
+                                                    ),
+                                                ),
+                                        )
+                                    }
+                                />
+                                <CategoryPicker
+                                    items={localCategories as CategoryItem[]}
+                                    selected={formData.categories}
+                                    onChange={(next) =>
+                                        setFormData({
+                                            ...formData,
+                                            categories: next,
+                                        })
+                                    }
+                                />
+                            </div>
                         </SidebarSection>
 
                         <SidebarSection
@@ -445,16 +554,38 @@ export default function EditArticle({
                             title={t('articles.form.tags')}
                             description={`已选 ${formData.selectedTags.length} 个`}
                         >
-                            <TagPicker
-                                items={tags as TagItem[]}
-                                selected={formData.selectedTags}
-                                onChange={(next) =>
-                                    setFormData({
-                                        ...formData,
-                                        selectedTags: next,
-                                    })
-                                }
-                            />
+                            <div className="flex flex-col gap-1.5">
+                                <AiTermButton
+                                    target="tags"
+                                    label={`AI ${t('articles.form.tags')}`}
+                                    taxonomyName={t('articles.form.tags')}
+                                    selectedIds={formData.selectedTags}
+                                    getDraft={getDraft}
+                                    onConfirm={(terms) =>
+                                        applyTermSuggestions(
+                                            terms,
+                                            'selectedTags',
+                                            (fresh) =>
+                                                setLocalTags((prev) =>
+                                                    mergeUniqueItems(
+                                                        prev,
+                                                        fresh,
+                                                    ),
+                                                ),
+                                        )
+                                    }
+                                />
+                                <TagPicker
+                                    items={localTags as TagItem[]}
+                                    selected={formData.selectedTags}
+                                    onChange={(next) =>
+                                        setFormData({
+                                            ...formData,
+                                            selectedTags: next,
+                                        })
+                                    }
+                                />
+                            </div>
                         </SidebarSection>
 
                         <SidebarSection

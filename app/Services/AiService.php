@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * AI 写作服务：支持 OpenAI 兼容（Chat Completions）与 Anthropic（Messages）两种接口格式。
  * 配置存于 options 表（ai_api_format / ai_api_url / ai_api_key / ai_model），由 AI 设置页维护。
+ * 另提供 listAssistantModels()：按 AI 小助手自有的 assistant_* 配置拉取模型列表。
  */
 class AiService
 {
@@ -103,22 +104,62 @@ class AiService
             throw new \RuntimeException('请先填写并保存 API 密钥，再获取模型列表。');
         }
 
-        $modelsUrl = $this->resolveApiUrl().'/models';
+        return $this->requestModels($this->resolveApiUrl(), $this->authorizedRequest($apiKey));
+    }
+
+    /**
+     * 用小助手自有的接口配置（assistant_api_url / assistant_api_key）拉取模型列表。
+     * 小助手只走 OpenAI 兼容接口，故固定 Bearer 鉴权。
+     *
+     * @return array<int, string> 模型 ID 列表
+     *
+     * @throws \RuntimeException 未配置密钥或接口地址、接口失败、返回格式异常时抛出
+     */
+    public function listAssistantModels(): array
+    {
+        $apiKey = trim((string) Option::get('assistant_api_key', ''));
+
+        if ($apiKey === '') {
+            throw new \RuntimeException('请先填写并保存小助手的 API 密钥，再获取模型列表。');
+        }
+
+        $apiUrl = rtrim(trim((string) Option::get('assistant_api_url', '')), '/');
+
+        if ($apiUrl === '') {
+            throw new \RuntimeException('请先填写并保存小助手的接口地址，再获取模型列表。');
+        }
+
+        return $this->requestModels(
+            $apiUrl,
+            Http::timeout(30)->connectTimeout(10)->acceptJson()->withToken($apiKey),
+        );
+    }
+
+    /**
+     * 请求 GET {接口地址}/models 并解析出模型 ID 列表。
+     *
+     * @return array<int, string>
+     *
+     * @throws \RuntimeException
+     */
+    protected function requestModels(string $apiUrl, PendingRequest $request): array
+    {
+        $modelsUrl = $apiUrl.'/models';
 
         try {
-            $response = $this->authorizedRequest($apiKey)->get($modelsUrl);
+            $response = $request->get($modelsUrl);
         } catch (\Throwable $e) {
             Log::warning('AiService: 获取模型列表连接失败', ['error' => $e->getMessage()]);
 
             throw new AiRequestException('无法连接 AI 接口，请检查接口地址与网络。', [
-                'url' => $modelsUrl ?? null,
+                'url' => $modelsUrl,
                 'error' => $e->getMessage(),
             ]);
         }
 
         if ($response->failed()) {
             Log::warning('AiService: 获取模型列表失败', [
-                'url' => $modelsUrl ?? null,
+                'url' => $modelsUrl,
                 'status' => $response->status(),
                 'body' => mb_substr($response->body(), 0, 500),
             ]);
@@ -290,26 +331,27 @@ PROMPT;
     }
 
     /**
-     * 依据已生成的文章内容，专门补全 SEO 与归类（标签/分类）。
+     * 依据已生成的文章内容，专门补全摘要、SEO 与归类（标签/分类）。
      *
      * 主生成调用有时（弱模型或 JSON 被容错解析）会漏掉这些字段，此方法用一次
-     * 聚焦的短指令（仅 4 个字段）重新提取，命中率更高，且结果贴合正文。
+     * 聚焦的短指令重新提取，命中率更高，且结果贴合正文；后台写作页的
+     * 「AI 生成摘要 / SEO / 分类 / 标签」也复用这里的一次调用。
      *
      * @param  string  $title  文章标题
      * @param  string  $excerpt  文章摘要
      * @param  string  $markdown  文章正文（Markdown，仅取前段）
      * @param  array{categories?: array<int, string>, tags?: array<int, string>}  $context  现有分类/标签名，供 AI 优先选用
-     * @return array{meta_title: string, meta_description: string, tags: array<int, string>, categories: array<int, string>}
+     * @return array{excerpt: string, meta_title: string, meta_description: string, tags: array<int, string>, categories: array<int, string>}
      *
      * @throws \RuntimeException 接口失败时抛出（调用方自行决定是否兜底）
      */
     public function extractArticleMeta(string $title, string $excerpt, string $markdown, array $context = []): array
     {
         $systemPrompt = <<<'PROMPT'
-你是一位 SEO 与内容运营专家。请根据给定文章的标题、摘要与正文，补全搜索优化信息与归类。
+你是一位 SEO 与内容运营专家。请根据给定文章的标题、摘要与正文，补全摘要、搜索优化信息与归类。
 严格输出一个 JSON 对象，不要输出 JSON 以外的任何内容，也不要用 Markdown 代码块包裹。格式：
-{"meta_title":"SEO标题","meta_description":"SEO描述","tags":["标签1","标签2","标签3"],"categories":["分类1"]}
-要求：meta_title 约 20~30 字；meta_description 约 50~120 字；tags 给 3~5 个；categories 给 1~3 个；语言与文章一致。
+{"excerpt":"文章摘要","meta_title":"SEO标题","meta_description":"SEO描述","tags":["标签1","标签2","标签3"],"categories":["分类1"]}
+要求：excerpt 不超过 80 字，概括正文且不与标题重复；meta_title 约 20~30 字；meta_description 约 50~120 字；tags 给 3~5 个；categories 给 1~3 个；语言与文章一致。
 重要：输出必须是合法 JSON；字符串值内部禁止未转义的英文双引号。
 PROMPT;
 
@@ -331,11 +373,20 @@ PROMPT;
         $data = $this->extractMetaPayload($text);
 
         return [
+            'excerpt' => $this->limitChars(trim((string) ($data['excerpt'] ?? '')), 160),
             'meta_title' => trim((string) ($data['meta_title'] ?? $data['seo_title'] ?? '')),
             'meta_description' => trim((string) ($data['meta_description'] ?? $data['seo_description'] ?? '')),
             'tags' => $this->normalizeNameList($data, ['tags', '标签']),
             'categories' => $this->normalizeNameList($data, ['categories', '分类', '栏目']),
         ];
+    }
+
+    /**
+     * 截断过长的 AI 文本，避免模型无视字数要求时写回超长内容。
+     */
+    private function limitChars(string $value, int $max): string
+    {
+        return mb_strlen($value) > $max ? mb_substr($value, 0, $max) : $value;
     }
 
     /**

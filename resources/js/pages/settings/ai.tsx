@@ -55,6 +55,9 @@ const API_FORMATS: Array<{ value: 'openai' | 'anthropic'; labelKey: string }> =
         { value: 'anthropic', labelKey: 'settings.ai.formatAnthropic' },
     ];
 
+/** 模型列表的两个来源：AI 写作接口 / AI 小助手接口。 */
+type ModelTarget = 'ai' | 'assistant';
+
 function getCsrfToken(): { headerName: string; value: string } | null {
     const meta = document
         .querySelector('meta[name="csrf-token"]')
@@ -76,6 +79,109 @@ function getCsrfToken(): { headerName: string; value: string } | null {
     return null;
 }
 
+interface FetchModelsButtonProps {
+    disabled: boolean;
+    loading: boolean;
+    onClick: () => void;
+}
+
+/** 「获取模型」按钮；另一处正在拉取时禁用，避免两个来源互相覆盖。 */
+function FetchModelsButton({
+    disabled,
+    loading,
+    onClick,
+}: FetchModelsButtonProps) {
+    const { t } = useTranslation();
+
+    return (
+        <Button
+            type="button"
+            variant="outline"
+            className="shrink-0"
+            onClick={onClick}
+            disabled={disabled}
+            title={t('settings.ai.fetchModelsHint')}
+        >
+            {loading ? (
+                <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t('settings.ai.fetchingModels')}
+                </>
+            ) : (
+                <>
+                    <RefreshCw className="h-4 w-4" />
+                    {t('settings.ai.fetchModels')}
+                </>
+            )}
+        </Button>
+    );
+}
+
+interface ModelListProps {
+    filter: string;
+    models: string[];
+    onFilterChange: (value: string) => void;
+    onSelect: (id: string) => void;
+    selected: string;
+}
+
+/** 拉取到的模型候选：可按名称筛选，点选后回填并收起。 */
+function ModelList({
+    filter,
+    models,
+    onFilterChange,
+    onSelect,
+    selected,
+}: ModelListProps) {
+    const { t } = useTranslation();
+
+    if (models.length === 0) {
+        return null;
+    }
+
+    const filtered = models.filter((id) =>
+        id.toLowerCase().includes(filter.trim().toLowerCase()),
+    );
+
+    return (
+        <div className="rounded-xl border border-input">
+            <div className="border-b border-border/40 p-2">
+                <Input
+                    value={filter}
+                    onChange={(e) => onFilterChange(e.target.value)}
+                    placeholder={t('settings.ai.filterModels')}
+                    className="h-8 text-sm"
+                />
+            </div>
+            <div className="max-h-56 overflow-y-auto p-1.5">
+                {filtered.length === 0 ? (
+                    <p className="py-4 text-center text-xs text-muted-foreground">
+                        {t('settings.ai.noModelsMatch')}
+                    </p>
+                ) : (
+                    filtered.map((id) => (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => onSelect(id)}
+                            className={cn(
+                                'block w-full truncate rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-primary/10 hover:text-primary',
+                                id === selected &&
+                                    'bg-primary/10 font-medium text-primary',
+                            )}
+                        >
+                            {id}
+                        </button>
+                    ))
+                )}
+            </div>
+            <p className="border-t border-border/40 px-2.5 py-1.5 text-xs text-muted-foreground">
+                {t('settings.ai.modelListHint')}
+            </p>
+        </div>
+    );
+}
+
 export default function AiSettings({
     ai_api_format,
     ai_api_url,
@@ -93,7 +199,10 @@ export default function AiSettings({
     const [saving, setSaving] = useState(false);
     const [models, setModels] = useState<string[]>([]);
     const [modelFilter, setModelFilter] = useState('');
-    const [loadingModels, setLoadingModels] = useState(false);
+    // 两处模型列表用各自的接口配置拉取，同一时刻只允许一个在请求
+    const [loadingModelsFor, setLoadingModelsFor] = useState<ModelTarget | null>(
+        null,
+    );
     const [errorDetail, setErrorDetail] = useState<AiErrorDetail | null>(null);
 
     // AI 小助手表单状态
@@ -119,6 +228,8 @@ export default function AiSettings({
         assistant.assistant_model,
     );
     const [assistantApiKey, setAssistantApiKey] = useState('');
+    const [assistantModels, setAssistantModels] = useState<string[]>([]);
+    const [assistantModelFilter, setAssistantModelFilter] = useState('');
     const [assistantAvatar, setAssistantAvatar] = useState(
         assistant.assistant_avatar,
     );
@@ -126,12 +237,12 @@ export default function AiSettings({
     const [avatarUploading, setAvatarUploading] = useState(false);
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
-    const fetchModels = async () => {
-        if (loadingModels) {
+    const fetchModels = async (target: ModelTarget) => {
+        if (loadingModelsFor) {
             return;
         }
 
-        setLoadingModels(true);
+        setLoadingModelsFor(target);
 
         try {
             const csrf = getCsrfToken();
@@ -140,13 +251,18 @@ export default function AiSettings({
                 throw new Error('CSRF token not found.');
             }
 
-            const response = await fetch('/admin/settings/ai/models', {
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    [csrf.headerName]: csrf.value,
+            const response = await fetch(
+                target === 'ai'
+                    ? '/admin/settings/ai/models'
+                    : '/admin/settings/assistant/models',
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        [csrf.headerName]: csrf.value,
+                    },
                 },
-            });
+            );
 
             const data = await response.json().catch(() => null);
 
@@ -168,8 +284,13 @@ export default function AiSettings({
 
             const list: string[] = Array.isArray(data?.data) ? data.data : [];
 
-            setModels(list);
-            setModelFilter('');
+            if (target === 'ai') {
+                setModels(list);
+                setModelFilter('');
+            } else {
+                setAssistantModels(list);
+                setAssistantModelFilter('');
+            }
 
             if (list.length > 0) {
                 toast.success(
@@ -181,13 +302,9 @@ export default function AiSettings({
         } catch {
             toast.error(t('settings.ai.modelsFetchFailed'));
         } finally {
-            setLoadingModels(false);
+            setLoadingModelsFor(null);
         }
     };
-
-    const filteredModels = models.filter((id) =>
-        id.toLowerCase().includes(modelFilter.trim().toLowerCase()),
-    );
 
     const submitApi = (e: React.FormEvent) => {
         e.preventDefault();
@@ -430,88 +547,27 @@ export default function AiSettings({
                                             }
                                             placeholder="gpt-4o-mini"
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="shrink-0"
-                                            onClick={fetchModels}
-                                            disabled={loadingModels}
-                                            title={t(
-                                                'settings.ai.fetchModelsHint',
-                                            )}
-                                        >
-                                            {loadingModels ? (
-                                                <>
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                    {t(
-                                                        'settings.ai.fetchingModels',
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <RefreshCw className="h-4 w-4" />
-                                                    {t(
-                                                        'settings.ai.fetchModels',
-                                                    )}
-                                                </>
-                                            )}
-                                        </Button>
+                                        <FetchModelsButton
+                                            disabled={loadingModelsFor !== null}
+                                            loading={loadingModelsFor === 'ai'}
+                                            onClick={() => fetchModels('ai')}
+                                        />
                                     </div>
                                     <p className="text-xs text-muted-foreground">
                                         {t('settings.ai.modelHint')}
                                     </p>
 
-                                    {models.length > 0 && (
-                                        <div className="rounded-xl border border-input">
-                                            <div className="border-b border-border/40 p-2">
-                                                <Input
-                                                    value={modelFilter}
-                                                    onChange={(e) =>
-                                                        setModelFilter(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder={t(
-                                                        'settings.ai.filterModels',
-                                                    )}
-                                                    className="h-8 text-sm"
-                                                />
-                                            </div>
-                                            <div className="max-h-56 overflow-y-auto p-1.5">
-                                                {filteredModels.length === 0 ? (
-                                                    <p className="py-4 text-center text-xs text-muted-foreground">
-                                                        {t(
-                                                            'settings.ai.noModelsMatch',
-                                                        )}
-                                                    </p>
-                                                ) : (
-                                                    filteredModels.map((id) => (
-                                                        <button
-                                                            key={id}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setModel(id);
-                                                                setModels([]);
-                                                                setModelFilter(
-                                                                    '',
-                                                                );
-                                                            }}
-                                                            className={cn(
-                                                                'block w-full truncate rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-primary/10 hover:text-primary',
-                                                                id === model &&
-                                                                    'bg-primary/10 font-medium text-primary',
-                                                            )}
-                                                        >
-                                                            {id}
-                                                        </button>
-                                                    ))
-                                                )}
-                                            </div>
-                                            <p className="border-t border-border/40 px-2.5 py-1.5 text-xs text-muted-foreground">
-                                                {t('settings.ai.modelListHint')}
-                                            </p>
-                                        </div>
-                                    )}
+                                    <ModelList
+                                        filter={modelFilter}
+                                        models={models}
+                                        onFilterChange={setModelFilter}
+                                        onSelect={(id) => {
+                                            setModel(id);
+                                            setModels([]);
+                                            setModelFilter('');
+                                        }}
+                                        selected={model}
+                                    />
                                 </div>
 
                                 <div className="flex items-center justify-between gap-3 border-t border-border/40 pt-4">
@@ -764,19 +820,52 @@ export default function AiSettings({
                                     <Label htmlFor="assistant-model">
                                         {t('settings.assistant.model')}
                                     </Label>
-                                    <Input
-                                        id="assistant-model"
-                                        value={assistantModel}
-                                        onChange={(e) =>
-                                            setAssistantModel(e.target.value)
+                                    <div className="flex gap-2">
+                                        <Input
+                                            id="assistant-model"
+                                            value={assistantModel}
+                                            onChange={(e) =>
+                                                setAssistantModel(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder={
+                                                assistantMode === 'fastgpt'
+                                                    ? t(
+                                                          'settings.assistant.modelFastgptPlaceholder',
+                                                      )
+                                                    : 'gpt-4o-mini'
+                                            }
+                                        />
+                                        <FetchModelsButton
+                                            disabled={loadingModelsFor !== null}
+                                            loading={
+                                                loadingModelsFor === 'assistant'
+                                            }
+                                            onClick={() =>
+                                                fetchModels('assistant')
+                                            }
+                                        />
+                                    </div>
+                                    {assistantMode === 'fastgpt' && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {t(
+                                                'settings.assistant.fetchModelsFastgptHint',
+                                            )}
+                                        </p>
+                                    )}
+                                    <ModelList
+                                        filter={assistantModelFilter}
+                                        models={assistantModels}
+                                        onFilterChange={
+                                            setAssistantModelFilter
                                         }
-                                        placeholder={
-                                            assistantMode === 'fastgpt'
-                                                ? t(
-                                                      'settings.assistant.modelFastgptPlaceholder',
-                                                  )
-                                                : 'gpt-4o-mini'
-                                        }
+                                        onSelect={(id) => {
+                                            setAssistantModel(id);
+                                            setAssistantModels([]);
+                                            setAssistantModelFilter('');
+                                        }}
+                                        selected={assistantModel}
                                     />
                                 </div>
 

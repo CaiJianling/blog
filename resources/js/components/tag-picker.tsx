@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { X } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { store, destroy } from '@/routes/taxonomies';
 
 export interface TagItem {
@@ -20,10 +20,6 @@ export function TagPicker({ items, selected, onChange, onChanged }: Props) {
     const [busy, setBusy] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        inputRef.current?.focus();
-    }, []);
-
     const submit = async () => {
         const names = input
             .split(/[,,，\s]+/)
@@ -31,18 +27,23 @@ export function TagPicker({ items, selected, onChange, onChanged }: Props) {
             .filter(Boolean);
 
         if (names.length === 0 || busy) {
-return;
-}
+            return;
+        }
 
         setBusy(true);
         const newlyCreated: number[] = [];
 
         for (const name of names) {
             // try to find an existing tag with this name (case-insensitive)
-            const existing = items.find((i) => i.name.toLowerCase() === name.toLowerCase());
+            const existing = items.find(
+                (i) => i.name.toLowerCase() === name.toLowerCase(),
+            );
 
             if (existing) {
-                if (!selected.includes(existing.id) && !newlyCreated.includes(existing.id)) {
+                if (
+                    !selected.includes(existing.id) &&
+                    !newlyCreated.includes(existing.id)
+                ) {
                     newlyCreated.push(existing.id);
                 }
 
@@ -83,8 +84,8 @@ return;
         onChange(selected.filter((id) => id !== item.id));
 
         if (!window.confirm(`确定要删除标签「${item.name}」吗？`)) {
-return;
-}
+            return;
+        }
 
         router.delete(destroy({ termTaxonomy: item.id }).url, {
             preserveScroll: true,
@@ -103,13 +104,13 @@ return;
                 {selectedItems.map((item) => (
                     <span
                         key={item.id}
-                        className="apple-press inline-flex items-center gap-1 rounded-md bg-secondary px-1.5 py-0.5 text-xs group"
+                        className="apple-press group inline-flex items-center gap-1 rounded-md bg-secondary px-1.5 py-0.5 text-xs"
                     >
                         #{item.name}
                         <button
                             type="button"
                             onClick={() => removeTag(item)}
-                            className="hidden group-hover:inline-flex rounded text-muted-foreground hover:text-destructive"
+                            className="hidden rounded text-muted-foreground group-hover:inline-flex hover:text-destructive"
                             aria-label={`删除 ${item.name}`}
                         >
                             <X className="h-3 w-3" />
@@ -128,11 +129,11 @@ return;
                     }}
                     onBlur={() => {
                         if (input.trim()) {
-submit();
-}
+                            submit();
+                        }
                     }}
                     placeholder={selectedItems.length ? '' : '添加标签…'}
-                    className="flex-1 min-w-[80px] bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                    className="min-w-[80px] flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
                     disabled={busy}
                 />
             </div>
@@ -140,7 +141,9 @@ submit();
 
             {mostUsed.length > 0 && (
                 <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-muted-foreground">最多使用</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                        最多使用
+                    </span>
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                         {mostUsed.map((item) => (
                             <button

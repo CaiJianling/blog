@@ -1,5 +1,19 @@
 import { Head, router } from '@inertiajs/react';
-import { FileText, Eye, MessageSquare, Calendar, Pencil, Plus, Search, Trash2, Send, CheckCircle, FileEdit, Inbox, RotateCcw } from 'lucide-react';
+import {
+    FileText,
+    Eye,
+    MessageSquare,
+    Calendar,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
+    Send,
+    CheckCircle,
+    FileEdit,
+    Inbox,
+    RotateCcw,
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as articleActions from '@/actions/App/Http/Controllers/ArticleController';
@@ -68,7 +82,13 @@ interface Props {
     currentStatus: string;
 }
 
-const STATUS_MAP: Record<string, { label: string; variant: 'default' | 'outline' | 'destructive' | 'secondary' }> = {
+const STATUS_MAP: Record<
+    string,
+    {
+        label: string;
+        variant: 'default' | 'outline' | 'destructive' | 'secondary';
+    }
+> = {
     publish: { label: 'articles.status.publish', variant: 'default' },
     draft: { label: 'articles.status.draft', variant: 'secondary' },
     pending: { label: 'articles.status.pending', variant: 'outline' },
@@ -83,7 +103,11 @@ const STATUS_TABS = [
     { key: 'trash', label: '回收站' },
 ] as const;
 
-export default function ArticleIndex({ articles: pageArticles, statusCounts, currentStatus }: Props) {
+export default function ArticleIndex({
+    articles: pageArticles,
+    statusCounts,
+    currentStatus,
+}: Props) {
     const { t } = useTranslation();
     const articleList = pageArticles.data;
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -106,11 +130,15 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
     }, [selectedIds]);
 
     const handleFilterChange = (status: string) => {
-        const url = status === 'all' ? '/admin/articles' : `/admin/articles?status=${status}`;
+        const url =
+            status === 'all'
+                ? '/admin/articles'
+                : `/admin/articles?status=${status}`;
         router.visit(url, { preserveScroll: true });
     };
 
-    const allSelected = articleList.length > 0 && selectedIds.length === articleList.length;
+    const allSelected =
+        articleList.length > 0 && selectedIds.length === articleList.length;
     const someSelected = selectedIds.length > 0 && !allSelected;
 
     const toggleSelectAll = () => {
@@ -123,18 +151,26 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
 
     const toggleSelect = (id: number) => {
         setSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id],
+            prev.includes(id)
+                ? prev.filter((sid) => sid !== id)
+                : [...prev, id],
         );
     };
 
-    const handleBatchAction = (status: 'publish' | 'pending' | 'draft' | 'trash') => {
-        router.post('/admin/articles/batch', {
-            ids: selectedIds,
-            status,
-        }, {
-            preserveScroll: true,
-            onSuccess: () => setSelectedIds([]),
-        });
+    const handleBatchAction = (
+        status: 'publish' | 'pending' | 'draft' | 'trash',
+    ) => {
+        router.post(
+            '/admin/articles/batch',
+            {
+                ids: selectedIds,
+                status,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => setSelectedIds([]),
+            },
+        );
     };
 
     const handleTrash = (id: number) => {
@@ -142,10 +178,17 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
     };
 
     const handleRestore = (id: number) => {
-        router.put(`/admin/articles/${id}/restore`, {}, { preserveScroll: true });
+        router.put(
+            `/admin/articles/${id}/restore`,
+            {},
+            { preserveScroll: true },
+        );
     };
 
-    const [forceDeleteTarget, setForceDeleteTarget] = useState<{ id: number; title: string } | null>(null);
+    const [forceDeleteTarget, setForceDeleteTarget] = useState<{
+        id: number;
+        title: string;
+    } | null>(null);
 
     const handleForceDelete = (id: number, title: string) => {
         setForceDeleteTarget({ id, title });
@@ -153,8 +196,8 @@ export default function ArticleIndex({ articles: pageArticles, statusCounts, cur
 
     const executeForceDelete = () => {
         if (!forceDeleteTarget) {
-return;
-}
+            return;
+        }
 
         router.delete(`/admin/articles/${forceDeleteTarget.id}`, {
             preserveScroll: true,
@@ -178,13 +221,18 @@ return;
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="relative min-w-0 flex-1 sm:flex-none">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-foreground/50" />
+                            <Search className="pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2 text-foreground/50" />
                             <Input
                                 placeholder="搜索文章..."
                                 className="w-full pl-9 sm:w-56"
                             />
                         </div>
-                        <Button className="shrink-0" onClick={() => router.visit(articleActions.create.url())}>
+                        <Button
+                            className="shrink-0"
+                            onClick={() =>
+                                router.visit(articleActions.create.url())
+                            }
+                        >
                             <Plus className="h-4 w-4" />
                             {t('articles.create')}
                         </Button>
@@ -192,10 +240,11 @@ return;
                 </div>
 
                 {/* Status Filter Tabs */}
-                <div className="inline-flex w-full items-center gap-1 overflow-x-auto rounded-2xl bg-neutral-200/60 p-1 backdrop-blur-sm dark:bg-neutral-700/60 sm:w-fit">
+                <div className="inline-flex w-full items-center gap-1 overflow-x-auto rounded-2xl bg-neutral-200/60 p-1 backdrop-blur-sm sm:w-fit dark:bg-neutral-700/60">
                     {STATUS_TABS.map((tab) => {
                         const isActive = currentStatus === tab.key;
-                        const count = statusCounts[tab.key as keyof StatusCounts] ?? 0;
+                        const count =
+                            statusCounts[tab.key as keyof StatusCounts] ?? 0;
 
                         return (
                             <button
@@ -208,11 +257,13 @@ return;
                                 }`}
                             >
                                 {tab.label}
-                                <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums sm:h-5 sm:min-w-5 sm:px-1.5 sm:text-xs ${
-                                    isActive
-                                        ? 'bg-primary/15 text-primary'
-                                        : 'bg-muted text-muted-foreground'
-                                }`}>
+                                <span
+                                    className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums sm:h-5 sm:min-w-5 sm:px-1.5 sm:text-xs ${
+                                        isActive
+                                            ? 'bg-primary/15 text-primary'
+                                            : 'bg-muted text-muted-foreground'
+                                    }`}
+                                >
                                     {count}
                                 </span>
                             </button>
@@ -222,13 +273,13 @@ return;
 
                 {/* Overview Stats */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                    <Card className="!p-0 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/10">
+                    <Card className="border-primary/10 bg-gradient-to-br from-primary/5 to-primary/10 !p-0">
                         <CardContent className="flex items-center justify-between p-2.5 sm:p-5">
                             <div className="flex min-w-0 flex-col gap-1 sm:gap-2">
-                                <div className="text-[10px] font-medium uppercase tracking-wider text-secondary-label sm:text-footnote">
+                                <div className="text-secondary-label sm:text-footnote text-[10px] font-medium tracking-wider uppercase">
                                     全部文章
                                 </div>
-                                <div className="text-base font-semibold tracking-tight sm:text-title-2">
+                                <div className="sm:text-title-2 text-base font-semibold tracking-tight">
                                     {statusCounts.all}
                                 </div>
                             </div>
@@ -237,32 +288,38 @@ return;
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="!p-0 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 border-emerald-500/10">
+                    <Card className="border-emerald-500/10 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 !p-0">
                         <CardContent className="flex items-center justify-between p-2.5 sm:p-5">
                             <div className="flex min-w-0 flex-col gap-1 sm:gap-2">
-                                <div className="text-[10px] font-medium uppercase tracking-wider text-secondary-label sm:text-footnote">
+                                <div className="text-secondary-label sm:text-footnote text-[10px] font-medium tracking-wider uppercase">
                                     总浏览量
                                 </div>
-                                <div className="text-base font-semibold tracking-tight sm:text-title-2">
-                                    {articleList.reduce((sum, a) => sum + a.views, 0)}
+                                <div className="sm:text-title-2 text-base font-semibold tracking-tight">
+                                    {articleList.reduce(
+                                        (sum, a) => sum + a.views,
+                                        0,
+                                    )}
                                 </div>
                             </div>
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 sm:h-12 sm:w-12 sm:rounded-2xl">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 sm:h-12 sm:w-12 sm:rounded-2xl dark:text-emerald-400">
                                 <Eye className="h-4 w-4 sm:h-6 sm:w-6" />
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="!p-0 bg-gradient-to-br from-blue-500/5 to-blue-500/10 border-blue-500/10">
+                    <Card className="border-blue-500/10 bg-gradient-to-br from-blue-500/5 to-blue-500/10 !p-0">
                         <CardContent className="flex items-center justify-between p-2.5 sm:p-5">
                             <div className="flex min-w-0 flex-col gap-1 sm:gap-2">
-                                <div className="text-[10px] font-medium uppercase tracking-wider text-secondary-label sm:text-footnote">
+                                <div className="text-secondary-label sm:text-footnote text-[10px] font-medium tracking-wider uppercase">
                                     总评论
                                 </div>
-                                <div className="text-base font-semibold tracking-tight sm:text-title-2">
-                                    {articleList.reduce((sum, a) => sum + a.comment_count, 0)}
+                                <div className="sm:text-title-2 text-base font-semibold tracking-tight">
+                                    {articleList.reduce(
+                                        (sum, a) => sum + a.comment_count,
+                                        0,
+                                    )}
                                 </div>
                             </div>
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 sm:h-12 sm:w-12 sm:rounded-2xl">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600 sm:h-12 sm:w-12 sm:rounded-2xl dark:text-blue-400">
                                 <MessageSquare className="h-4 w-4 sm:h-6 sm:w-6" />
                             </div>
                         </CardContent>
@@ -274,9 +331,7 @@ return;
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle>
-                                    {t('articles.list')}
-                                </CardTitle>
+                                <CardTitle>{t('articles.list')}</CardTitle>
                                 <CardDescription>
                                     {t('articles.manageArticles')}
                                 </CardDescription>
@@ -291,13 +346,19 @@ return;
 
                     {/* Floating Batch Action Toolbar — translucent material overlay clipped to card radius */}
                     {showToolbar && (
-                        <div className={`sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-background/70 px-4 py-3 backdrop-blur-xl backdrop-saturate-150 sm:px-6 sm:py-4 ${isExiting ? 'animate-out fade-out slide-out-to-top-2 duration-300' : 'animate-in fade-in slide-in-from-top-2 duration-300'} dark:border-white/5 dark:bg-background/60`}>
+                        <div
+                            className={`sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-background/70 px-4 py-3 backdrop-blur-xl backdrop-saturate-150 sm:px-6 sm:py-4 ${isExiting ? 'animate-out duration-300 fade-out slide-out-to-top-2' : 'animate-in duration-300 fade-in slide-in-from-top-2'} dark:border-white/5 dark:bg-background/60`}
+                        >
                             <div className="flex min-w-0 shrink items-center gap-2 sm:gap-3">
                                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                                     <CheckCircle className="h-4.5 w-4.5" />
                                 </div>
-                                <span className="truncate text-callout font-medium tracking-tight sm:whitespace-normal">
-                                    已选择 <span className="text-primary tabular-nums">{selectedIds.length}</span> 篇文章
+                                <span className="text-callout truncate font-medium tracking-tight sm:whitespace-normal">
+                                    已选择{' '}
+                                    <span className="text-primary tabular-nums">
+                                        {selectedIds.length}
+                                    </span>{' '}
+                                    篇文章
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5 overflow-x-auto">
@@ -349,37 +410,43 @@ return;
                         </div>
                     )}
                     <CardContent className="p-0 pb-2 sm:pb-0">
-                        <Table className="min-w-[1000px]">
+                        <Table className="w-full">
                             <TableHeader>
                                 <TableRow className="bg-muted/30 hover:bg-muted/30">
-                                    <TableHead className="h-11 w-11 pl-5 pr-0">
+                                    <TableHead className="h-11 w-11 shrink-0 pr-0 pl-5">
                                         <Checkbox
-                                            checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                                            checked={
+                                                allSelected
+                                                    ? true
+                                                    : someSelected
+                                                      ? 'indeterminate'
+                                                      : false
+                                            }
                                             onCheckedChange={toggleSelectAll}
                                         />
                                     </TableHead>
-                                    <TableHead className="h-11 px-3 text-footnote font-semibold uppercase tracking-wider text-secondary-label">
+                                    <TableHead className="text-footnote text-secondary-label h-11 min-w-[12rem] px-3 font-semibold tracking-wider uppercase">
                                         {t('articles.table.title')}
                                     </TableHead>
-                                    <TableHead className="h-11 px-3 text-footnote font-semibold uppercase tracking-wider text-secondary-label">
+                                    <TableHead className="text-footnote text-secondary-label h-11 w-1 px-3 font-semibold tracking-wider whitespace-nowrap uppercase">
                                         {t('articles.table.author')}
                                     </TableHead>
-                                    <TableHead className="h-11 px-3 text-footnote font-semibold uppercase tracking-wider text-secondary-label">
+                                    <TableHead className="text-footnote text-secondary-label h-11 min-w-[7rem] px-3 font-semibold tracking-wider uppercase">
                                         {t('articles.table.categories')}
                                     </TableHead>
-                                    <TableHead className="h-11 px-3 text-footnote font-semibold uppercase tracking-wider text-secondary-label">
+                                    <TableHead className="text-footnote text-secondary-label h-11 min-w-[7rem] px-3 font-semibold tracking-wider uppercase">
                                         {t('articles.table.tags')}
                                     </TableHead>
-                                    <TableHead className="h-11 px-3 text-footnote font-semibold uppercase tracking-wider text-secondary-label">
+                                    <TableHead className="text-footnote text-secondary-label h-11 w-1 px-3 font-semibold tracking-wider whitespace-nowrap uppercase">
                                         {t('articles.table.comments')}
                                     </TableHead>
-                                    <TableHead className="h-11 px-3 text-footnote font-semibold uppercase tracking-wider text-secondary-label">
+                                    <TableHead className="text-footnote text-secondary-label h-11 w-1 px-3 font-semibold tracking-wider whitespace-nowrap uppercase">
                                         {t('articles.table.date')}
                                     </TableHead>
-                                    <TableHead className="h-11 px-3 text-footnote font-semibold uppercase tracking-wider text-secondary-label">
+                                    <TableHead className="text-footnote text-secondary-label h-11 w-1 px-3 font-semibold tracking-wider whitespace-nowrap uppercase">
                                         {t('articles.table.views')}
                                     </TableHead>
-                                    <TableHead className="h-11 px-5 text-footnote font-semibold uppercase tracking-wider text-secondary-label text-right">
+                                    <TableHead className="text-footnote text-secondary-label h-11 w-1 px-5 text-right font-semibold tracking-wider whitespace-nowrap uppercase">
                                         {t('articles.table.actions')}
                                     </TableHead>
                                 </TableRow>
@@ -393,7 +460,8 @@ return;
                                         >
                                             <div className="flex flex-col items-center gap-3">
                                                 <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-muted text-muted-foreground/60">
-                                                    {currentStatus === 'trash' ? (
+                                                    {currentStatus ===
+                                                    'trash' ? (
                                                         <Inbox className="h-8 w-8" />
                                                     ) : (
                                                         <FileText className="h-8 w-8" />
@@ -401,12 +469,16 @@ return;
                                                 </div>
                                                 <div className="flex flex-col gap-1">
                                                     <div className="text-headline font-medium">
-                                                        {currentStatus === 'trash'
+                                                        {currentStatus ===
+                                                        'trash'
                                                             ? '回收站为空'
-                                                            : t('articles.noArticles')}
+                                                            : t(
+                                                                  'articles.noArticles',
+                                                              )}
                                                     </div>
                                                     <div className="text-footnote text-tertiary-label">
-                                                        {currentStatus === 'trash'
+                                                        {currentStatus ===
+                                                        'trash'
                                                             ? '没有文章被移至回收站'
                                                             : '开始创作你的第一篇文章吧'}
                                                     </div>
@@ -415,11 +487,17 @@ return;
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={() => router.visit(articleActions.create.url())}
+                                                        onClick={() =>
+                                                            router.visit(
+                                                                articleActions.create.url(),
+                                                            )
+                                                        }
                                                         className="mt-2"
                                                     >
                                                         <Plus className="h-4 w-4" />
-                                                        {t('articles.writeFirst')}
+                                                        {t(
+                                                            'articles.writeFirst',
+                                                        )}
                                                     </Button>
                                                 )}
                                             </div>
@@ -427,101 +505,204 @@ return;
                                     </TableRow>
                                 ) : (
                                     articleList.map((article) => {
-                                        const isSelected = selectedIds.includes(article.id);
+                                        const isSelected = selectedIds.includes(
+                                            article.id,
+                                        );
 
                                         return (
                                             <TableRow
                                                 key={article.id}
                                                 className={`border-b border-border/30 transition-colors duration-200 hover:bg-muted/20 ${isSelected ? 'bg-primary/5' : ''}`}
                                             >
-                                                <TableCell className="w-11 pl-5 pr-0 py-3.5">
+                                                <TableCell className="w-11 py-3.5 pr-0 pl-5">
                                                     <Checkbox
                                                         checked={isSelected}
-                                                        onCheckedChange={() => toggleSelect(article.id)}
+                                                        onCheckedChange={() =>
+                                                            toggleSelect(
+                                                                article.id,
+                                                            )
+                                                        }
                                                     />
                                                 </TableCell>
-                                                <TableCell className="px-3 py-3.5">
-                                                    <div className="flex items-center gap-2.5">
+                                                <TableCell className="max-w-[34rem] px-3 py-3.5">
+                                                    <div className="flex items-start gap-2.5">
                                                         <Badge
-                                                            variant={STATUS_MAP[article.status]?.variant || 'outline'}
-                                                            className="shrink-0"
+                                                            variant={
+                                                                STATUS_MAP[
+                                                                    article
+                                                                        .status
+                                                                ]?.variant ||
+                                                                'outline'
+                                                            }
+                                                            className="mt-0.5 shrink-0"
                                                         >
-                                                            {t(STATUS_MAP[article.status]?.label || 'articles.status.unknown')}
+                                                            {t(
+                                                                STATUS_MAP[
+                                                                    article
+                                                                        .status
+                                                                ]?.label ||
+                                                                    'articles.status.unknown',
+                                                            )}
                                                         </Badge>
-                                                        <span className="text-body truncate font-medium">
-                                                            {article.title}
-                                                        </span>
+                                                        {article.status ===
+                                                            'publish' &&
+                                                        article.permalink ? (
+                                                            <a
+                                                                href={
+                                                                    article.permalink
+                                                                }
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                title={t(
+                                                                    'articles.openArticle',
+                                                                )}
+                                                                className="text-body min-w-0 font-medium break-words hover:text-primary hover:underline"
+                                                            >
+                                                                {article.title}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-body min-w-0 font-medium break-words">
+                                                                {article.title}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3.5">
-                                                    <span className="text-callout text-secondary-label">
-                                                        {article.author_name || '-'}
+                                                    <span className="text-callout text-secondary-label whitespace-nowrap">
+                                                        {article.author_name ||
+                                                            '-'}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3.5">
-                                                    {article.categories.length > 0 ? (
+                                                    {article.categories.length >
+                                                    0 ? (
                                                         <div className="flex flex-wrap gap-1">
-                                                            {article.categories.slice(0, 2).map((cat, i) => (
-                                                                <Badge key={i} variant="outline" className="font-normal">
-                                                                    {cat}
-                                                                </Badge>
-                                                            ))}
-                                                            {article.categories.length > 2 && (
-                                                                <Badge variant="outline" className="font-normal">
-                                                                    +{article.categories.length - 2}
+                                                            {article.categories
+                                                                .slice(0, 2)
+                                                                .map(
+                                                                    (
+                                                                        cat,
+                                                                        i,
+                                                                    ) => (
+                                                                        <Badge
+                                                                            key={
+                                                                                i
+                                                                            }
+                                                                            variant="outline"
+                                                                            className="font-normal"
+                                                                        >
+                                                                            {
+                                                                                cat
+                                                                            }
+                                                                        </Badge>
+                                                                    ),
+                                                                )}
+                                                            {article.categories
+                                                                .length > 2 && (
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className="font-normal"
+                                                                >
+                                                                    +
+                                                                    {article
+                                                                        .categories
+                                                                        .length -
+                                                                        2}
                                                                 </Badge>
                                                             )}
                                                         </div>
                                                     ) : (
-                                                        <span className="text-callout text-tertiary-label">-</span>
+                                                        <span className="text-callout text-tertiary-label">
+                                                            -
+                                                        </span>
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3.5">
                                                     {article.tags.length > 0 ? (
                                                         <div className="flex flex-wrap gap-1">
-                                                            {article.tags.slice(0, 2).map((tag, i) => (
-                                                                <Badge key={i} variant="secondary" className="font-normal">
-                                                                    #{tag}
-                                                                </Badge>
-                                                            ))}
-                                                            {article.tags.length > 2 && (
-                                                                <Badge variant="secondary" className="font-normal">
-                                                                    +{article.tags.length - 2}
+                                                            {article.tags
+                                                                .slice(0, 2)
+                                                                .map(
+                                                                    (
+                                                                        tag,
+                                                                        i,
+                                                                    ) => (
+                                                                        <Badge
+                                                                            key={
+                                                                                i
+                                                                            }
+                                                                            variant="secondary"
+                                                                            className="font-normal"
+                                                                        >
+                                                                            #
+                                                                            {
+                                                                                tag
+                                                                            }
+                                                                        </Badge>
+                                                                    ),
+                                                                )}
+                                                            {article.tags
+                                                                .length > 2 && (
+                                                                <Badge
+                                                                    variant="secondary"
+                                                                    className="font-normal"
+                                                                >
+                                                                    +
+                                                                    {article
+                                                                        .tags
+                                                                        .length -
+                                                                        2}
                                                                 </Badge>
                                                             )}
                                                         </div>
                                                     ) : (
-                                                        <span className="text-callout text-tertiary-label">-</span>
+                                                        <span className="text-callout text-tertiary-label">
+                                                            -
+                                                        </span>
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3.5">
                                                     <div className="flex items-center gap-1.5">
-                                                        <MessageSquare className="h-4 w-4 text-tertiary-label" />
-                                                        {article.status === 'publish' && article.permalink ? (
+                                                        <MessageSquare className="text-tertiary-label h-4 w-4" />
+                                                        {article.status ===
+                                                            'publish' &&
+                                                        article.permalink ? (
                                                             <a
                                                                 href={`${article.permalink}#comments`}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                title={t('articles.viewComments')}
-                                                                className="text-callout tabular-nums text-primary hover:underline"
+                                                                title={t(
+                                                                    'articles.viewComments',
+                                                                )}
+                                                                className="text-callout text-primary tabular-nums hover:underline"
                                                             >
-                                                                {article.comment_count}
+                                                                {
+                                                                    article.comment_count
+                                                                }
                                                             </a>
                                                         ) : (
-                                                            <span className="text-callout tabular-nums">{article.comment_count}</span>
+                                                            <span className="text-callout tabular-nums">
+                                                                {
+                                                                    article.comment_count
+                                                                }
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3.5">
                                                     <div className="flex items-center gap-1.5">
-                                                        <Calendar className="h-4 w-4 text-tertiary-label" />
-                                                        <span className="text-callout">{article.created_at}</span>
+                                                        <Calendar className="text-tertiary-label h-4 w-4" />
+                                                        <span className="text-callout">
+                                                            {article.created_at}
+                                                        </span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3.5">
                                                     <div className="flex items-center gap-1.5">
-                                                        <Eye className="h-4 w-4 text-tertiary-label" />
-                                                        <span className="text-callout tabular-nums">{article.views}</span>
+                                                        <Eye className="text-tertiary-label h-4 w-4" />
+                                                        <span className="text-callout tabular-nums">
+                                                            {article.views}
+                                                        </span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="px-5 py-3.5 text-right">
@@ -529,42 +710,70 @@ return;
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => router.visit(`/admin/articles/${article.id}/edit`)}
-                                                            className="h-8 gap-1.5 pl-2 pr-3"
+                                                            onClick={() =>
+                                                                router.visit(
+                                                                    `/admin/articles/${article.id}/edit`,
+                                                                )
+                                                            }
+                                                            className="h-8 gap-1.5 pr-3 pl-2"
                                                         >
                                                             <Pencil className="h-4 w-4" />
-                                                            <span>{t('articles.edit')}</span>
+                                                            <span>
+                                                                {t(
+                                                                    'articles.edit',
+                                                                )}
+                                                            </span>
                                                         </Button>
-                                                        {article.status === 'trash' ? (
+                                                        {article.status ===
+                                                        'trash' ? (
                                                             <div className="flex items-center gap-1">
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
-                                                                    onClick={() => handleRestore(article.id)}
-                                                                    className="h-8 gap-1.5 pl-2 pr-3 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600 dark:text-emerald-400"
+                                                                    onClick={() =>
+                                                                        handleRestore(
+                                                                            article.id,
+                                                                        )
+                                                                    }
+                                                                    className="h-8 gap-1.5 pr-3 pl-2 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600 dark:text-emerald-400"
                                                                 >
                                                                     <RotateCcw className="h-4 w-4" />
-                                                                    <span>取出回收站</span>
+                                                                    <span>
+                                                                        取出回收站
+                                                                    </span>
                                                                 </Button>
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
-                                                                    onClick={() => handleForceDelete(article.id, article.title)}
-                                                                    className="h-8 gap-1.5 pl-2 pr-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                    onClick={() =>
+                                                                        handleForceDelete(
+                                                                            article.id,
+                                                                            article.title,
+                                                                        )
+                                                                    }
+                                                                    className="h-8 gap-1.5 pr-3 pl-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                                 >
                                                                     <Trash2 className="h-4 w-4" />
-                                                                    <span>永久删除</span>
+                                                                    <span>
+                                                                        永久删除
+                                                                    </span>
                                                                 </Button>
                                                             </div>
                                                         ) : (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                onClick={() => handleTrash(article.id)}
-                                                                className="h-8 gap-1.5 pl-2 pr-3 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                onClick={() =>
+                                                                    handleTrash(
+                                                                        article.id,
+                                                                    )
+                                                                }
+                                                                className="h-8 gap-1.5 pr-3 pl-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                             >
                                                                 <Trash2 className="h-4 w-4" />
-                                                                <span>回收站</span>
+                                                                <span>
+                                                                    回收站
+                                                                </span>
                                                             </Button>
                                                         )}
                                                     </div>
@@ -592,25 +801,40 @@ return;
                         }
 
                         params.set('page', String(page));
-                        router.visit(`/admin/articles?${params.toString()}`, { preserveScroll: true });
+                        router.visit(`/admin/articles?${params.toString()}`, {
+                            preserveScroll: true,
+                        });
                     }}
                 />
             </div>
 
             {/* Force delete confirmation dialog */}
-            <Dialog open={!!forceDeleteTarget} onOpenChange={(open) => !open && setForceDeleteTarget(null)}>
+            <Dialog
+                open={!!forceDeleteTarget}
+                onOpenChange={(open) => !open && setForceDeleteTarget(null)}
+            >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{t('articles.deleteConfirmTitle')}</DialogTitle>
+                        <DialogTitle>
+                            {t('articles.deleteConfirmTitle')}
+                        </DialogTitle>
                         <DialogDescription>
-                            {t('articles.deleteConfirmDescription', { title: forceDeleteTarget?.title ?? '' })}
+                            {t('articles.deleteConfirmDescription', {
+                                title: forceDeleteTarget?.title ?? '',
+                            })}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setForceDeleteTarget(null)}>
+                        <Button
+                            variant="outline"
+                            onClick={() => setForceDeleteTarget(null)}
+                        >
                             {t('common.cancel')}
                         </Button>
-                        <Button variant="destructive" onClick={executeForceDelete}>
+                        <Button
+                            variant="destructive"
+                            onClick={executeForceDelete}
+                        >
                             {t('common.confirm')}
                         </Button>
                     </DialogFooter>

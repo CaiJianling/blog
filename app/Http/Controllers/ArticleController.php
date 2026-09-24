@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ArticleController extends Controller
@@ -228,6 +229,106 @@ class ArticleController extends Controller
             'created_categories' => $categories['created'],
             'created_tags' => $tags['created'],
         ]));
+    }
+
+    /**
+     * AI 辅助已写好的草稿：按 target 只补全摘要 / SEO / 分类 / 标签中的一项，
+     * 依据当前标题与正文内容生成，供写作页逐字段点击使用。
+     *
+     * 分类与标签会解析为词条 id（缺失的词条即时创建），并把建议列表回传给前端，
+     * 由作者勾选后再填入，避免未经确认就改动文章的归类。
+     */
+    public function aiAssist(Request $request, AiService $ai): JsonResponse
+    {
+        $validated = $request->validate([
+            'target' => ['required', 'string', Rule::in(['categories', 'tags', 'excerpt', 'seo'])],
+            'title' => ['nullable', 'string', 'max:255'],
+            'excerpt' => ['nullable', 'string', 'max:500'],
+            'content' => ['nullable', 'array'],
+        ], [
+            'target.required' => '请指定要补全的内容。',
+            'target.in' => '不支持的补全类型。',
+        ]);
+
+        if (! $ai->isConfigured()) {
+            return response()->json([
+                'message' => '请先在后台「设置 → AI 设置」中完成 AI 接口配置。',
+            ], 422);
+        }
+
+        $plainText = Article::extractPlainText($validated['content'] ?? []);
+
+        if (trim((string) $validated['title']) === '' && mb_strlen($plainText) < 20) {
+            return response()->json([
+                'message' => '请先填写标题或写一段正文，AI 需要内容依据才能补全。',
+            ], 422);
+        }
+
+        try {
+            $meta = $ai->extractArticleMeta(
+                (string) ($validated['title'] ?? ''),
+                (string) ($validated['excerpt'] ?? ''),
+                $plainText,
+                [
+                    'categories' => $this->existingTaxonomyNames('category'),
+                    'tags' => $this->existingTaxonomyNames('tag'),
+                ],
+            );
+        } catch (AiRequestException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'debug' => $e->context(),
+            ], 502);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 502);
+        }
+
+        return match ($validated['target']) {
+            'excerpt' => response()->json(['excerpt' => $meta['excerpt']]),
+            'seo' => response()->json([
+                'meta_title' => $meta['meta_title'],
+                'meta_description' => $meta['meta_description'],
+            ]),
+            default => response()->json([
+                'terms' => $this->suggestTerms(
+                    $validated['target'] === 'categories' ? 'category' : 'tag',
+                    $validated['target'] === 'categories' ? $meta['categories'] : $meta['tags'],
+                ),
+            ]),
+        };
+    }
+
+    /**
+     * 把 AI 建议的词条名解析为可勾选列表：命中已有则复用，缺失则创建并标记 created。
+     *
+     * @param  array<int, string>  $names
+     * @return array<int, array{id: int, name: string, created: bool}>
+     */
+    private function suggestTerms(string $taxonomy, array $names): array
+    {
+        $resolution = $this->resolveTaxonomyIds($taxonomy, $names);
+
+        if ($resolution['ids'] === []) {
+            return [];
+        }
+
+        $createdIds = array_column($resolution['created'], 'id');
+
+        $terms = TermTaxonomy::whereIn('term_taxonomy_id', $resolution['ids'])
+            ->with('term')
+            ->get()
+            ->keyBy('term_taxonomy_id');
+
+        return array_map(
+            fn (int $id) => [
+                'id' => $id,
+                'name' => (string) ($terms[$id]?->term->name ?? ''),
+                'created' => in_array($id, $createdIds, true),
+            ],
+            $resolution['ids'],
+        );
     }
 
     /**

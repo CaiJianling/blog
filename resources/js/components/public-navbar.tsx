@@ -16,22 +16,13 @@ import { EFFECT_LEVEL, useEffectsAtLeast } from '@/hooks/use-effects';
 import { useGlassSurfaceSize } from '@/hooks/use-glass-surface-size';
 import { cn } from '@/lib/utils';
 import { home, dashboard, login, register } from '@/routes';
-import blog from '@/routes/blog';
-import links from '@/routes/links';
-import nav from '@/routes/nav';
-import tools from '@/routes/tools';
-import type { RouteDefinition } from '@/wayfinder';
 
 /**
- * 后台「菜单管理」（slug=top）解析出的导航节点；
- * 为空时回退到内置默认导航。
- * url 可以是后端菜单给出的字符串路径，也可以是默认导航的 Wayfinder 路由对象。
+ * 后台「菜单设置」（slug=top 的顶部导航）解析出的导航节点，顶栏只渲染它。
  */
-type Href = string | RouteDefinition<'get'>;
-
 type NavNode = {
     label: string;
-    url: Href;
+    url: string;
     target: string;
     children: NavNode[];
 };
@@ -43,13 +34,8 @@ type PageProps = {
     top_nav?: NavNode[];
 };
 
-const urlOf = (url: Href): string => (typeof url === 'string' ? url : url.url);
-
-const isExternalUrl = (url: Href): boolean => {
-    const value = urlOf(url);
-
-    return /^https?:\/\//i.test(value) || value.startsWith('//');
-};
+const isExternalUrl = (url: string): boolean =>
+    /^https?:\/\//i.test(url) || url.startsWith('//');
 
 /**
  * 顶栏控件底衬：亮色半透黑、暗色半透白。
@@ -77,49 +63,9 @@ export default function PublicNavbar() {
     // 位移图按面板尺寸生成，故需要实测顶栏大小
     const barSize = useGlassSurfaceSize(barRef, barGlass);
 
-    // 默认导航（后台未维护 top 菜单或其项全部无效时回退）
-    const defaultItems: NavNode[] = [
-        { label: t('publicNav.home'), url: home(), target: '', children: [] },
-        {
-            label: t('publicNav.blog'),
-            url: blog.index(),
-            target: '',
-            children: [],
-        },
-        {
-            label: t('publicNav.moments'),
-            url: '/moments',
-            target: '',
-            children: [],
-        },
-        {
-            label: t('publicNav.archive'),
-            url: '/archive',
-            target: '',
-            children: [],
-        },
-        {
-            label: t('publicNav.tools'),
-            url: tools.index(),
-            target: '',
-            children: [],
-        },
-        {
-            label: t('publicNav.nav'),
-            url: nav.index(),
-            target: '',
-            children: [],
-        },
-        {
-            label: t('publicNav.links'),
-            url: links.index(),
-            target: '',
-            children: [],
-        },
-    ];
-
-    const items = (top_nav?.length ? top_nav : defaultItems).filter(
-        (item) => urlOf(item.url) !== '' || item.children.length > 0,
+    // 顶栏入口全部来自后台「菜单设置」：清空菜单即清空顶栏
+    const items = (top_nav ?? []).filter(
+        (item) => item.url !== '' || item.children.length > 0,
     );
 
     const toggleMobileExpand = (label: string) => {
@@ -163,7 +109,7 @@ export default function PublicNavbar() {
         if (isExternalUrl(item.url) || item.target === '_blank') {
             return (
                 <a
-                    href={urlOf(item.url)}
+                    href={item.url}
                     target={item.target === '_blank' ? '_blank' : undefined}
                     rel="noopener noreferrer"
                     onClick={onClick}
@@ -234,11 +180,15 @@ export default function PublicNavbar() {
                                     key={item.label}
                                     className="group relative"
                                 >
-                                    {urlOf(item.url) !== '' ? (
+                                    {item.url !== '' ? (
                                         isExternalUrl(item.url) ? (
                                             <a
-                                                href={urlOf(item.url)}
-                                                target={item.target === '_blank' ? '_blank' : undefined}
+                                                href={item.url}
+                                                target={
+                                                    item.target === '_blank'
+                                                        ? '_blank'
+                                                        : undefined
+                                                }
                                                 rel="noopener noreferrer"
                                                 className={cn(
                                                     'apple-press inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors',
@@ -290,7 +240,9 @@ export default function PublicNavbar() {
                                     </div>
                                 </div>
                             ) : (
-                                <div key={item.label}>{renderLink(item, navChip)}</div>
+                                <div key={item.label}>
+                                    {renderLink(item, navChip)}
+                                </div>
                             ),
                         )}
                     </nav>
@@ -368,10 +320,10 @@ export default function PublicNavbar() {
                                 {item.children.length > 0 ? (
                                     <>
                                         <div className="flex items-center justify-between">
-                                            {urlOf(item.url) !== '' ? (
+                                            {item.url !== '' ? (
                                                 isExternalUrl(item.url) ? (
                                                     <a
-                                                        href={urlOf(item.url)}
+                                                        href={item.url}
                                                         target={
                                                             item.target ===
                                                             '_blank'

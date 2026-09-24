@@ -95,6 +95,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/create', [ArticleController::class, 'create'])->name('articles.create');
         Route::post('/', [ArticleController::class, 'store'])->name('articles.store');
         Route::post('/ai-generate', [ArticleController::class, 'aiGenerate'])->name('articles.ai-generate');
+        Route::post('/ai-assist', [ArticleController::class, 'aiAssist'])->name('articles.ai-assist');
         Route::post('/batch', [ArticleController::class, 'batchUpdate'])->name('articles.batch');
         Route::get('/{article}/edit', [ArticleController::class, 'edit'])->name('articles.edit');
         Route::put('/{article}', [ArticleController::class, 'update'])->name('articles.update');
@@ -192,10 +193,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('smileys', [SmileyController::class, 'storeSmiley'])->name('smileys.store');
         Route::delete('smileys/{smiley}', [SmileyController::class, 'destroySmiley'])->name('smileys.destroy');
 
+        // 菜单位置固定（config/menus.php），只维护菜单项，故无创建/删除
         Route::get('menus', [MenuController::class, 'index'])->name('menus.index');
-        Route::post('menus', [MenuController::class, 'store'])->name('menus.store');
         Route::put('menus/{menu}', [MenuController::class, 'update'])->name('menus.update');
-        Route::delete('menus/{menu}', [MenuController::class, 'destroy'])->name('menus.destroy');
 
         // 导航页内容管理（分类、链接、图文介绍）
         Route::get('settings/navigation', [NavigationSettingController::class, 'edit'])->name('navigation.edit');
@@ -235,8 +235,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('settings/links/{link}/image', [LinksController::class, 'uploadImage'])->name('links.image.store');
         Route::delete('settings/links/{link}/image', [LinksController::class, 'removeImage'])->name('links.image.destroy');
 
-        // AI 小助手设置（页面合并进 settings/ai，仅保留保存与头像接口）
+        // AI 小助手设置（页面合并进 settings/ai，仅保留保存、模型列表与头像接口）
         Route::put('settings/assistant', [AssistantSettingController::class, 'update'])->name('assistant.update');
+        Route::get('settings/assistant/models', [AssistantSettingController::class, 'models'])->name('assistant.models');
         Route::post('settings/assistant/avatar', [AssistantSettingController::class, 'uploadAvatar'])->name('assistant.avatar.store');
         Route::delete('settings/assistant/avatar', [AssistantSettingController::class, 'removeAvatar'])->name('assistant.avatar.destroy');
         Route::get('settings/assistant', fn () => to_route('ai.edit'))->name('assistant.edit');

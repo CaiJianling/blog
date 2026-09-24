@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AiRequestException;
 use App\Models\Attachment;
 use App\Models\Option;
+use App\Services\AiService;
 use App\Services\AttachmentService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
@@ -87,6 +89,35 @@ class AssistantSettingController extends Controller
         }
 
         return to_route('ai.edit')->with('toast', ['type' => 'success', 'message' => 'AI 小助手设置已保存。']);
+    }
+
+    /**
+     * 用小助手自有的接口配置拉取可用模型列表，供设置页选择。
+     */
+    public function models(AiService $ai): JsonResponse
+    {
+        if (trim((string) Option::get('assistant_api_key', '')) === '') {
+            return response()->json([
+                'message' => '请先填写并保存小助手的 API 密钥，再获取模型列表。',
+            ], 422);
+        }
+
+        try {
+            $models = $ai->listAssistantModels();
+        } catch (AiRequestException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'debug' => $e->context(),
+            ], 502);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 502);
+        }
+
+        return response()->json([
+            'data' => $models,
+        ]);
     }
 
     /**

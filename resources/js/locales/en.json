@@ -548,7 +548,9 @@
             "uploadSuccess": "Avatar updated.",
             "uploadFailed": "Avatar upload failed.",
             "enabledBadge": "Enabled",
-            "disabledBadge": "Disabled"
+            "disabledBadge": "Disabled",
+            "usageHint": "Once configured, the assistant opens from the lower-right corner of the site.",
+            "fetchModelsFastgptHint": "FastGPT endpoints usually don't expose /models; enter the model name manually if fetching fails."
         },
         "footer": {
             "title": "Footer Settings",
@@ -725,6 +727,7 @@
         "list": "Article List",
         "allArticles": "All Articles",
         "viewComments": "View the comments for this article",
+        "openArticle": "Open this post in a new tab",
         "create": "Write Article",
         "categories": "Categories",
         "tags": "Tags",
@@ -816,6 +819,14 @@
             "generate": "Generate",
             "generating": "Generating…",
             "success": "AI content ready (including SEO, tags and categories). Please review before saving.",
+            "assist": {
+                "none": "AI did not return anything new to use.",
+                "applied": "AI content filled in. Review it before saving.",
+                "pickTitle": "Choose {{name}} to add",
+                "pickDescription": "Tick the terms to add to this article; ones marked \"new\" do not exist on the site yet.",
+                "newTerm": "new",
+                "addSelected": "Add {{count}} selected"
+            },
             "failed": "AI generation failed. Please try again later.",
             "csrfFailed": "Your session has expired or become invalid. Please refresh the page and try again.",
             "confirmOverwrite": "You already have a title or content. Continuing will overwrite it. Continue?",
@@ -849,6 +860,7 @@
         "editPage": "Edit Page",
         "managePages": "Manage your pages",
         "viewComments": "View the comments for this page",
+        "openPage": "Open this page in a new tab",
         "pagesCount": "{{count}} pages",
         "noPages": "No pages yet",
         "writeFirst": "Write your first page",
@@ -1231,13 +1243,6 @@
         "linkSent": "A new verification link has been sent to your email address."
     },
     "publicNav": {
-        "home": "Home",
-        "blog": "Blog",
-        "moments": "Moments",
-        "archive": "Archive",
-        "tools": "Tools",
-        "nav": "Navigation",
-        "links": "Friend Links",
         "dashboard": "Dashboard",
         "login": "Sign in",
         "register": "Register",

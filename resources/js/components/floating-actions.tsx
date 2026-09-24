@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { motion, useAnimationControls } from 'framer-motion';
-import { MessageSquare, Rocket, SquarePen } from 'lucide-react';
+import { MessageSquare, Plus, Rocket, SquarePen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import FloatingSettingsPanel from '@/components/floating-settings-panel';
 import GlassButtonBackground from '@/components/LiquidGlass/glass-button-background';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 /**
  * 前台右下角悬浮操作组：
  * - 编辑本文（仅文章作者本人登录时出现，跳后台编辑页）
+ * - 新建说说（仅管理员，且只在说说列表页出现，跳后台写说说）
  * - 回到顶部（按钮圆环显示文章阅读进度）
  * - 跳转评论区（文章详情页且开启评论，点击后聚焦评论输入框）
  *
@@ -19,9 +20,10 @@ import { cn } from '@/lib/utils';
  * 位置与 AI 小助手按钮协调：启用时悬浮其上方，未启用时贴底。
  */
 export default function FloatingActions() {
-    const { assistant, article } = usePage().props as unknown as {
+    const { assistant, article, auth } = usePage().props as unknown as {
         assistant?: { enabled?: boolean };
         article?: { id?: number; can_edit?: boolean };
+        auth?: { user?: { role?: string } };
     };
     const glassButtons = useEffectsAtLeast(EFFECT_LEVEL.pro);
 
@@ -36,8 +38,15 @@ export default function FloatingActions() {
         ? `/admin/articles/${article.id}/edit`
         : null;
 
+    // 管理员在说说列表页的快捷新建入口（写说说走后台 /admin/moments/create）
+    const createMomentUrl =
+        auth?.user?.role === 'administrator' && url.split('?')[0] === '/moments'
+            ? '/admin/moments/create'
+            : null;
+
     // 按下缩放反馈（与小助手 FAB 的 whileTap 一致）
     const pressEdit = useAnimationControls();
+    const pressCreateMoment = useAnimationControls();
     const pressComment = useAnimationControls();
     const pressTop = useAnimationControls();
 
@@ -123,6 +132,35 @@ export default function FloatingActions() {
                     </TooltipTrigger>
                     <TooltipContent side="left" className="tooltip-dark">
                         编辑这篇文章
+                    </TooltipContent>
+                </Tooltip>
+            )}
+            {createMomentUrl && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <motion.span
+                            animate={pressCreateMoment}
+                            className="relative block h-10 w-10"
+                        >
+                            <Link
+                                href={createMomentUrl}
+                                onPointerDown={() => press(pressCreateMoment)}
+                                onPointerUp={() => release(pressCreateMoment)}
+                                onPointerLeave={() => release(pressCreateMoment)}
+                                className={cn(
+                                    'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-primary/45 text-primary shadow-md transition-colors hover:bg-primary/10',
+                                    !glassButtons && 'bg-popover',
+                                )}
+                                aria-label="新建说说"
+                            >
+                                <GlassButtonBackground size={40} />
+                                <Plus className="relative h-4 w-4" />
+                            </Link>
+                            {glassButtons && <GlassEdgeRing variant="circle" />}
+                        </motion.span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="tooltip-dark">
+                        新建说说
                     </TooltipContent>
                 </Tooltip>
             )}
