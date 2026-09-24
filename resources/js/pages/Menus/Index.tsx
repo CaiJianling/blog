@@ -7,7 +7,6 @@ import {
     FileStack,
     FolderTree,
     Plus,
-    Trash2,
     X,
     Save,
 } from 'lucide-react';
@@ -16,13 +15,6 @@ import { useTranslation } from 'react-i18next';
 import * as menuActions from '@/actions/App/Http/Controllers/MenuController';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -150,12 +142,9 @@ export default function MenusIndex({
     const [nodes, setNodes] = useState<MenuItemNode[]>(() =>
         buildInitialNodes(items),
     );
-    const [menuName, setMenuName] = useState(selectedMenu?.name ?? '');
     const [autoAddPages, setAutoAddPages] = useState(
         selectedMenu?.auto_add_pages ?? false,
     );
-    const [createOpen, setCreateOpen] = useState(false);
-    const [newMenuName, setNewMenuName] = useState('');
     const [expanded, setExpanded] = useState<Set<string>>(new Set());
     const [saving, setSaving] = useState(false);
 
@@ -372,6 +361,8 @@ export default function MenusIndex({
     const handleDragStart = (clientId: string) => (e: React.DragEvent) => {
         setDragId(clientId);
         e.dataTransfer.effectAllowed = 'move';
+        // Firefox / Safari 在 setData 之前不会真正开始拖拽
+        e.dataTransfer.setData('text/plain', clientId);
         dragCounter.current = 0;
     };
 
@@ -470,7 +461,7 @@ export default function MenusIndex({
         setDropTarget(null);
     };
 
-    // ---------- 保存 / 删除 ----------
+    // ---------- 保存 ----------
     const handleSave = () => {
         if (!selectedMenu) {
             return;
@@ -478,7 +469,6 @@ export default function MenusIndex({
 
         setSaving(true);
         const payload = {
-            name: menuName,
             auto_add_pages: autoAddPages ? '1' : '0',
             items: nodes.map((n) => ({
                 clientId: n.clientId,
@@ -495,34 +485,6 @@ export default function MenusIndex({
             preserveScroll: true,
             onFinish: () => setSaving(false),
         });
-    };
-
-    const handleDeleteMenu = () => {
-        if (!selectedMenu) {
-            return;
-        }
-
-        if (!window.confirm(t('menus.deleteConfirm'))) {
-            return;
-        }
-
-        router.delete(menuActions.destroy.url(selectedMenu.id), {
-            preserveScroll: true,
-        });
-    };
-
-    const handleCreateMenu = () => {
-        if (!newMenuName.trim()) {
-            return;
-        }
-
-        router.post(
-            menuActions.store.url(),
-            { name: newMenuName.trim() },
-            { preserveScroll: true },
-        );
-        setCreateOpen(false);
-        setNewMenuName('');
     };
 
     const switchMenu = (id: string) => {
@@ -567,7 +529,9 @@ export default function MenusIndex({
                     onDrop={handleDrop(node.clientId)}
                     onDragEnd={handleDragEnd}
                     className={cn(
-                        'apple-press relative rounded-xl border border-border/50 bg-card shadow-sm transition-all',
+                        // 不能挂 apple-press：按下时整行 scale(0.96) 会让指针与行内的展开箭头
+                        // 错位导致点击落空，同时也会打断 draggable 的拖拽起始
+                        'relative rounded-xl border border-border/50 bg-card shadow-sm transition-all',
                         isDragging && 'opacity-40',
                         isDropTarget &&
                             dropTarget?.pos === 'child' &&
@@ -786,7 +750,7 @@ export default function MenusIndex({
                     </p>
                 </div>
 
-                {/* 菜单选择 */}
+                {/* 菜单位置（固定挂点，不可增删） */}
                 <div className="apple-card flex flex-wrap items-center gap-3 p-4">
                     <span className="text-callout text-muted-foreground">
                         {t('menus.selectMenu')}
@@ -806,13 +770,14 @@ export default function MenusIndex({
                             ))}
                         </SelectContent>
                     </Select>
-                    <button
-                        type="button"
-                        onClick={() => setCreateOpen(true)}
-                        className="text-callout cursor-pointer text-primary hover:underline"
-                    >
-                        {t('menus.createNew')}
-                    </button>
+                    {selectedMenu && (
+                        <span className="text-footnote rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
+                            {t('menus.location')}
+                            <span className="ml-1 font-mono">
+                                {selectedMenu.slug}
+                            </span>
+                        </span>
+                    )}
                 </div>
 
                 <div className="grid flex-1 auto-rows-min items-start gap-5 lg:grid-cols-[320px_1fr]">
@@ -927,10 +892,8 @@ export default function MenusIndex({
                                         </Label>
                                         <Input
                                             id="menu_name"
-                                            value={menuName}
-                                            onChange={(e) =>
-                                                setMenuName(e.target.value)
-                                            }
+                                            value={selectedMenu.name}
+                                            readOnly
                                         />
                                     </div>
                                     <p className="text-footnote mt-3 text-muted-foreground">
@@ -977,18 +940,10 @@ export default function MenusIndex({
                                 <div className="flex items-center gap-3">
                                     <Button
                                         onClick={handleSave}
-                                        disabled={saving || !menuName.trim()}
+                                        disabled={saving}
                                     >
                                         <Save className="h-4 w-4" />
                                         {t('menus.save')}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        onClick={handleDeleteMenu}
-                                        className="text-destructive hover:text-destructive"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                        {t('menus.deleteMenu')}
                                     </Button>
                                 </div>
                             </>
@@ -997,54 +952,10 @@ export default function MenusIndex({
                                 <p className="text-callout text-muted-foreground">
                                     {t('menus.noMenu')}
                                 </p>
-                                <Button
-                                    className="mt-3"
-                                    onClick={() => setCreateOpen(true)}
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    {t('menus.createNew')}
-                                </Button>
                             </div>
                         )}
                     </div>
                 </div>
-
-                {/* 创建菜单弹窗 */}
-                <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>{t('menus.createTitle')}</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid gap-2 py-2">
-                            <Label htmlFor="new_menu_name">
-                                {t('menus.menuName')}
-                            </Label>
-                            <Input
-                                id="new_menu_name"
-                                value={newMenuName}
-                                onChange={(e) => setNewMenuName(e.target.value)}
-                                onKeyDown={(e) =>
-                                    e.key === 'Enter' && handleCreateMenu()
-                                }
-                                autoFocus
-                            />
-                        </div>
-                        <DialogFooter>
-                            <Button
-                                variant="outline"
-                                onClick={() => setCreateOpen(false)}
-                            >
-                                {t('common.cancel')}
-                            </Button>
-                            <Button
-                                onClick={handleCreateMenu}
-                                disabled={!newMenuName.trim()}
-                            >
-                                {t('common.confirm')}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
             </div>
         </>
     );

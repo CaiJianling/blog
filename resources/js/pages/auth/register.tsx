@@ -206,7 +206,7 @@ export default function Register({ passwordRules, captchaEnabled, captcha }: Pro
                                                 <img
                                                     src={`${captcha.src}?t=${captchaStamp}`}
                                                     alt={t('auth.register.captcha')}
-                                                    className="block h-10 bg-background"
+                                                    className="block h-12 w-auto max-w-full bg-background object-contain"
                                                 />
                                             </button>
                                         </div>

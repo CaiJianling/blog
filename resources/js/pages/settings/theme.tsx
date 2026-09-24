@@ -432,15 +432,18 @@ export default function Theme({
                                             <span>{t('settings.theme.glassFrostClear')}</span>
                                             <span>{t('settings.theme.glassFrostFrosted')}</span>
                                         </div>
-                                        <LiquidSlider
-                                            fillContainer
-                                            size={0.5}
-                                            min={GLASS_FROST_LIMITS.min}
-                                            max={GLASS_FROST_LIMITS.max}
-                                            value={glassFrost}
-                                            onChange={setGlassFrost}
-                                            aria-label={t('settings.theme.defaultGlassFrost')}
-                                        />
+                                        {/* 窄屏随容器收窄，宽屏上限 360px（参考示例最大那档的比例） */}
+                                        <div className="mx-auto w-full max-w-90">
+                                            <LiquidSlider
+                                                fillContainer
+                                                size="md"
+                                                min={GLASS_FROST_LIMITS.min}
+                                                max={GLASS_FROST_LIMITS.max}
+                                                value={glassFrost}
+                                                onChange={setGlassFrost}
+                                                aria-label={t('settings.theme.defaultGlassFrost')}
+                                            />
+                                        </div>
                                     </div>
 
                                     <div className="flex items-center justify-end border-t border-border/40 pt-4">
@@ -493,34 +496,37 @@ export default function Theme({
                                                     {bgOpacity}%
                                                 </span>
                                             </div>
-                                            {liquidSlider ? (
-                                                <LiquidSlider
-                                                    fillContainer
-                                                    size={0.5}
-                                                    min={0}
-                                                    max={100}
-                                                    value={bgOpacity}
-                                                    onChange={setBgOpacity}
-                                                    aria-label={t(
-                                                        'settings.theme.bgOpacity',
-                                                    )}
-                                                />
-                                            ) : (
-                                                <input
-                                                    id="bg-opacity"
-                                                    type="range"
-                                                    min={0}
-                                                    max={100}
-                                                    step={1}
-                                                    value={bgOpacity}
-                                                    onChange={(e) =>
-                                                        setBgOpacity(
-                                                            Number(e.target.value),
-                                                        )
-                                                    }
-                                                    className="w-full accent-[var(--primary)]"
-                                                />
-                                            )}
+                                            {/* 窄屏随容器收窄，宽屏上限 360px；数值显示在标签行右侧 */}
+                                            <div className="mx-auto w-full max-w-90">
+                                                {liquidSlider ? (
+                                                    <LiquidSlider
+                                                        fillContainer
+                                                        size="md"
+                                                        min={0}
+                                                        max={100}
+                                                        value={bgOpacity}
+                                                        onChange={setBgOpacity}
+                                                        aria-label={t(
+                                                            'settings.theme.bgOpacity',
+                                                        )}
+                                                    />
+                                                ) : (
+                                                    <input
+                                                        id="bg-opacity"
+                                                        type="range"
+                                                        min={0}
+                                                        max={100}
+                                                        step={1}
+                                                        value={bgOpacity}
+                                                        onChange={(e) =>
+                                                            setBgOpacity(
+                                                                Number(e.target.value),
+                                                            )
+                                                        }
+                                                        className="w-full accent-[var(--primary)]"
+                                                    />
+                                                )}
+                                            </div>
                                             <p className="text-xs text-muted-foreground">
                                                 {t('settings.theme.bgOpacityHint')}
                                             </p>
@@ -623,32 +629,37 @@ export default function Theme({
                                                 {heroOpacity}%
                                             </span>
                                         </div>
-                                        {liquidSlider ? (
-                                            <LiquidSlider
-                                                fillContainer
-                                                size={0.5}
-                                                min={0}
-                                                max={100}
-                                                value={heroOpacity}
-                                                onChange={setHeroOpacity}
-                                                aria-label={t('settings.theme.heroOpacity')}
-                                            />
-                                        ) : (
-                                            <input
-                                                id="hero-opacity"
-                                                type="range"
-                                                min={0}
-                                                max={100}
-                                                step={1}
-                                                value={heroOpacity}
-                                                onChange={(e) =>
-                                                    setHeroOpacity(
-                                                        Number(e.target.value),
-                                                    )
-                                                }
-                                                className="w-full accent-[var(--primary)]"
-                                            />
-                                        )}
+                                        {/* 窄屏随容器收窄，宽屏上限 360px；数值显示在标签行右侧 */}
+                                        <div className="mx-auto w-full max-w-90">
+                                            {liquidSlider ? (
+                                                <LiquidSlider
+                                                    fillContainer
+                                                    size="md"
+                                                    min={0}
+                                                    max={100}
+                                                    value={heroOpacity}
+                                                    onChange={setHeroOpacity}
+                                                    aria-label={t(
+                                                        'settings.theme.heroOpacity',
+                                                    )}
+                                                />
+                                            ) : (
+                                                <input
+                                                    id="hero-opacity"
+                                                    type="range"
+                                                    min={0}
+                                                    max={100}
+                                                    step={1}
+                                                    value={heroOpacity}
+                                                    onChange={(e) =>
+                                                        setHeroOpacity(
+                                                            Number(e.target.value),
+                                                        )
+                                                    }
+                                                    className="w-full accent-[var(--primary)]"
+                                                />
+                                            )}
+                                        </div>
                                         <p className="text-xs text-muted-foreground">
                                             {t('settings.theme.heroOpacityHint')}
                                         </p>

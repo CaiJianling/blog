@@ -10,6 +10,7 @@ import type { AssistantConversation, AssistantMessage } from '@/lib/assistant-db
 import { deleteConversation, listConversations, newConversationId, putConversation } from '@/lib/assistant-db';
 import { getCsrfHeaders } from '@/lib/csrf';
 import { renderMarkdown } from '@/lib/markdown';
+import { panelEnter, panelExit } from '@/lib/panel-motion';
 import { cn } from '@/lib/utils';
 
 interface AssistantConfig {
@@ -68,9 +69,9 @@ export default function AiAssistantWidget() {
     }, [current?.messages.length, sending]);
 
     // 液态玻璃滤镜需要面板的实时尺寸来生成折射位移图。
-    // 入场/离场是 transform 缩放（不改变 offsetWidth/Height），但首帧从 0→实际值
-    // 会触发一次重算；窗口缩放也会触发。此处去抖，尺寸稳定后只重算一次，
-    // 避免连续 setState 造成卡顿。
+    // 入场/离场是 transform 缩放（不改变 offsetWidth/Height），所以挂载即测一次即可，
+    // 等 ResizeObserver 的首次回调（异步 + 一帧 rAF）会让展开的第一帧没有玻璃底。
+    // 尺寸真变了（窗口缩放、档位切换）再由 RO 重算，且结果在 LiquidGlassPanel 里按参数缓存。
     useEffect(() => {
         const el = panelRef.current;
 
@@ -78,24 +79,27 @@ export default function AiAssistantWidget() {
             return;
         }
 
-        let timer: number | null = null;
+        let frame: number | null = null;
+        const measure = () => {
+            setPanelSize({ width: el.offsetWidth, height: el.offsetHeight });
+        };
+
+        measure();
+
         const observer = new ResizeObserver(() => {
-            if (timer !== null) {
-                cancelAnimationFrame(timer);
+            if (frame !== null) {
+                cancelAnimationFrame(frame);
             }
 
-            timer = requestAnimationFrame(() => {
-                timer = null;
-                setPanelSize({ width: el.offsetWidth, height: el.offsetHeight });
-            });
+            frame = requestAnimationFrame(measure);
         });
         observer.observe(el);
 
         return () => {
             observer.disconnect();
 
-            if (timer !== null) {
-                cancelAnimationFrame(timer);
+            if (frame !== null) {
+                cancelAnimationFrame(frame);
             }
         };
     }, [open]);
@@ -204,10 +208,10 @@ export default function AiAssistantWidget() {
                                 onClick={() => setOpen(true)}
                                 initial={{ opacity: 0, scale: 0.5 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.5 }}
+                                exit={{ opacity: 0, scale: 0.5, transition: panelExit }}
                                 whileHover={{ scale: 1.06 }}
                                 whileTap={{ scale: 0.94 }}
-                                transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                                transition={panelEnter}
                                 className="fixed right-5 bottom-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
                                 aria-label={`打开${name}`}
                             >
@@ -228,19 +232,24 @@ export default function AiAssistantWidget() {
             {/* 对话面板 */}
             <AnimatePresence>
                 {open && (
+                    /* 面板与外缘暗线共用一个动画节点：两条弹簧不可能帧帧同步 */
                     <motion.div
                         key="assistant-panel"
-                        ref={panelRef}
-                        initial={{ scale: 0.92, y: 16 }}
-                        animate={{ scale: 1, y: 0 }}
-                        exit={{ scale: 0.92, y: 16 }}
-                        transition={{ type: 'spring', stiffness: 340, damping: 30 }}
+                        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 12, transition: panelExit }}
+                        transition={panelEnter}
                         style={{ transformOrigin: 'bottom right' }}
-                        className="fixed right-4 bottom-4 z-50 flex h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-white/50 dark:border-white/10 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
+                        className="fixed right-4 bottom-4 z-50 h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))]"
                     >
-                        {/* 面板玻璃背景：进阶档 = 液态玻璃（边缘折射 + 色散），未达档位 = 半透明磨砂 */}
-                        {typeof window !== 'undefined' && panelSize.width > 0 && panelSize.height > 0 && (
-                            panelGlass ? (
+                    <div
+                        ref={panelRef}
+                        className="relative flex h-full w-full flex-col overflow-hidden rounded-3xl border border-white/50 dark:border-white/10 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
+                    >
+                        {/* 面板背景：进阶档 = 液态玻璃（边缘折射 + 色散），未达档位或位移图
+                            还没就绪 = 半透明磨砂垫底，绝不留空 */}
+                        {typeof window !== 'undefined' &&
+                            (panelGlass && panelSize.width > 0 && panelSize.height > 0 ? (
                                 <LiquidGlassPanel
                                     id={filterId}
                                     width={panelSize.width}
@@ -248,8 +257,7 @@ export default function AiAssistantWidget() {
                                 />
                             ) : (
                                 <div className="pointer-events-none absolute inset-0 bg-white/70 dark:bg-zinc-900/55 backdrop-blur-2xl backdrop-saturate-150" />
-                            )
-                        )}
+                            ))}
 
                         {/* 头部 */}
                         <div className="relative flex items-center gap-2.5 border-b border-border/50 px-4 py-3">
@@ -421,21 +429,11 @@ export default function AiAssistantWidget() {
                             Enter 发送 · Shift+Enter 换行 · 会话仅保存在本浏览器
                         </p>
                     </div>
-                    </motion.div>
-                )}
-                {/* 外缘暗线环（iOS 27）：与面板同几何、同动画的外层 1px 渐淡暗线，
-                    玻璃容器 overflow-hidden 无法容纳外扩像素，故作为兄弟节点渲染 */}
-                {open && panelGlass && (
-                    <motion.div
-                        key="assistant-panel-edge"
-                        initial={{ scale: 0.92, y: 16 }}
-                        animate={{ scale: 1, y: 0 }}
-                        exit={{ scale: 0.92, y: 16 }}
-                        transition={{ type: 'spring', stiffness: 340, damping: 30 }}
-                        style={{ transformOrigin: 'bottom right' }}
-                        className="pointer-events-none fixed right-4 bottom-4 z-50 h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))]"
-                    >
-                        <GlassEdgeRing variant="edges" radius={24} />
+                    </div>
+
+                    {/* 外缘暗线环（iOS 27）：画在玻璃容器外的 1px 渐淡暗线，
+                        overflow-hidden 会裁掉外扩像素，所以挂在容器这一层、和面板同一个动画节点 */}
+                    {panelGlass && <GlassEdgeRing variant="edges" radius={24} />}
                     </motion.div>
                 )}
             </AnimatePresence>

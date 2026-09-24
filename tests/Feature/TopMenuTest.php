@@ -127,15 +127,39 @@ test('auto add pages appends published pages to the top menu', function () {
     $menu = makeTopMenu(['auto_add_pages' => true]);
     makeMenuItem($menu, ['type' => 'custom', 'label' => '首页', 'url' => '/']);
 
+    $expectedPageUrl = app(PermalinkService::class)->pagePath($page);
+
     $this->get('/')
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $assert) => $assert
             ->where('top_nav.0.label', '首页')
             ->where('top_nav.1.label', '关于我们')
-            ->where('top_nav.1.url', '/about')
+            ->where('top_nav.1.url', $expectedPageUrl)
             ->has('top_nav', 2));
 
     expect($draft->id)->toBeGreaterThan(0);
+});
+
+test('page menu items resolve through the permalink structure even without a slug', function () {
+    // 「留言板」这类页面可以没有 slug，链接仍必须按固定链接结构生成，
+    // 否则解析成空串会被 buildTree 当成死链过滤掉，前台顶栏永远看不到它
+    $page = Page::create([
+        'title' => '留言板',
+        'slug' => '',
+        'content' => [],
+        'status' => 'publish',
+    ]);
+
+    $menu = makeTopMenu();
+    makeMenuItem($menu, ['type' => 'page', 'object_id' => $page->id, 'url' => '']);
+
+    $expectedUrl = app(PermalinkService::class)->pagePath($page);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertInertia(fn (Assert $pageAssert) => $pageAssert
+            ->where('top_nav.0.label', '留言板')
+            ->where('top_nav.0.url', $expectedUrl));
 });
 
 test('items pointing at missing objects are dropped from the navbar', function () {

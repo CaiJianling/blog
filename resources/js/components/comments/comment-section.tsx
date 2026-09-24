@@ -436,7 +436,7 @@ export default function CommentSection({ articleId, objectType = 'article', comm
                                     <img
                                         src={`${captcha.src}?t=${captchaStamp}`}
                                         alt={t('publicComment.captcha')}
-                                        className="block h-10 bg-background"
+                                        className="block h-12 w-auto max-w-full bg-background object-contain"
                                     />
                                 </button>
                             )}

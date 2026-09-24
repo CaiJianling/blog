@@ -36,7 +36,7 @@ class MenuService
         $articleIds = $items->where('type', 'article')->pluck('object_id')->unique()->filter();
         $categoryIds = $items->where('type', 'category')->pluck('object_id')->unique()->filter();
 
-        $pages = Page::whereIn('id', $pageIds)->get(['id', 'title', 'slug']);
+        $pages = Page::whereIn('id', $pageIds)->get(['id', 'title', 'slug', 'created_at']);
         $articles = Article::whereIn('id', $articleIds)->get(['id', 'title', 'slug', 'created_at']);
         $articleUrls = $articles
             ->mapWithKeys(fn (Article $article) => [$article->id => $this->permalinks->articlePath($article)]);
@@ -61,7 +61,9 @@ class MenuService
                 case 'page':
                     $page = $pages->firstWhere('id', $item->object_id);
                     $objectLabel = $page?->title ?? '';
-                    $resolvedUrl = $page?->slug ? '/'.$page->slug : '';
+                    // 页面同样走固定链接结构：slug 可以为空（如「留言板」），
+                    // 直接拼 '/'.slug 会解析成空链接并被 buildTree 过滤掉
+                    $resolvedUrl = $page ? $this->permalinks->pagePath($page) : '';
                     break;
                 case 'article':
                     $article = $articles->firstWhere('id', $item->object_id);

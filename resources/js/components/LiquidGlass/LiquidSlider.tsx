@@ -160,6 +160,19 @@ export default function LiquidSlider({
     const pointerDown = useMotionValue(0);
     const overshoot = useMotionValue(0);
     const lastEmitted = useRef(Math.round(initialValue));
+    const dragging = useRef(false);
+    const lastEmitAt = useRef(0);
+    const syncTimer = useRef<number | null>(null);
+
+    /** 记录本次 emit，供 isEchoedValue 判断回流。 */
+    const emit = useCallback(
+        (next: number): void => {
+            lastEmitted.current = next;
+            lastEmitAt.current = performance.now();
+            onChange?.(next);
+        },
+        [onChange],
+    );
 
     useMotionValueEvent(x, 'change', (latestX) => {
         const rawProgress = (latestX - constraintsLeft) / totalSlideRange;
@@ -178,11 +191,11 @@ export default function LiquidSlider({
         const normValue = Math.max(0, Math.min(100, eased * 100));
         norm.set(normValue);
 
+        // 与参考实现一致：只在整数变化时回灌父组件，变化频率天然受数值粒度限制，不必再等帧
         const actual = Math.round(fromNorm(normValue));
 
         if (actual !== lastEmitted.current) {
-            lastEmitted.current = actual;
-            onChange?.(actual);
+            emit(actual);
         }
 
         // 越界形变：记录拇指超出物理边界的距离
@@ -199,24 +212,73 @@ export default function LiquidSlider({
         }
     });
 
-    // 受控值外部变化时（如登录后数据库覆盖本地值）弹簧归位
+    /**
+     * 外部受控值是否只是我们自己 emit 出去的值的回声。
+     *
+     * onChange 会写父组件 state，state 回灌到 value 时拇指往往已经又往前走了几帧（尤其是
+     * 惯性滑动中）。此时若对它起 animate，就会和拖拽/惯性动画抢同一个 x motion value：
+     * 拇指被拽回上一帧、动量清零，手感变成「拖不动、滑快了没有惯性」。所以拖拽中、以及
+     * 刚刚 emit 过（回流必然发生在几帧内）时一律跳过。
+     */
+    const isEchoedValue = useCallback(
+        (v: number): boolean =>
+            dragging.current ||
+            Math.abs(v - lastEmitted.current) < 1 ||
+            performance.now() - lastEmitAt.current < 200,
+        [],
+    );
+
+    const syncToValue = useCallback(
+        (v: number): void => {
+            if (Math.abs(v - fromNorm(norm.get())) <= 0.75) {
+                return;
+            }
+
+            x.stop();
+            void animate(x, normToX(toNorm(v)), { type: 'spring', stiffness: 400, damping: 30 });
+        },
+        [x, norm, normToX, toNorm, fromNorm],
+    );
+
+    // 受控值外部变化时（如登录后数据库覆盖本地值、点「恢复默认」）弹簧归位
     useEffect(() => {
         if (value === undefined) {
             return;
         }
 
-        if (Math.abs(value - fromNorm(norm.get())) > 0.75) {
-            void animate(x, normToX(toNorm(value)), {
-                type: 'spring',
-                stiffness: 400,
-                damping: 30,
-            });
+        if (syncTimer.current !== null) {
+            clearTimeout(syncTimer.current);
+            syncTimer.current = null;
         }
-    }, [value, x, norm, normToX, toNorm, fromNorm]);
 
-    // 容器宽度变化后把拇指复位到当前数值对应的物理位置
+        if (!isEchoedValue(value)) {
+            syncToValue(value);
+
+            return;
+        }
+
+        // 安静窗口后补做归位，否则被当成回声的外部改动会永久丢掉
+        syncTimer.current = window.setTimeout(() => {
+            syncTimer.current = null;
+
+            if (!dragging.current && value !== lastEmitted.current) {
+                syncToValue(value);
+            }
+        }, 220);
+    }, [value, isEchoedValue, syncToValue]);
+
+    useEffect(
+        () => () => {
+            if (syncTimer.current !== null) {
+                clearTimeout(syncTimer.current);
+            }
+        },
+        [],
+    );
+
+    // 容器宽度变化后把拇指复位到当前数值对应的物理位置（拖拽中交给指针自己持有 x）
     useEffect(() => {
-        if (!fillContainer) {
+        if (!fillContainer || dragging.current) {
             return;
         }
 
@@ -306,6 +368,7 @@ export default function LiquidSlider({
 
     useEffect(() => {
         const onPointerUp = (): void => {
+            dragging.current = false;
             pointerDown.set(0);
             void animate(overshoot, 0, { type: 'spring', stiffness: 400, damping: 30 });
         };
@@ -321,27 +384,33 @@ export default function LiquidSlider({
         };
     }, [overshoot, pointerDown]);
 
-    // fillContainer：实测容器宽度（换算为 1 号基准宽度），并监听 resize
+    // fillContainer：挂载即实测容器宽度（换算为 1 号基准宽度），并用 ResizeObserver 跟随变化。
+    // 不能延迟测量：首帧按 480 基准渲染会让拇指位置看起来不居中。
     useEffect(() => {
         if (!fillContainer) {
             return;
         }
 
         const updateWidth = (): void => {
-            const rect = containerRef.current?.getBoundingClientRect();
+            const width = containerRef.current?.offsetWidth ?? 0;
 
-            if (rect && rect.width > 0) {
-                setContainerWidth(rect.width / scale);
+            if (width > 0) {
+                setContainerWidth(width / scale);
             }
         };
 
-        const timer = setTimeout(updateWidth, 100);
-        window.addEventListener('resize', updateWidth);
+        updateWidth();
 
-        return () => {
-            clearTimeout(timer);
-            window.removeEventListener('resize', updateWidth);
-        };
+        const container = containerRef.current;
+
+        if (!container) {
+            return;
+        }
+
+        const observer = new ResizeObserver(updateWidth);
+        observer.observe(container);
+
+        return () => observer.disconnect();
     }, [fillContainer, scale]);
 
     const onThumbKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -373,8 +442,7 @@ export default function LiquidSlider({
         const rounded = Math.round(next);
 
         void animate(x, normToX(toNorm(next)), { type: 'spring', stiffness: 400, damping: 30 });
-        lastEmitted.current = rounded;
-        onChange?.(rounded);
+        emit(rounded);
         onChangeEnd?.(rounded);
     };
 
@@ -451,8 +519,15 @@ export default function LiquidSlider({
                     dragConstraints={{ left: constraintsLeft, right: constraintsRight }}
                     onMouseDown={() => pointerDown.set(1)}
                     onMouseUp={() => pointerDown.set(0)}
-                    onDragStart={() => pointerDown.set(1)}
+                    onDragStart={() => {
+                        dragging.current = true;
+                        pointerDown.set(1);
+
+                        // 上一段程序动画（吸附/回填）还在跑时立刻交还控制权给指针，否则两边抢同一个 x
+                        x.stop();
+                    }}
                     onDragEnd={() => {
+                        dragging.current = false;
                         pointerDown.set(0);
 
                         // 贴近两端时吸附到 min/max
@@ -477,8 +552,7 @@ export default function LiquidSlider({
                         void animate(overshoot, 0, { type: 'spring', stiffness: 400, damping: 30 });
 
                         const finalValue = targetValue !== null ? targetValue : Math.round(fromNorm(norm.get()));
-                        lastEmitted.current = finalValue;
-                        onChange?.(finalValue);
+                        emit(finalValue);
                         onChangeEnd?.(finalValue);
                     }}
                     className="absolute focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"

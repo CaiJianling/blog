@@ -145,6 +145,22 @@ function imageDataToUrl(imageData: ImageData): string {
     return canvas.toDataURL();
 }
 
+/** useDisplacementMaps 的返回值，按输入参数缓存。 */
+type DisplacementMaps = {
+    maxDisp: number;
+    maps: ChannelMaps;
+    bufferWidth: number;
+    bufferHeight: number;
+};
+
+/**
+ * 位移图 = 全画布像素循环 + 三次 toDataURL，实测几十毫秒。它挂在浮窗上时正好落在入场动画
+ * 的前几帧，每开一次算一次就会明显掉帧；而 toDataURL 出来的 PNG base64 又很占内存，
+ * 尺寸一变（窗口缩放）还会累积。故按输入缓存并只保留最近 8 份。
+ */
+const MAPS_CACHE_LIMIT = 8;
+const mapsCache = new Map<string, DisplacementMaps>();
+
 function useDisplacementMaps(
     width: number,
     height: number,
@@ -154,15 +170,38 @@ function useDisplacementMaps(
     refractiveIndex: number,
     dpr: number,
 ) {
-    return useMemo(() => {
+    return useMemo<DisplacementMaps>(() => {
+        const key = `${width}x${height}|r${radius}|b${bezelWidth}|t${glassThickness}|n${refractiveIndex}|d${dpr}`;
+        const cached = mapsCache.get(key);
+
+        if (cached) {
+            // 移到末尾，让最近用过的留在缓存里
+            mapsCache.delete(key);
+            mapsCache.set(key, cached);
+
+            return cached;
+        }
+
         const profile = calculateDisplacementMap(glassThickness, bezelWidth, CONVEX.fn, refractiveIndex);
         const maxDisp = Math.max(...profile.map((v) => Math.abs(v)));
 
         // 一张覆盖整面板的位移图：边缘为折射场，中部为中性（恒等变换）
         const base = calculateDisplacementMap2(width, height, width, height, radius, bezelWidth, maxDisp, profile, dpr);
-        const maps = buildChannelMaps(base, radius, dpr);
+        const built: DisplacementMaps = { maxDisp, maps: buildChannelMaps(base, radius, dpr), bufferWidth: width, bufferHeight: height };
 
-        return { maxDisp, maps, bufferWidth: width, bufferHeight: height };
+        mapsCache.set(key, built);
+
+        while (mapsCache.size > MAPS_CACHE_LIMIT) {
+            const oldest = mapsCache.keys().next().value;
+
+            if (oldest === undefined) {
+                break;
+            }
+
+            mapsCache.delete(oldest);
+        }
+
+        return built;
     }, [width, height, radius, bezelWidth, glassThickness, refractiveIndex, dpr]);
 }
 

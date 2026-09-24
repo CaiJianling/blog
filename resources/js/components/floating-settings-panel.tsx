@@ -27,6 +27,7 @@ import {
 import { useThemeColor, updateThemeColor } from '@/hooks/use-theme-color';
 import type { Locale } from '@/i18n';
 import { getCsrfHeaders } from '@/lib/csrf';
+import { panelEnter, panelExit } from '@/lib/panel-motion';
 import { cn } from '@/lib/utils';
 import { show as userSettingsShow, update as userSettingsUpdate } from '@/routes/user-settings';
 
@@ -77,6 +78,7 @@ export default function FloatingSettingsPanel() {
     const { frost, updateGlassFrost, resetGlassFrost } = useGlassFrost();
     const pressGear = useAnimationControls();
     const lastSynced = useRef<UserPreferences | null>(null);
+    const glassReady = glassSize.width > 0 && glassSize.height > 0;
 
     // 按下缩放反馈（与小助手 FAB 的 whileTap 一致）
     const press = (controls: ReturnType<typeof useAnimationControls>): void => {
@@ -105,13 +107,12 @@ export default function FloatingSettingsPanel() {
         setOpen(true);
     };
 
-    // 特效开启时弹窗使用液态玻璃背景，需要实测弹窗尺寸生成位移图
+    // 特效开启时弹窗使用液态玻璃背景，需要实测弹窗尺寸生成位移图。
+    // 关闭时故意不清零：离场动画期间玻璃层必须留在原位，否则弹窗会先变成一个空边框再缩回去。
     useEffect(() => {
         const el = popoverBodyRef.current;
 
         if (!open || !el) {
-            setGlassSize({ width: 0, height: 0 });
-
             return;
         }
 
@@ -119,21 +120,14 @@ export default function FloatingSettingsPanel() {
             setGlassSize({ width: el.offsetWidth, height: el.offsetHeight });
         };
 
-        // 立即测量一次（ResizeObserver 首次回调是异步的，直接测量可避免
-        // 弹窗展开瞬间玻璃层缺失）；RO 负责后续尺寸变化，定时器兜底节流环境。
+        // 挂载即测（ResizeObserver 首次回调是异步的，等它就会在展开的第一帧没有底）；
+        // RO 负责后续尺寸变化，例如切换特效档位时提示文字变长。
         update();
 
         const observer = new ResizeObserver(update);
-
         observer.observe(el);
-        const fallback1 = window.setTimeout(update, 50);
-        const fallback2 = window.setTimeout(update, 300);
 
-        return () => {
-            observer.disconnect();
-            window.clearTimeout(fallback1);
-            window.clearTimeout(fallback2);
-        };
+        return () => observer.disconnect();
     }, [open]);
 
     // 点击弹窗与齿轮按钮之外时关闭
@@ -234,24 +228,31 @@ export default function FloatingSettingsPanel() {
                     >
                         <AnimatePresence>
                             {open && (
+                                /* 弹窗与外缘暗线共用一个动画节点：两条弹簧不可能帧帧同步，
+                                   拆成兄弟节点时暗线会跟玻璃错开一帧。 */
                                 <motion.div
-                                    ref={popoverBodyRef}
-                                    initial={{ y: 8, scale: 0.96 }}
-                                    animate={{ y: 0, scale: 1 }}
-                                    exit={{ y: 8, scale: 0.96 }}
-                                    transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                                    key="settings-popover"
+                                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 8, scale: 0.96, transition: panelExit }}
+                                    transition={panelEnter}
                                     style={{ transformOrigin: 'bottom right' }}
-                                    className={cn(
-                                        'relative overflow-hidden rounded-3xl border border-white/50 dark:border-white/10 p-3 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]',
-                                        !panelGlass && 'bg-popover/90 backdrop-blur-xl',
-                                    )}
+                                    className="relative"
                                 >
-                                    {/* 液态玻璃背景（进阶档起），未达档位时为磨砂底 */}
-                                    {panelGlass && glassSize.width > 0 && glassSize.height > 0 && (
-                                        <LiquidGlassPanel id={filterId} width={glassSize.width} height={glassSize.height} />
-                                    )}
+                                    <div
+                                        ref={popoverBodyRef}
+                                        className={cn(
+                                            'relative overflow-hidden rounded-3xl border border-white/50 dark:border-white/10 p-3 text-popover-foreground shadow-[0_16px_48px_rgba(0,0,0,0.3)]',
+                                            // 玻璃层就绪之前先垫磨砂底，否则展开的第一帧没有材质
+                                            (!panelGlass || !glassReady) && 'bg-popover/90 backdrop-blur-xl',
+                                        )}
+                                    >
+                                        {/* 液态玻璃背景（进阶档起），未达档位时为磨砂底 */}
+                                        {panelGlass && glassReady && (
+                                            <LiquidGlassPanel id={filterId} width={glassSize.width} height={glassSize.height} />
+                                        )}
 
-                                    <div className="relative">
+                                        <div className="relative">
                                     <div className="flex items-center justify-between">
                                         <p className="text-sm font-semibold">{t('settings.floating.title')}</p>
                                         <button
@@ -457,20 +458,11 @@ export default function FloatingSettingsPanel() {
                                         {isAuthed ? t('settings.floating.synced') : t('settings.floating.local')}
                                     </p>
                                     </div>
-                                </motion.div>
-                            )}
-                            {/* 外缘暗线环（iOS 27）：与弹窗同动画的外层 1px 渐淡暗线兄弟节点 */}
-                            {open && panelGlass && (
-                                <motion.div
-                                    key="settings-popover-edge"
-                                    initial={{ y: 8, scale: 0.96 }}
-                                    animate={{ y: 0, scale: 1 }}
-                                    exit={{ y: 8, scale: 0.96 }}
-                                    transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-                                    style={{ transformOrigin: 'bottom right' }}
-                                    className="pointer-events-none absolute inset-0"
-                                >
-                                    <GlassEdgeRing variant="edges" radius={24} />
+                                    </div>
+
+                                    {/* 外缘暗线环（iOS 27）：画在玻璃容器外的 1px 渐淡暗线，
+                                        放在同一动画节点里才能和玻璃帧帧对齐 */}
+                                    {panelGlass && <GlassEdgeRing variant="edges" radius={24} />}
                                 </motion.div>
                             )}
                         </AnimatePresence>

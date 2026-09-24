@@ -27,14 +27,19 @@ class MenuController extends Controller
     ) {}
 
     /**
-     * 菜单管理页：菜单列表 + 当前菜单结构 + 可添加对象。
+     * 菜单管理页：固定挂点菜单 + 当前菜单结构 + 可添加对象。
      */
     public function index(Request $request): Response
     {
-        $menus = NavMenu::orderBy('id')->get(['id', 'name', 'slug']);
+        $menus = collect(config('menus.locations'))
+            ->map(fn (string $name, string $slug) => NavMenu::firstOrCreate(
+                ['slug' => $slug],
+                ['name' => $name, 'auto_add_pages' => false],
+            ))
+            ->values();
 
         $selectedId = (int) $request->query('menu', $menus->first()?->id ?? 0);
-        $menu = NavMenu::find($selectedId) ?? $menus->first();
+        $menu = $menus->firstWhere('id', $selectedId) ?: $menus->first();
 
         $pages = Page::where('status', '!=', 'trash')
             ->orderByDesc('updated_at')
@@ -69,7 +74,11 @@ class MenuController extends Controller
             : [];
 
         return Inertia::render('Menus/Index', [
-            'menus' => $menus,
+            'menus' => $menus->map(fn (NavMenu $nav) => [
+                'id' => $nav->id,
+                'name' => $nav->name,
+                'slug' => $nav->slug,
+            ])->values(),
             'selectedMenu' => $menu ? [
                 'id' => $menu->id,
                 'name' => $menu->name,
@@ -86,33 +95,11 @@ class MenuController extends Controller
     }
 
     /**
-     * 创建新菜单。
-     */
-    public function store(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:191',
-        ]);
-
-        $count = NavMenu::count();
-        $menu = NavMenu::create([
-            'name' => $validated['name'],
-            'slug' => 'menu-'.($count + 1),
-            'auto_add_pages' => false,
-        ]);
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => '菜单已创建。']);
-
-        return to_route('menus.index', ['menu' => $menu->id]);
-    }
-
-    /**
-     * 保存菜单：名称、设置 + 全量同步菜单项（扁平 DFS 列表）。
+     * 保存菜单项与设置（扁平 DFS 列表）。菜单位置固定，名称不可改。
      */
     public function update(Request $request, NavMenu $menu): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:191',
             'auto_add_pages' => ['nullable', 'in:0,1'],
             'items' => ['array'],
             'items.*.clientId' => ['required', 'string'],
@@ -129,7 +116,6 @@ class MenuController extends Controller
 
         DB::transaction(function () use ($menu, $validated, $items) {
             $menu->update([
-                'name' => $validated['name'],
                 'auto_add_pages' => ($validated['auto_add_pages'] ?? '0') === '1',
             ]);
 
@@ -175,20 +161,5 @@ class MenuController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => '菜单已保存。']);
 
         return to_route('menus.index', ['menu' => $menu->id]);
-    }
-
-    /**
-     * 删除菜单及其全部菜单项。
-     */
-    public function destroy(NavMenu $menu): RedirectResponse
-    {
-        DB::transaction(function () use ($menu) {
-            NavMenuItem::where('menu_id', $menu->id)->delete();
-            $menu->delete();
-        });
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => '菜单已删除。']);
-
-        return to_route('menus.index');
     }
 }

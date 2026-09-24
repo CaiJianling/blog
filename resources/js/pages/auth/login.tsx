@@ -150,7 +150,7 @@ export default function Login({ status, canResetPassword, captchaEnabled, captch
                                             <img
                                                 src={`${captcha.src}?t=${captchaStamp}`}
                                                 alt={t('auth.login.captcha')}
-                                                className="block h-10 bg-background"
+                                                className="block h-12 w-auto max-w-full bg-background object-contain"
                                             />
                                         </button>
                                     </div>

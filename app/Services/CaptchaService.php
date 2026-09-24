@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Session;
  * 会话键按 scope 区分（captcha_login / captcha_comment），登录与评论互不干扰。
  * 复杂程度（easy/medium/hard）影响图形方式的字符数、旋转角度与干扰密度；
  * 简单计算的难度固定（加减乘、小数值），与评论原有行为一致。
+ *
+ * 图形方式按 2 倍画布渲染（IMAGE_HEIGHT），前端以一半高度显示，高分屏下字形不发虚。
  */
 class CaptchaService
 {
@@ -78,15 +80,38 @@ class CaptchaService
     protected const MATH_TTL_MINUTES = 10;
 
     /**
+     * 图形画布高度：按 2 倍尺寸绘制、前端以一半高度显示，高分屏下字形不发虚。
+     */
+    protected const IMAGE_HEIGHT = 96;
+
+    /**
+     * 渲染字体：TTF 随仓库分发（resources/fonts，SIL OFL 1.1），不依赖各机器的系统字体。
+     * 用 Regular 而非 Bold——粗体在干扰点下过于显眼。
+     */
+    protected const FONT_FILE = 'LiberationSans-Regular.ttf';
+
+    /**
+     * 两种图形方式的渲染参数：cell 单字符占位宽；font 字号；maxRotate 旋转角上限（null 表示跟随复杂程度）。
+     * 算式是一整串，用窄格并收紧旋转，避免相邻字符糊在一起。
+     *
+     * @var array<string, array{cell: int, font: int, maxRotate: int|null}>
+     */
+    protected const IMAGE_RENDER_CONFIG = [
+        self::TYPE_IMAGE => ['cell' => 48, 'font' => 44, 'maxRotate' => null],
+        self::TYPE_IMAGE_MATH => ['cell' => 38, 'font' => 46, 'maxRotate' => 12],
+    ];
+
+    /**
      * 各复杂程度的图形渲染参数。
      * length 字符数；rotate 最大旋转角；lines 干扰线；dots 噪点；jitter 垂直抖动。
+     * 数值按 IMAGE_HEIGHT 画布标定，改画布尺寸需同步调整 dots/jitter。
      *
      * @var array<string, array{length: int, rotate: int, lines: int, dots: int, jitter: int}>
      */
     protected const COMPLEXITY_CONFIG = [
-        self::COMPLEXITY_EASY => ['length' => 4, 'rotate' => 10, 'lines' => 2, 'dots' => 80, 'jitter' => 3],
-        self::COMPLEXITY_MEDIUM => ['length' => 4, 'rotate' => 16, 'lines' => 4, 'dots' => 160, 'jitter' => 5],
-        self::COMPLEXITY_HARD => ['length' => 5, 'rotate' => 22, 'lines' => 6, 'dots' => 280, 'jitter' => 8],
+        self::COMPLEXITY_EASY => ['length' => 4, 'rotate' => 10, 'lines' => 2, 'dots' => 320, 'jitter' => 6],
+        self::COMPLEXITY_MEDIUM => ['length' => 4, 'rotate' => 16, 'lines' => 4, 'dots' => 640, 'jitter' => 10],
+        self::COMPLEXITY_HARD => ['length' => 5, 'rotate' => 22, 'lines' => 6, 'dots' => 1120, 'jitter' => 16],
     ];
 
     /**
@@ -309,20 +334,22 @@ class CaptchaService
     public function generateImage(string $scope, string $type): string
     {
         $complexity = $this->complexityFor($scope);
+        $isMath = $type === self::TYPE_IMAGE_MATH;
+        $render = self::IMAGE_RENDER_CONFIG[$isMath ? self::TYPE_IMAGE_MATH : self::TYPE_IMAGE];
 
-        if ($type === self::TYPE_IMAGE_MATH) {
+        if ($isMath) {
             ['question' => $question, 'answer' => $answer] = $this->buildMathQuestion();
 
             $this->storeSessionAnswer($scope, (string) $answer);
 
-            return $this->render("{$question} = ?", $complexity, 20);
+            return $this->render(str_replace(' ', '', $question).'=?', $complexity, $render);
         }
 
         $code = $this->buildCode($complexity);
 
         $this->storeSessionAnswer($scope, $code);
 
-        return $this->render($code, $complexity, 30);
+        return $this->render($code, $complexity, $render);
     }
 
     /**
@@ -424,15 +451,24 @@ class CaptchaService
     }
 
     /**
-     * 渲染验证码图片：逐字符绘制到小块 → 旋转 → 贴主画布，再叠加干扰线与噪点。
-     *
-     * @param  int  $cellWidth  每个字符占位宽度（算式图片用窄格）
+     * 验证码字体路径（TTF 随仓库分发，保证各环境渲染一致）。
      */
-    protected function render(string $text, string $complexity, int $cellWidth = 30): string
+    protected function fontPath(): string
+    {
+        return resource_path('fonts/'.self::FONT_FILE);
+    }
+
+    /**
+     * 渲染验证码图片：逐字符用 TTF 绘制到小块 → 旋转 → 贴主画布，再叠加干扰线与噪点。
+     *
+     * @param  array{cell: int, font: int, maxRotate: int|null}  $render  单字符占位宽、字号与旋转角上限
+     */
+    protected function render(string $text, string $complexity, array $render): string
     {
         $config = self::COMPLEXITY_CONFIG[$this->normalizeComplexity($complexity)];
-        $height = 48;
-        $padding = 10;
+        $height = self::IMAGE_HEIGHT;
+        $cellWidth = $render['cell'];
+        $padding = intdiv($cellWidth, 3);
         $width = $cellWidth * strlen($text) + $padding * 2;
 
         $image = imagecreatetruecolor($width, $height);
@@ -443,9 +479,9 @@ class CaptchaService
         imagefilledrectangle($image, 0, 0, $width - 1, $height - 1, $background);
 
         // 逐字符：独立小块绘制 → 随机旋转 → 贴回主画布
-        $font = 5;
-        $charWidth = imagefontwidth($font);
-        $charHeight = imagefontheight($font);
+        $font = $this->fontPath();
+        $fontSize = $render['font'];
+        $rotate = $render['maxRotate'] === null ? $config['rotate'] : min($config['rotate'], $render['maxRotate']);
 
         foreach (str_split($text) as $index => $char) {
             if ($char === ' ') {
@@ -458,12 +494,15 @@ class CaptchaService
             imagefilledrectangle($cell, 0, 0, $cellWidth - 1, $height - 1, $cellBackground);
 
             $color = imagecolorallocate($cell, random_int(30, 110), random_int(30, 110), random_int(30, 110));
-            $x = intdiv($cellWidth - $charWidth, 2);
-            $y = intdiv($height - $charHeight, 2) + random_int(-$config['jitter'], $config['jitter']);
 
-            imagestring($cell, $font, $x, max(2, min($height - $charHeight - 2, $y)), $char, $color);
+            /** @var array<int, int> $metrics 字体可读时 GD 必定返回包围盒，仅字体文件损坏才会 false */
+            $metrics = imagettfbbox($fontSize, 0, $font, $char);
+            $x = (int) (intdiv($cellWidth - ($metrics[2] - $metrics[0]), 2) - $metrics[0]);
+            $y = (int) (intdiv($height + ($metrics[1] - $metrics[7]), 2) + random_int(-$config['jitter'], $config['jitter']));
 
-            $angle = (float) random_int(-$config['rotate'], $config['rotate']);
+            imagettftext($cell, $fontSize, 0, $x, $y, $color, $font, $char);
+
+            $angle = (float) random_int(-$rotate, $rotate);
             $rotated = imagerotate($cell, $angle, $background);
 
             imagecopy(
@@ -482,6 +521,8 @@ class CaptchaService
         }
 
         // 干扰线（叠在字符上方）
+        imagesetthickness($image, 2);
+
         for ($i = 0; $i < $config['lines']; $i++) {
             $lineColor = imagecolorallocate($image, random_int(150, 210), random_int(150, 210), random_int(150, 210));
 
@@ -503,8 +544,8 @@ class CaptchaService
                 $image,
                 random_int(0, $width - 1),
                 random_int(0, $height - 1),
-                random_int(1, 2),
-                random_int(1, 2),
+                random_int(2, 4),
+                random_int(2, 4),
                 $dotColor,
             );
         }
