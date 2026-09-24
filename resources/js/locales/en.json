@@ -1053,6 +1053,19 @@
     },
     "articlePage": {
         "blog": "Blog",
+        "share": {
+            "title": "Share",
+            "copy": "Copy title + link",
+            "copied": "Title and link copied — paste it anywhere",
+            "copyFailed": "Copy failed. Please copy the address manually.",
+            "wechat": "WeChat",
+            "wechatHint": "Scan with WeChat, then forward to a chat or Moments",
+            "weibo": "Weibo",
+            "qzone": "Qzone",
+            "x": "X",
+            "facebook": "Facebook",
+            "system": "More"
+        },
         "related": "Related Posts",
         "prev": "Previous",
         "next": "Next",

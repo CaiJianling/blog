@@ -14,6 +14,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import ArticleShare from '@/components/article-share';
 import type { BlockNoteDocument } from '@/components/blocknote-editor';
 import CommentSection from '@/components/comments/comment-section';
 import type {
@@ -900,6 +901,12 @@ export default function Show({
                                 <span className="tabular-nums">{likes}</span>
                             </button>
                         </div>
+
+                        {/* 分享：复制链接 / 微信扫码 / 微博 / QQ空间 / X / Facebook */}
+                        <ArticleShare
+                            permalink={article.permalink}
+                            title={article.title}
+                        />
 
                         {/* 评论：置于正文之后、上下篇之前 */}
                         <div className="mt-12">

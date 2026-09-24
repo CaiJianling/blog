@@ -58,7 +58,7 @@ export default function Index({ navigationCategories }: Props) {
                 {buildSeoMeta({ site: seo, title: '网站导航' })}
             </Head>
 
-            <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-14">
+            <div className="mx-auto max-w-7xl px-5 py-10 md:px-8 md:py-14">
                 <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h1 className="text-display">网站导航</h1>

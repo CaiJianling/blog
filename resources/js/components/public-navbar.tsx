@@ -156,7 +156,7 @@ export default function PublicNavbar() {
                     />
                 )}
 
-                <div className="relative mx-auto flex h-14 max-w-6xl items-center px-5 md:px-8">
+                <div className="relative mx-auto flex h-14 max-w-7xl items-center px-5 md:px-8">
                     {/* Logo */}
                     <Link
                         href={home()}
@@ -314,7 +314,7 @@ export default function PublicNavbar() {
             {/* Mobile Nav */}
             {mobileOpen && (
                 <div className="material-thick border-t border-border/50 md:hidden">
-                    <nav className="mx-auto flex max-w-6xl flex-col px-5 py-3">
+                    <nav className="mx-auto flex max-w-7xl flex-col px-5 py-3">
                         {items.map((item) => (
                             <div key={item.label}>
                                 {item.children.length > 0 ? (

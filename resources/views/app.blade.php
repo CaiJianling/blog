@@ -31,9 +31,15 @@
             }
         </style>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        {{-- 站点图标：后台上传过就用上传的（URL 带版本参数，换图标不必等硬刷新），否则回退内置默认 --}}
+        @if ($site_icon)
+            <link rel="icon" href="{{ $site_icon['url'] }}">
+            <link rel="apple-touch-icon" href="{{ $site_icon['url'] }}">
+        @else
+            <link rel="icon" href="/favicon.ico" sizes="any">
+            <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+            <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        @endif
         {{-- RSS 订阅发现：浏览器/阅读器可自动识别 /feed --}}
         <link rel="alternate" type="application/rss+xml" title="{{ config('app.name', 'Laravel') }} RSS" href="{{ url('/feed') }}">
 

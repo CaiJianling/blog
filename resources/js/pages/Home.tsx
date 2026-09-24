@@ -91,7 +91,7 @@ export default function Home() {
                     >
                         <HeroCanvas name={name ?? 'B'} />
                     </div>
-                    <div className="relative mx-auto w-full max-w-6xl px-5 pt-20 pb-16 md:px-8 md:pt-28 md:pb-24">
+                    <div className="relative mx-auto w-full max-w-7xl px-5 pt-20 pb-16 md:px-8 md:pt-28 md:pb-24">
                         <div className="mx-auto max-w-3xl text-center">
                             <span className="text-footnote inline-flex items-center rounded-full border border-border/60 bg-card/60 px-4 py-1.5 text-muted-foreground backdrop-blur">
                                 {texts.home_badge}
@@ -133,7 +133,7 @@ export default function Home() {
             </div>
 
             {/* Latest Articles */}
-            <section className="mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-16">
+            <section className="mx-auto max-w-7xl px-5 py-12 md:px-8 md:py-16">
                 <div className="flex items-end justify-between">
                     <div>
                         <h2 className="text-title">
@@ -210,7 +210,7 @@ export default function Home() {
             </section>
 
             {/* Featured Tools */}
-            <section className="mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-16">
+            <section className="mx-auto max-w-7xl px-5 py-12 md:px-8 md:py-16">
                 <div className="flex items-end justify-between">
                     <div>
                         <h2 className="text-title">{texts.home_tools_title}</h2>
@@ -251,7 +251,7 @@ export default function Home() {
             </section>
 
             {/* Navigation Preview */}
-            <section className="mx-auto max-w-6xl px-5 py-12 md:px-8 md:py-16">
+            <section className="mx-auto max-w-7xl px-5 py-12 md:px-8 md:py-16">
                 <div className="flex items-end justify-between">
                     <div>
                         <h2 className="text-title">{texts.home_nav_title}</h2>

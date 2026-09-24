@@ -14,11 +14,11 @@ import { buildSeoMeta } from '@/lib/seo';
 import blog from '@/routes/blog';
 
 const SEARCH_SCOPES: SearchScope[] = [
-    { value: 'title', label: '搜索标题', placeholder: '搜索文章标题' },
-    { value: 'content', label: '搜索文章内容', placeholder: '搜索文章内容' },
+    { value: 'title', label: '标题', placeholder: '搜索文章标题' },
+    { value: 'content', label: '内容', placeholder: '搜索文章内容' },
     {
         value: 'title_content',
-        label: '搜索标题和内容',
+        label: '标题 + 内容',
         placeholder: '搜索标题和内容',
     },
 ];
@@ -105,7 +105,7 @@ export default function Index({
                 {buildSeoMeta({ site: seo, title: '博客' })}
             </Head>
 
-            <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-14">
+            <div className="mx-auto max-w-7xl px-5 py-10 md:px-8 md:py-14">
                 <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h1 className="text-display">博客</h1>
