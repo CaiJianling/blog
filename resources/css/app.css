@@ -448,6 +448,22 @@
         margin: 0.5em auto;
     }
 
+    /* 读者上传的图片常见透明背景（PNG/GIF），深色主题或灰底卡片上会糊成一片看不清，
+       因此所有用户图片统一垫「灰白棋盘格」衬底：一眼能看出哪里是透明的，
+       不透明图片会被自身像素盖住，视觉无变化。组件里可直接用 .image-alpha-bg。 */
+    .image-alpha-bg,
+    .article-content img,
+    .comment-content img,
+    .moment-content img,
+    .blocknote-editor-wrapper img {
+        background-color: #fff;
+        background-image:
+            linear-gradient(45deg, rgb(0 0 0 / 0.07) 25%, transparent 25%, transparent 75%, rgb(0 0 0 / 0.07) 75%),
+            linear-gradient(45deg, rgb(0 0 0 / 0.07) 25%, transparent 25%, transparent 75%, rgb(0 0 0 / 0.07) 75%);
+        background-position: 0 0, 10px 10px;
+        background-size: 20px 20px;
+    }
+
     .article-content figure {
         margin: 1.25em 0;
         text-align: center;

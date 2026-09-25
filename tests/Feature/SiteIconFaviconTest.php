@@ -3,6 +3,7 @@
 use App\Models\Attachment;
 use App\Models\Option;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
 /**
  * 站点图标：后台「站点设置 → 站点图标」上传后必须真的出现在页面 <head> 的 favicon 上
@@ -82,4 +83,19 @@ test('removing the site icon restores the default links', function () {
     $this->get('/')
         ->assertSee('<link rel="icon" href="/favicon.ico" sizes="any">', false)
         ->assertDontSee('/storage/uploads', false);
+});
+
+test('site icon is shared as an inertia prop so the front logo can use it', function () {
+    $attachment = siteIconAttachment();
+    Option::set('site_icon', (string) $attachment->id);
+
+    $expected = Storage::disk('public')->url($attachment->file_path).'?v='.$attachment->updated_at->timestamp;
+
+    $this->get('/')
+        ->assertInertia(fn (Assert $page) => $page->where('siteIcon', $expected));
+
+    Option::set('site_icon', '');
+
+    $this->get('/')
+        ->assertInertia(fn (Assert $page) => $page->where('siteIcon', null));
 });

@@ -511,7 +511,7 @@ return;
                                             <img
                                                 src={attachment.thumbnail_url}
                                                 alt={attachment.file_name}
-                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                className="h-full w-full image-alpha-bg object-cover transition-transform duration-500 group-hover:scale-105"
                                                 loading="lazy"
                                             />
                                         ) : (
@@ -689,7 +689,7 @@ return;
                                                                 <img
                                                                     src={attachment.thumbnail_url}
                                                                     alt={attachment.file_name}
-                                                                    className="h-full w-full object-cover"
+                                                                    className="h-full w-full image-alpha-bg object-cover"
                                                                     loading="lazy"
                                                                 />
                                                             ) : (
@@ -787,7 +787,7 @@ return;
                                     <img
                                         src={previewAttachment.thumbnail_url}
                                         alt={previewAttachment.file_name}
-                                        className="max-h-[50vh] w-full object-contain"
+                                        className="max-h-[50vh] w-full image-alpha-bg object-contain"
                                     />
                                 ) : (
                                     <div className="flex h-48 w-full flex-col items-center justify-center gap-3 text-muted-foreground">

@@ -51,6 +51,26 @@ class OptionController extends Controller
     ];
 
     /**
+     * 站点图标的可访问 URL，供 favicon（resources/views/app.blade.php）与前台顶栏 logo 共用。
+     *
+     * URL 上的 ?v= 取附件自身的更新时间：浏览器对 favicon 的缓存很顽固，不换 URL 的话
+     * 换图标要硬刷新才生效。未设置、附件已删或不是图片时返回 null（回退内置默认图标）。
+     */
+    public static function siteIconUrl(): ?string
+    {
+        $attachment = Attachment::find((int) Option::get('site_icon', ''));
+
+        if ($attachment === null || ! $attachment->isImage()) {
+            return null;
+        }
+
+        /** @var FilesystemAdapter $publicDisk */
+        $publicDisk = Storage::disk('public');
+
+        return $publicDisk->url($attachment->file_path).'?v='.($attachment->updated_at?->timestamp ?? 0);
+    }
+
+    /**
      * Show the site settings page.
      */
     public function edit(Request $request): Response

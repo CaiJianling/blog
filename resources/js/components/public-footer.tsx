@@ -32,8 +32,9 @@ function contactIcon(url: string) {
 }
 
 export default function PublicFooter() {
-    const { name, footer } = usePage().props as unknown as {
+    const { name, siteIcon, footer } = usePage().props as unknown as {
         name?: string;
+        siteIcon?: string | null;
         footer?: {
             resources: FooterLink[];
             contacts: FooterLink[];
@@ -51,11 +52,19 @@ export default function PublicFooter() {
                 <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
                     <div className="col-span-2 md:col-span-1">
                         <Link href={home()} className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                                <span className="text-sm font-bold">
-                                    {name?.charAt(0) ?? 'B'}
-                                </span>
-                            </div>
+                            {siteIcon ? (
+                                <img
+                                    src={siteIcon}
+                                    alt=""
+                                    className="h-8 w-8 shrink-0 rounded-lg object-contain"
+                                />
+                            ) : (
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                    <span className="text-sm font-bold">
+                                        {name?.charAt(0) ?? 'B'}
+                                    </span>
+                                </div>
+                            )}
                             <span className="text-headline">{name}</span>
                         </Link>
                         <p className="text-footnote mt-3 leading-relaxed">

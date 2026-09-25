@@ -12,6 +12,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\FooterSettingController;
+use App\Http\Controllers\OptionController;
 use App\Http\Controllers\ThemeSettingController;
 use App\Models\Attachment;
 use App\Models\Option;
@@ -61,6 +62,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            // 站点图标：前台顶栏 logo 用它（favicon 由 app.blade.php 直接输出同一个 URL）
+            'siteIcon' => OptionController::siteIconUrl(),
             'auth' => [
                 'user' => $request->user(),
             ],

@@ -409,7 +409,7 @@ export default function MediaCreate() {
                                                         <img
                                                             src={item.previewUrl}
                                                             alt={item.file.name}
-                                                            className="h-full w-full object-cover"
+                                                            className="h-full w-full image-alpha-bg object-cover"
                                                         />
                                                     ) : (
                                                         <div className="flex flex-col items-center gap-1 text-muted-foreground">

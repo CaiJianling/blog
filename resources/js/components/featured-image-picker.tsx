@@ -152,7 +152,7 @@ export default function FeaturedImagePicker({
                         <img
                             src={selected.url}
                             alt={t('articles.featuredImage.title')}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full image-alpha-bg object-cover"
                         />
                         <div className="absolute inset-0 flex items-end justify-end gap-1 bg-gradient-to-t from-black/40 to-transparent p-2 opacity-0 transition-opacity focus-within:opacity-100 hover:opacity-100">
                             <button
@@ -265,7 +265,7 @@ export default function FeaturedImagePicker({
                                                 src={item.url}
                                                 alt={item.file_name}
                                                 loading="lazy"
-                                                className="h-full w-full object-cover"
+                                                className="h-full w-full image-alpha-bg object-cover"
                                             />
                                             {isSelected && (
                                                 <span className="absolute right-1 top-1 rounded-full bg-primary p-1 text-white">

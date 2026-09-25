@@ -401,7 +401,7 @@ return Video;
                                                     <img
                                                         src={itemUrl}
                                                         alt={item.file_name}
-                                                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                                        className="h-full w-full image-alpha-bg object-cover transition-transform duration-200 group-hover:scale-105"
                                                         loading="lazy"
                                                     />
                                                 ) : (

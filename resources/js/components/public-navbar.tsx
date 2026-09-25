@@ -30,6 +30,7 @@ type NavNode = {
 type PageProps = {
     auth: { user?: unknown };
     name?: string;
+    siteIcon?: string | null;
     canRegister?: boolean;
     top_nav?: NavNode[];
 };
@@ -48,7 +49,7 @@ const navChip =
 
 export default function PublicNavbar() {
     const { t } = useTranslation();
-    const { auth, name, canRegister, top_nav } = usePage().props as PageProps;
+    const { auth, name, siteIcon, canRegister, top_nav } = usePage().props as PageProps;
     const { appearance, updateAppearance } = useAppearance();
     const barGlass = useEffectsAtLeast(EFFECT_LEVEL.ultimate);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -157,16 +158,24 @@ export default function PublicNavbar() {
                 )}
 
                 <div className="relative mx-auto flex h-14 max-w-7xl items-center px-5 md:px-8">
-                    {/* Logo */}
+                    {/* Logo：后台设过站点图标就用它，否则用站名首字生成 */}
                     <Link
                         href={home()}
                         className="apple-press flex items-center gap-2 rounded-xl px-1.5 py-1"
                     >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                            <span className="text-sm font-bold">
-                                {name?.charAt(0) ?? 'B'}
-                            </span>
-                        </div>
+                        {siteIcon ? (
+                            <img
+                                src={siteIcon}
+                                alt=""
+                                className="h-8 w-8 shrink-0 rounded-lg object-contain"
+                            />
+                        ) : (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                <span className="text-sm font-bold">
+                                    {name?.charAt(0) ?? 'B'}
+                                </span>
+                            </div>
+                        )}
                         <span className="text-headline hidden sm:block">
                             {name}
                         </span>
