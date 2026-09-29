@@ -9,6 +9,10 @@ import type {
 } from '@/components/comments/comment-section';
 import { useArticleLike } from '@/hooks/use-article-like';
 import { blocknoteToHtml } from '@/lib/blocknote-to-html';
+import {
+    EXPAND_TARGET_ATTR,
+    EXPAND_TRANSITION_NAME,
+} from '@/lib/expand-transition';
 import { buildSeoMeta } from '@/lib/seo';
 
 type MomentBlock = Record<string, unknown>;
@@ -72,7 +76,11 @@ export default function MomentShow({
                     返回说说
                 </Link>
 
-                <article className="apple-card p-5 sm:p-6">
+                <article
+                    className="apple-card p-5 sm:p-6"
+                    {...{ [EXPAND_TARGET_ATTR]: moment.permalink }}
+                    style={{ viewTransitionName: EXPAND_TRANSITION_NAME }}
+                >
                     {/* 作者 + 时间 */}
                     <div className="flex items-center gap-3">
                         {moment.author_avatar ? (

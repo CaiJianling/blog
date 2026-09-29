@@ -24,6 +24,10 @@ import type {
 } from '@/components/comments/comment-section';
 import { blocknoteToHtml } from '@/lib/blocknote-to-html';
 import { copyToClipboard } from '@/lib/clipboard';
+import {
+    EXPAND_TARGET_ATTR,
+    EXPAND_TRANSITION_NAME,
+} from '@/lib/expand-transition';
 import { buildSeoMeta } from '@/lib/seo';
 import { home } from '@/routes';
 import blog from '@/routes/blog';
@@ -774,7 +778,13 @@ export default function Show({
                     <div className="min-w-0 flex-1">
                         <article className="mt-0">
                             {/* 文章头部 */}
-                            <header className="apple-card p-6 md:p-10">
+                            <header
+                                className="apple-card p-6 md:p-10"
+                                {...{ [EXPAND_TARGET_ATTR]: article.permalink }}
+                                style={{
+                                    viewTransitionName: EXPAND_TRANSITION_NAME,
+                                }}
+                            >
                                 {article.categories.length > 0 && (
                                     <div className="mb-4 flex flex-wrap gap-2">
                                         {article.categories.map((cat) => (

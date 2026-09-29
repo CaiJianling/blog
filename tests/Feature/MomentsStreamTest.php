@@ -83,6 +83,26 @@ test('moment detail page shows content and accepts comments', function () {
             ->where('moment.comment_count', 1));
 });
 
+test('moment detail exposes can_edit only to its author', function () {
+    $moment = publishMoment($this->user, '作者本人的说说');
+
+    $this->actingAs($this->user)
+        ->get("/moments/{$moment->id}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Moment/Show')
+            ->where('moment.can_edit', true));
+
+    $other = User::factory()->create(['role' => 'subscriber', 'email_verified_at' => now()]);
+
+    $this->actingAs($other)
+        ->get("/moments/{$moment->id}")
+        ->assertInertia(fn (Assert $page) => $page->where('moment.can_edit', false));
+
+    $this->get("/moments/{$moment->id}")
+        ->assertInertia(fn (Assert $page) => $page->where('moment.can_edit', false));
+});
+
 test('blog list and home page exclude moments', function () {
     publishPost($this->user, '博客里的文章');
     publishMoment($this->user, '不该出现在博客列表的说说');

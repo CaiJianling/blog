@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useArticleLike } from '@/hooks/use-article-like';
 import { blocknoteToHtml } from '@/lib/blocknote-to-html';
+import { beginExpandTransition } from '@/lib/expand-transition';
 import { buildSeoMeta } from '@/lib/seo';
 
 type MomentBlock = Record<string, unknown>;
@@ -105,7 +106,10 @@ function MomentCard({ moment }: { moment: MomentItem }) {
         moment.comment_count > 0 || (moment.content?.length ?? 0) > 0;
 
     return (
-        <article className="apple-card apple-press hover-glow group p-5">
+        <article
+            className="apple-card apple-press hover-glow group p-5"
+            data-expand-source={moment.permalink}
+        >
             {/* 头部：作者 + 时间 */}
             <div className="flex items-center gap-3">
                 {moment.author_avatar ? (
@@ -135,6 +139,17 @@ function MomentCard({ moment }: { moment: MomentItem }) {
                 {hasDetail && (
                     <Link
                         href={moment.permalink}
+                        prefetch
+                        onClick={(e) => {
+                            if (
+                                beginExpandTransition(
+                                    e.currentTarget,
+                                    moment.permalink,
+                                )
+                            ) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="apple-press text-footnote flex shrink-0 items-center gap-0.5 rounded-full px-2 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         aria-label="查看详情"
                     >
@@ -169,6 +184,16 @@ function MomentCard({ moment }: { moment: MomentItem }) {
                 </button>
                 <Link
                     href={moment.permalink}
+                    onClick={(e) => {
+                        if (
+                            beginExpandTransition(
+                                e.currentTarget,
+                                moment.permalink,
+                            )
+                        ) {
+                            e.preventDefault();
+                        }
+                    }}
                     className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
                 >
                     <MessageSquare className="h-4 w-4" />

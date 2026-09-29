@@ -69,6 +69,9 @@
     --shadow-apple-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
     --shadow-apple-xl: 0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.10);
     --shadow-apple-card: 0 1px 3px rgb(0 0 0 / 0.04), 0 8px 24px -8px rgb(0 0 0 / 0.10);
+    /* 位移动画曲线（iOS 抽屉曲线）：上面的 cubic-bezier(0.25,0.1,0.25,1) 只用于色彩/阴影微过渡，
+       卡片展开这类「屏幕上移动的元素」需要更强的起收感 */
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 :root {
@@ -968,6 +971,23 @@
         line-height: 1.4;
         letter-spacing: 0.004em;
         color: var(--muted-foreground);
+    }
+}
+
+/* ============================================================
+ * 列表卡片 → 详情页头部的展开/缩回过渡（View Transitions）
+ * 命名元素（expand-card）由 lib/expand-transition.ts 在点击时挂到卡片上，
+ * 详情页头部常驻同名；浏览器负责形变盒子与内容交叉淡入，这里只调曲线和时长。
+ * ============================================================ */
+::view-transition-group(expand-card) {
+    animation-duration: 260ms;
+    animation-timing-function: var(--ease-drawer);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* 减少动效时保留一次极短的形变，避免位置突变，但不做位移感 */
+    ::view-transition-group(expand-card) {
+        animation-duration: 1ms;
     }
 }
 

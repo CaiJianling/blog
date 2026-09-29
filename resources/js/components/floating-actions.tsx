@@ -5,13 +5,17 @@ import { useEffect, useState } from 'react';
 import FloatingSettingsPanel from '@/components/floating-settings-panel';
 import GlassButtonBackground from '@/components/LiquidGlass/glass-button-background';
 import GlassEdgeRing from '@/components/LiquidGlass/glass-edge-ring';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { EFFECT_LEVEL, useEffectsAtLeast } from '@/hooks/use-effects';
 import { cn } from '@/lib/utils';
 
 /**
  * 前台右下角悬浮操作组：
- * - 编辑本文（仅文章作者本人登录时出现，跳后台编辑页）
+ * - 编辑本文（仅作者本人登录时出现，文章与说说详情页各自跳对应后台编辑页）
  * - 新建说说（仅管理员，且只在说说列表页出现，跳后台写说说）
  * - 回到顶部（按钮圆环显示文章阅读进度）
  * - 跳转评论区（文章详情页且开启评论，点击后聚焦评论输入框）
@@ -20,9 +24,10 @@ import { cn } from '@/lib/utils';
  * 位置与 AI 小助手按钮协调：启用时悬浮其上方，未启用时贴底。
  */
 export default function FloatingActions() {
-    const { assistant, article, auth } = usePage().props as unknown as {
+    const { assistant, article, moment, auth } = usePage().props as unknown as {
         assistant?: { enabled?: boolean };
         article?: { id?: number; can_edit?: boolean };
+        moment?: { id?: number; can_edit?: boolean };
         auth?: { user?: { role?: string } };
     };
     const glassButtons = useEffectsAtLeast(EFFECT_LEVEL.pro);
@@ -33,10 +38,20 @@ export default function FloatingActions() {
     const [hasComments, setHasComments] = useState(false);
     const { url } = usePage();
 
-    // 作者本人的编辑入口：can_edit 由 BlogController 按 author_id 判定后下发
-    const editUrl = article?.can_edit === true && typeof article.id === 'number'
-        ? `/admin/articles/${article.id}/edit`
-        : null;
+    // 作者本人的编辑入口：can_edit 由 BlogController / MomentController
+    // 各自按 author_id 判定后下发，跳对应后台编辑页
+    const edit =
+        article?.can_edit === true && typeof article.id === 'number'
+            ? {
+                  href: `/admin/articles/${article.id}/edit`,
+                  label: '编辑这篇文章',
+              }
+            : moment?.can_edit === true && typeof moment.id === 'number'
+              ? {
+                    href: `/admin/moments/${moment.id}/edit`,
+                    label: '编辑这条说说',
+                }
+              : null;
 
     // 管理员在说说列表页的快捷新建入口（写说说走后台 /admin/moments/create）
     const createMomentUrl =
@@ -51,18 +66,29 @@ export default function FloatingActions() {
     const pressTop = useAnimationControls();
 
     const press = (controls: ReturnType<typeof useAnimationControls>): void => {
-        void controls.start({ scale: 0.94, transition: { duration: 0.1, ease: 'easeOut' } });
+        void controls.start({
+            scale: 0.94,
+            transition: { duration: 0.1, ease: 'easeOut' },
+        });
     };
 
-    const release = (controls: ReturnType<typeof useAnimationControls>): void => {
-        void controls.start({ scale: 1, transition: { type: 'spring', stiffness: 420, damping: 26 } });
+    const release = (
+        controls: ReturnType<typeof useAnimationControls>,
+    ): void => {
+        void controls.start({
+            scale: 1,
+            transition: { type: 'spring', stiffness: 420, damping: 26 },
+        });
     };
 
     useEffect(() => {
         const onScroll = () => {
             const scrollY = window.scrollY;
-            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-            setProgress(maxScroll > 0 ? Math.min(100, (scrollY / maxScroll) * 100) : 0);
+            const maxScroll =
+                document.documentElement.scrollHeight - window.innerHeight;
+            setProgress(
+                maxScroll > 0 ? Math.min(100, (scrollY / maxScroll) * 100) : 0,
+            );
             setShowTop(scrollY > 300);
         };
 
@@ -86,11 +112,16 @@ export default function FloatingActions() {
     const bottomOffset = assistant?.enabled ? 'bottom-[92px]' : 'bottom-6';
 
     const scrollToComments = () => {
-        document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' });
+        document
+            .getElementById('comments')
+            ?.scrollIntoView({ behavior: 'smooth' });
 
         // 滚动完成后聚焦评论输入框
         setTimeout(() => {
-            const textarea = document.querySelector<HTMLTextAreaElement>('#comments textarea');
+            const textarea =
+                document.querySelector<HTMLTextAreaElement>(
+                    '#comments textarea',
+                );
 
             textarea?.focus({ preventScroll: true });
         }, 700);
@@ -105,8 +136,10 @@ export default function FloatingActions() {
     const ringCircumference = 2 * Math.PI * ringRadius;
 
     return (
-        <div className={`fixed right-5 z-40 flex flex-col gap-2 ${bottomOffset}`}>
-            {editUrl && (
+        <div
+            className={`fixed right-5 z-40 flex flex-col gap-2 ${bottomOffset}`}
+        >
+            {edit && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <motion.span
@@ -114,7 +147,7 @@ export default function FloatingActions() {
                             className="relative block h-10 w-10"
                         >
                             <Link
-                                href={editUrl}
+                                href={edit.href}
                                 onPointerDown={() => press(pressEdit)}
                                 onPointerUp={() => release(pressEdit)}
                                 onPointerLeave={() => release(pressEdit)}
@@ -122,7 +155,7 @@ export default function FloatingActions() {
                                     'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-primary/45 text-primary shadow-md transition-colors hover:bg-primary/10',
                                     !glassButtons && 'bg-popover',
                                 )}
-                                aria-label="编辑这篇文章"
+                                aria-label={edit.label}
                             >
                                 <GlassButtonBackground size={40} />
                                 <SquarePen className="relative h-4 w-4" />
@@ -131,7 +164,7 @@ export default function FloatingActions() {
                         </motion.span>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="tooltip-dark">
-                        编辑这篇文章
+                        {edit.label}
                     </TooltipContent>
                 </Tooltip>
             )}
@@ -146,7 +179,9 @@ export default function FloatingActions() {
                                 href={createMomentUrl}
                                 onPointerDown={() => press(pressCreateMoment)}
                                 onPointerUp={() => release(pressCreateMoment)}
-                                onPointerLeave={() => release(pressCreateMoment)}
+                                onPointerLeave={() =>
+                                    release(pressCreateMoment)
+                                }
                                 className={cn(
                                     'hover-glow relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-primary/45 text-primary shadow-md transition-colors hover:bg-primary/10',
                                     !glassButtons && 'bg-popover',
@@ -215,8 +250,19 @@ export default function FloatingActions() {
                             >
                                 <GlassButtonBackground size={40} />
                                 {showRing && (
-                                    <svg viewBox="0 0 40 40" className="pointer-events-none absolute inset-0 h-10 w-10 -rotate-90">
-                                        <circle cx="20" cy="20" r={ringRadius} fill="none" stroke="currentColor" strokeWidth="2.5" className="text-border/40" />
+                                    <svg
+                                        viewBox="0 0 40 40"
+                                        className="pointer-events-none absolute inset-0 h-10 w-10 -rotate-90"
+                                    >
+                                        <circle
+                                            cx="20"
+                                            cy="20"
+                                            r={ringRadius}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2.5"
+                                            className="text-border/40"
+                                        />
                                         <circle
                                             cx="20"
                                             cy="20"
@@ -227,7 +273,10 @@ export default function FloatingActions() {
                                             strokeLinecap="round"
                                             className="text-primary transition-[stroke-dashoffset] duration-150 ease-out"
                                             strokeDasharray={ringCircumference}
-                                            strokeDashoffset={ringCircumference * (1 - progress / 100)}
+                                            strokeDashoffset={
+                                                ringCircumference *
+                                                (1 - progress / 100)
+                                            }
                                         />
                                     </svg>
                                 )}
@@ -236,10 +285,12 @@ export default function FloatingActions() {
                             {glassButtons && <GlassEdgeRing variant="circle" />}
                         </motion.span>
                     </TooltipTrigger>
-                <TooltipContent side="left" className="tooltip-dark">
-                    {showRing ? `阅读进度 ${Math.round(progress)}%` : '回到顶部'}
-                </TooltipContent>
-            </Tooltip>
+                    <TooltipContent side="left" className="tooltip-dark">
+                        {showRing
+                            ? `阅读进度 ${Math.round(progress)}%`
+                            : '回到顶部'}
+                    </TooltipContent>
+                </Tooltip>
             )}
             <FloatingSettingsPanel />
         </div>

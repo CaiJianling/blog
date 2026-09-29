@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import HeroCanvas, { heroFallbackBackground } from '@/components/hero-canvas';
 import { useAppearance } from '@/hooks/use-appearance';
+import { beginExpandTransition } from '@/lib/expand-transition';
 import { buildSeoMeta } from '@/lib/seo';
 import blog from '@/routes/blog';
 import nav from '@/routes/nav';
@@ -60,14 +61,19 @@ export default function Home() {
     const { name } = usePage().props;
     const seo = usePage().props.seo;
     const { resolvedAppearance } = useAppearance();
-    const { latestArticles, featuredTools, navigationCategories, texts, heroOpacity } =
-        usePage<{
-            latestArticles: Article[];
-            featuredTools: Tool[];
-            navigationCategories: Record<string, NavSite[]>;
-            texts: HomeTexts;
-            heroOpacity: number;
-        }>().props;
+    const {
+        latestArticles,
+        featuredTools,
+        navigationCategories,
+        texts,
+        heroOpacity,
+    } = usePage<{
+        latestArticles: Article[];
+        featuredTools: Tool[];
+        navigationCategories: Record<string, NavSite[]>;
+        texts: HomeTexts;
+        heroOpacity: number;
+    }>().props;
 
     return (
         <>
@@ -157,6 +163,18 @@ export default function Home() {
                         <Link
                             key={article.id}
                             href={article.permalink}
+                            data-expand-source={article.permalink}
+                            prefetch
+                            onClick={(e) => {
+                                if (
+                                    beginExpandTransition(
+                                        e.currentTarget,
+                                        article.permalink,
+                                    )
+                                ) {
+                                    e.preventDefault();
+                                }
+                            }}
                             className="apple-card apple-press hover-glow group flex flex-col p-6"
                         >
                             {article.featured_image && (
@@ -165,7 +183,7 @@ export default function Home() {
                                     <img
                                         src={article.featured_image}
                                         alt={article.title}
-                                        className="aspect-[16/9] w-full image-alpha-bg object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                        className="image-alpha-bg aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                                         loading="lazy"
                                     />
                                 </div>

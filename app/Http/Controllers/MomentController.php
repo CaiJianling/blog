@@ -99,6 +99,8 @@ class MomentController extends Controller
                 : null,
             'created_at' => $moment->created_at->format('Y-m-d H:i'),
             'permalink' => '/moments/'.$moment->id,
+            // 仅作者本人可在前台看到「快捷编辑」悬浮入口（与文章页同一判定）
+            'can_edit' => $user !== null && (int) $moment->author_id === (int) $user->id,
         ];
     }
 }

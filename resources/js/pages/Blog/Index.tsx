@@ -10,6 +10,7 @@ import {
     Heart,
 } from 'lucide-react';
 import PageSearch, { type SearchScope } from '@/components/page-search';
+import { beginExpandTransition } from '@/lib/expand-transition';
 import { buildSeoMeta } from '@/lib/seo';
 import blog from '@/routes/blog';
 
@@ -317,14 +318,26 @@ export default function Index({
                                     <Link
                                         key={article.id}
                                         href={article.permalink}
+                                        data-expand-source={article.permalink}
+                                        prefetch
+                                        onClick={(e) => {
+                                            if (
+                                                beginExpandTransition(
+                                                    e.currentTarget,
+                                                    article.permalink,
+                                                )
+                                            ) {
+                                                e.preventDefault();
+                                            }
+                                        }}
                                         className="apple-card apple-press hover-glow group mb-5 block break-inside-avoid overflow-hidden p-5"
                                     >
                                         {article.featured_image && (
-                                            <div className="mb-4 -mt-5 -mx-5 overflow-hidden">
+                                            <div className="-mx-5 -mt-5 mb-4 overflow-hidden">
                                                 <img
                                                     src={article.featured_image}
                                                     alt={article.title}
-                                                    className="aspect-[16/9] w-full image-alpha-bg object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                                    className="image-alpha-bg aspect-[16/9] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                                                     loading="lazy"
                                                 />
                                             </div>
