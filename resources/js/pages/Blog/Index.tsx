@@ -10,7 +10,6 @@ import {
     Heart,
 } from 'lucide-react';
 import PageSearch, { type SearchScope } from '@/components/page-search';
-import { beginExpandTransition } from '@/lib/expand-transition';
 import { buildSeoMeta } from '@/lib/seo';
 import blog from '@/routes/blog';
 
@@ -318,18 +317,7 @@ export default function Index({
                                     <Link
                                         key={article.id}
                                         href={article.permalink}
-                                        data-expand-source={article.permalink}
                                         prefetch
-                                        onClick={(e) => {
-                                            if (
-                                                beginExpandTransition(
-                                                    e.currentTarget,
-                                                    article.permalink,
-                                                )
-                                            ) {
-                                                e.preventDefault();
-                                            }
-                                        }}
                                         className="apple-card apple-press hover-glow group mb-5 block break-inside-avoid overflow-hidden p-5"
                                     >
                                         {article.featured_image && (

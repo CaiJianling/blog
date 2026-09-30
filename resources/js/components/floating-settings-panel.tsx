@@ -232,9 +232,9 @@ export default function FloatingSettingsPanel() {
                                    拆成兄弟节点时暗线会跟玻璃错开一帧。 */
                                 <motion.div
                                     key="settings-popover"
-                                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 8, scale: 0.96, transition: panelExit }}
+                                    initial={{ opacity: 0, y: 8, scaleX: 0.92, scaleY: 0.92 }}
+                                    animate={{ opacity: 1, y: 0, scaleX: 1, scaleY: 1 }}
+                                    exit={{ opacity: 0, y: 8, scaleX: 0.94, scaleY: 0.94, transition: panelExit }}
                                     transition={panelEnter}
                                     style={{ transformOrigin: 'bottom right' }}
                                     className="relative"

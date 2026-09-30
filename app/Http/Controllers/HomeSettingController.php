@@ -9,7 +9,7 @@ use Inertia\Response;
 
 /**
  * 首页文案设置：Hero 区与各栏目的标题/描述均可后台维护。
- * 留空的字段回退为默认文案。
+ * 留空的字段回退为默认文案。另含「最新文章是否显示头图」开关。
  */
 class HomeSettingController extends Controller
 {
@@ -30,12 +30,18 @@ class HomeSettingController extends Controller
     ];
 
     /**
+     * 首页最新文章卡片是否显示头图的开关选项键。
+     */
+    public const FEATURED_IMAGE_OPTION = 'home_latest_featured_image';
+
+    /**
      * 前台显示设置页面（首页文案 + 侧边栏 + 页脚）。
      */
     public function edit(): Response
     {
         return Inertia::render('settings/home', [
             'texts' => self::texts(),
+            'latestFeaturedImage' => self::latestFeaturedImageEnabled(),
             'sidebar' => SidebarSettingController::props(),
             'footer' => [
                 'resources' => FooterSettingController::resources(),
@@ -58,6 +64,7 @@ class HomeSettingController extends Controller
         }
 
         $rules['home_badge'][] = 'max:60';
+        $rules[self::FEATURED_IMAGE_OPTION] = ['nullable', 'in:0,1'];
 
         $validated = $request->validate($rules, [
             'home_badge.max' => '徽章文案不能超过 60 个字符。',
@@ -67,6 +74,8 @@ class HomeSettingController extends Controller
         foreach (array_keys(self::DEFAULTS) as $key) {
             Option::set($key, trim($validated[$key] ?? ''));
         }
+
+        Option::set(self::FEATURED_IMAGE_OPTION, ($validated[self::FEATURED_IMAGE_OPTION] ?? '1') === '0' ? '0' : '1');
 
         return to_route('home.edit')->with('toast', ['type' => 'success', 'message' => '首页文案已保存。']);
     }
@@ -87,5 +96,13 @@ class HomeSettingController extends Controller
         }
 
         return $texts;
+    }
+
+    /**
+     * 首页最新文章卡片是否显示头图。未配置时默认显示。
+     */
+    public static function latestFeaturedImageEnabled(): bool
+    {
+        return trim((string) Option::get(self::FEATURED_IMAGE_OPTION, '1')) !== '0';
     }
 }

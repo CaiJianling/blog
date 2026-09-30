@@ -61,7 +61,8 @@ export default function PageShow({ page, comments, captcha, smileyGroups }: Prop
                 })}
             </Head>
 
-            <div className="mx-auto max-w-3xl px-5 py-10 md:px-8 md:py-14">
+            {/* 容器与博客/说说/工具等公开页同宽（max-w-7xl） */}
+            <div className="mx-auto max-w-7xl px-5 py-10 md:px-8 md:py-14">
                 <header>
                     <h1 className="text-display">{page.title}</h1>
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-footnote text-muted-foreground">

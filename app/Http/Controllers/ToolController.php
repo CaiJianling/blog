@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Tool;
 use App\Models\ToolCategory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,9 +18,11 @@ class ToolController extends Controller
 {
     public function index(): Response
     {
-        $toolCategories = ToolCategory::orderBy('sort_order')
+        $categories = ToolCategory::orderBy('sort_order')
             ->with('tools')
-            ->get()
+            ->get();
+
+        $toolCategories = $categories
             ->map(fn (ToolCategory $category) => [
                 'id' => $category->id,
                 'name' => $category->name,
@@ -38,7 +42,39 @@ class ToolController extends Controller
 
         return Inertia::render('Tools/Index', [
             'toolCategories' => $toolCategories,
+            'meta' => $this->indexMeta($categories),
         ]);
+    }
+
+    /**
+     * 工具列表页的 SEO 文案：分类名与工具名全部取自后台「工具设置」，
+     * 后台改动后前台 meta 自动跟着变，不需要再维护一份。
+     *
+     * @param  Collection<int, ToolCategory>  $categories
+     * @return array{title: string, description: string, keywords: string}
+     */
+    private function indexMeta(Collection $categories): array
+    {
+        $toolNames = $categories->flatMap(
+            fn (ToolCategory $category) => $category->tools->pluck('name'),
+        );
+        $total = $toolNames->count();
+
+        if ($total === 0) {
+            return [
+                'title' => '在线工具',
+                'description' => '免安装、即开即用的在线开发工具合集。',
+                'keywords' => '',
+            ];
+        }
+
+        $categoryNames = $categories->pluck('name')->filter()->take(6)->implode('、');
+
+        return [
+            'title' => '在线工具',
+            'description' => Str::limit("共 {$total} 个免安装、即开即用的在线工具，覆盖 {$categoryNames} 等分类。", 150, '…'),
+            'keywords' => $toolNames->filter()->take(12)->implode('，'),
+        ];
     }
 
     /**
@@ -69,6 +105,9 @@ class ToolController extends Controller
         // 打开工具详情计一次点击
         $tool->increment('clicks');
 
+        /** @var ToolCategory $category */
+        $category = $tool->category;
+
         return Inertia::render('Tools/Show', [
             'tool' => [
                 'id' => $tool->id,
@@ -78,8 +117,27 @@ class ToolController extends Controller
                 'icon' => $tool->icon,
                 'clicks' => (int) $tool->clicks,
             ],
-            'category' => $tool->category->name,
+            'category' => $category->name,
+            'meta' => $this->showMeta($tool, $category),
         ]);
+    }
+
+    /**
+     * 工具详情页的 SEO 文案：标题与描述直接用后台「工具设置」里该工具的名称和描述，
+     * 描述为空时由前端回退到站点级 SEO 描述。
+     *
+     * @return array{title: string, description: string, keywords: string}
+     */
+    private function showMeta(Tool $tool, ToolCategory $category): array
+    {
+        return [
+            'title' => $tool->name.' - 在线工具',
+            'description' => (string) $tool->description,
+            'keywords' => implode('，', array_filter([
+                $tool->name,
+                $category->name,
+            ])),
+        ];
     }
 
     /**

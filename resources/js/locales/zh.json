@@ -585,7 +585,10 @@
             "latestSection": "最新文章栏目",
             "toolsSection": "精选工具栏目",
             "navSection": "网站导航栏目",
-            "emptyFallback": "留空的字段将使用默认文案。"
+            "emptyFallback": "留空的字段将使用默认文案。",
+            "displayOptions": "显示选项",
+            "showFeaturedImage": "最新文章卡片显示头图",
+            "showFeaturedImageHint": "关闭后，首页最新文章卡片将不再显示文章头图。"
         },
         "floating": {
             "title": "设置",

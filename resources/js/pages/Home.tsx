@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import HeroCanvas, { heroFallbackBackground } from '@/components/hero-canvas';
 import { useAppearance } from '@/hooks/use-appearance';
-import { beginExpandTransition } from '@/lib/expand-transition';
 import { buildSeoMeta } from '@/lib/seo';
 import blog from '@/routes/blog';
 import nav from '@/routes/nav';
@@ -66,12 +65,14 @@ export default function Home() {
         featuredTools,
         navigationCategories,
         texts,
+        latestFeaturedImage,
         heroOpacity,
     } = usePage<{
         latestArticles: Article[];
         featuredTools: Tool[];
         navigationCategories: Record<string, NavSite[]>;
         texts: HomeTexts;
+        latestFeaturedImage: boolean;
         heroOpacity: number;
     }>().props;
 
@@ -163,21 +164,10 @@ export default function Home() {
                         <Link
                             key={article.id}
                             href={article.permalink}
-                            data-expand-source={article.permalink}
                             prefetch
-                            onClick={(e) => {
-                                if (
-                                    beginExpandTransition(
-                                        e.currentTarget,
-                                        article.permalink,
-                                    )
-                                ) {
-                                    e.preventDefault();
-                                }
-                            }}
                             className="apple-card apple-press hover-glow group flex flex-col p-6"
                         >
-                            {article.featured_image && (
+                            {latestFeaturedImage && article.featured_image && (
                                 // 圆角裁剪放在内层，避免卡片 overflow-hidden 切掉 .hover-glow::after 的外发光
                                 <div className="-mx-6 -mt-6 mb-5 overflow-hidden rounded-t-[inherit]">
                                     <img

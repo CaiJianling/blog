@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import AdminSettingsShell from '@/components/admin-settings-shell';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +30,7 @@ type SidebarMenu = { name: string; url: string };
 
 interface Props {
     texts: Record<string, string>;
+    latestFeaturedImage: boolean;
     sidebar: {
         sidebar_blogger_name: string;
         sidebar_blogger_intro: string;
@@ -63,7 +65,12 @@ function getCsrfToken(): { headerName: string; value: string } | null {
     return null;
 }
 
-export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
+export default function FrontendDisplay({
+    texts,
+    latestFeaturedImage,
+    sidebar,
+    footer,
+}: Props) {
     const { t } = useTranslation();
 
     // 首页文案
@@ -80,6 +87,9 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
         home_nav_desc: texts.home_nav_desc,
     });
     const [homeSaving, setHomeSaving] = useState(false);
+    const [showFeaturedImage, setShowFeaturedImage] = useState(
+        latestFeaturedImage,
+    );
 
     // 侧边栏
     const [bloggerName, setBloggerName] = useState(
@@ -106,9 +116,16 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
     const submitHome = (e: React.FormEvent) => {
         e.preventDefault();
         setHomeSaving(true);
-        router.put('/admin/settings/home', homeValues, {
-            onFinish: () => setHomeSaving(false),
-        });
+        router.put(
+            '/admin/settings/home',
+            {
+                ...homeValues,
+                home_latest_featured_image: showFeaturedImage ? '1' : '0',
+            },
+            {
+                onFinish: () => setHomeSaving(false),
+            },
+        );
     };
 
     const submitSidebar = (e: React.FormEvent) => {
@@ -509,6 +526,37 @@ export default function FrontendDisplay({ texts, sidebar, footer }: Props) {
                                                 className="h-9"
                                             />
                                         </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4 border-t border-border/40 pt-4">
+                                    <p className="text-sm font-medium">
+                                        {t('settings.home.displayOptions')}
+                                    </p>
+                                    <div className="grid gap-2">
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id="home_latest_featured_image"
+                                                checked={showFeaturedImage}
+                                                onCheckedChange={(checked) =>
+                                                    setShowFeaturedImage(
+                                                        checked === true,
+                                                    )
+                                                }
+                                            />
+                                            <Label
+                                                htmlFor="home_latest_featured_image"
+                                                className="cursor-pointer font-normal"
+                                            >
+                                                {t(
+                                                    'settings.home.showFeaturedImage',
+                                                )}
+                                            </Label>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {t(
+                                                'settings.home.showFeaturedImageHint',
+                                            )}
+                                        </p>
                                     </div>
                                 </div>
                                 {saveButton(homeSaving)}

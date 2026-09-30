@@ -235,9 +235,9 @@ export default function AiAssistantWidget() {
                     /* 面板与外缘暗线共用一个动画节点：两条弹簧不可能帧帧同步 */
                     <motion.div
                         key="assistant-panel"
-                        initial={{ opacity: 0, scale: 0.95, y: 12 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 12, transition: panelExit }}
+                        initial={{ opacity: 0, scaleX: 0.92, scaleY: 0.92, y: 12 }}
+                        animate={{ opacity: 1, scaleX: 1, scaleY: 1, y: 0 }}
+                        exit={{ opacity: 0, scaleX: 0.94, scaleY: 0.94, y: 12, transition: panelExit }}
                         transition={panelEnter}
                         style={{ transformOrigin: 'bottom right' }}
                         className="fixed right-4 bottom-4 z-50 h-[min(70vh,600px)] w-[min(380px,calc(100vw-2rem))]"

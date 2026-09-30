@@ -9,10 +9,6 @@ import type {
 } from '@/components/comments/comment-section';
 import { useArticleLike } from '@/hooks/use-article-like';
 import { blocknoteToHtml } from '@/lib/blocknote-to-html';
-import {
-    EXPAND_TARGET_ATTR,
-    EXPAND_TRANSITION_NAME,
-} from '@/lib/expand-transition';
 import { buildSeoMeta } from '@/lib/seo';
 
 type MomentBlock = Record<string, unknown>;
@@ -66,21 +62,18 @@ export default function MomentShow({
                 {buildSeoMeta({ site: seo, title: '说说' })}
             </Head>
 
-            <div className="mx-auto max-w-2xl px-5 py-10 md:px-8 md:py-14">
+            <div className="mx-auto max-w-7xl px-5 py-10 md:px-8 md:py-14">
                 {/* 返回说说流 */}
                 <Link
                     href="/moments"
+                    prefetch
                     className="apple-press text-footnote mb-5 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                     <ArrowLeft className="h-3.5 w-3.5" />
                     返回说说
                 </Link>
 
-                <article
-                    className="apple-card p-5 sm:p-6"
-                    {...{ [EXPAND_TARGET_ATTR]: moment.permalink }}
-                    style={{ viewTransitionName: EXPAND_TRANSITION_NAME }}
-                >
+                <article className="apple-card p-5 sm:p-6">
                     {/* 作者 + 时间 */}
                     <div className="flex items-center gap-3">
                         {moment.author_avatar ? (

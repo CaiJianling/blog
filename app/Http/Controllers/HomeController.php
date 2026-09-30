@@ -44,6 +44,7 @@ class HomeController extends Controller
             'featuredTools' => $featuredTools,
             'navigationCategories' => $navigation,
             'texts' => HomeSettingController::texts(),
+            'latestFeaturedImage' => HomeSettingController::latestFeaturedImageEnabled(),
             'heroOpacity' => ThemeSettingController::heroOpacity(),
         ]);
     }

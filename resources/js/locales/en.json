@@ -585,7 +585,10 @@
             "latestSection": "Latest articles section",
             "toolsSection": "Featured tools section",
             "navSection": "Navigation section",
-            "emptyFallback": "Blank fields fall back to the default texts."
+            "emptyFallback": "Blank fields fall back to the default texts.",
+            "displayOptions": "Display options",
+            "showFeaturedImage": "Show featured image on latest article cards",
+            "showFeaturedImageHint": "When off, the home latest article cards hide the featured image."
         },
         "floating": {
             "title": "Settings",

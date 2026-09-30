@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\HomeSettingController;
 use App\Models\Article;
 use App\Models\Attachment;
+use App\Models\Option;
 use App\Models\User;
 
 beforeEach(function () {
@@ -168,4 +170,70 @@ test('article store saves a valid featured image and rejects an unknown one', fu
         ])->assertSessionHasErrors(['featured_image']);
 
     expect(Article::where('slug', 'feat-bad')->exists())->toBeFalse();
+});
+
+test('home respects the latest featured image switch', function () {
+    $image = imageAttachment($this->user);
+
+    Article::create([
+        'author_id' => $this->user->id,
+        'title' => '首页带图文章',
+        'slug' => 'home-switch',
+        'excerpt' => '',
+        'content' => [],
+        'status' => 'publish',
+        'post_type' => Article::TYPE_POST,
+        'featured_image' => $image->id,
+    ]);
+
+    // 未配置时默认显示头图
+    $this->get('/')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('latestFeaturedImage', true),
+        );
+
+    // 后台关闭后首页不再显示头图，但数据仍下发，方便前端开关控制
+    Option::set('home_latest_featured_image', '0');
+
+    $this->get('/')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('latestFeaturedImage', false)
+            ->where('latestArticles.0.featured_image', fn (?string $url) => $url !== null && str_contains($url, 'uploads/cover.png')),
+        );
+});
+
+test('admin can save the latest featured image switch on home settings', function () {
+    $this->actingAs($this->user)
+        ->get(route('home.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/home')
+            ->where('latestFeaturedImage', true),
+        );
+
+    $this->actingAs($this->user)
+        ->put(route('home.update'), [
+            'home_latest_featured_image' => '0',
+            ...HomeSettingController::DEFAULTS,
+        ])
+        ->assertRedirect(route('home.edit'));
+
+    expect(Option::get('home_latest_featured_image'))->toBe('0');
+
+    $this->actingAs($this->user)
+        ->get(route('home.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('latestFeaturedImage', false),
+        );
+
+    $this->actingAs($this->user)
+        ->put(route('home.update'), [
+            'home_latest_featured_image' => '1',
+            ...HomeSettingController::DEFAULTS,
+        ]);
+
+    expect(Option::get('home_latest_featured_image'))->toBe('1');
 });

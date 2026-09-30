@@ -1,9 +1,10 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ExternalLink, MousePointerClick } from 'lucide-react';
-import { formatCount } from '@/lib/utils';
 import { useState } from 'react';
 import PageSearch from '@/components/page-search';
 import { buildSeoMeta } from '@/lib/seo';
+import { formatCount } from '@/lib/utils';
+import type { SiteSeo } from '@/types/global';
 
 type Tool = {
     id: number;
@@ -23,6 +24,8 @@ type ToolCategoryData = {
 
 type Props = {
     toolCategories: ToolCategoryData[];
+    /** 工具名、分类名等后台「工具设置」数据拼出的本页 SEO 文案。 */
+    meta: SiteSeo;
 };
 
 const iconMap: Record<string, string> = {
@@ -50,7 +53,7 @@ const iconMap: Record<string, string> = {
     Terminal: '⌨',
 };
 
-export default function Index({ toolCategories }: Props) {
+export default function Index({ toolCategories, meta }: Props) {
     const seo = usePage().props.seo;
     const [query, setQuery] = useState('');
 
@@ -78,8 +81,13 @@ export default function Index({ toolCategories }: Props) {
 
     return (
         <>
-            <Head title="在线工具">
-                {buildSeoMeta({ site: seo, title: '在线工具' })}
+            <Head title={meta.title}>
+                {buildSeoMeta({
+                    site: seo,
+                    title: meta.title,
+                    description: meta.description || undefined,
+                    keywords: meta.keywords || undefined,
+                })}
             </Head>
 
             <div className="mx-auto max-w-7xl px-5 py-10 md:px-8 md:py-14">
@@ -117,6 +125,7 @@ export default function Index({ toolCategories }: Props) {
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {category.tools.map((tool) => {
                                 const isExternal = !!tool.url;
+                                const detailUrl = `/tools/${tool.slug}`;
 
                                 const inner = (
                                     <>
@@ -134,7 +143,8 @@ export default function Index({ toolCategories }: Props) {
                                             </p>
                                             <p className="text-footnote mt-2 flex items-center gap-1 text-muted-foreground/70">
                                                 <MousePointerClick className="h-3 w-3" />
-                                                {formatCount(tool.clicks ?? 0)} 次使用
+                                                {formatCount(tool.clicks ?? 0)}{' '}
+                                                次使用
                                             </p>
                                         </div>
                                         {isExternal && (
@@ -157,7 +167,8 @@ export default function Index({ toolCategories }: Props) {
                                 ) : (
                                     <Link
                                         key={tool.id}
-                                        href={`/tools/${tool.slug}`}
+                                        href={detailUrl}
+                                        prefetch
                                         className="apple-card apple-press hover-glow group flex items-start gap-4 p-5"
                                     >
                                         {inner}

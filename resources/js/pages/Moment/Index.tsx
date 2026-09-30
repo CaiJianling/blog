@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useArticleLike } from '@/hooks/use-article-like';
 import { blocknoteToHtml } from '@/lib/blocknote-to-html';
-import { beginExpandTransition } from '@/lib/expand-transition';
 import { buildSeoMeta } from '@/lib/seo';
 
 type MomentBlock = Record<string, unknown>;
@@ -45,7 +44,7 @@ export default function MomentIndex({ moments }: Props) {
                 {buildSeoMeta({ site: seo, title: '说说' })}
             </Head>
 
-            <div className="mx-auto max-w-2xl px-5 py-10 md:px-8 md:py-14">
+            <div className="mx-auto max-w-7xl px-5 py-10 md:px-8 md:py-14">
                 <div className="mb-8">
                     <h1 className="text-display flex items-center gap-3">
                         <Sparkles className="h-7 w-7 text-primary" />
@@ -61,7 +60,9 @@ export default function MomentIndex({ moments }: Props) {
                         还没有发布说说，敬请期待
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-5">
+                    // 容器与博客/工具等列表页同宽，卡片流在这里分列；
+                    // items-start 让每张说说按自身内容高，不被同排卡片拉伸出空白
+                    <div className="grid grid-cols-1 items-start gap-5 sm:grid-cols-2 xl:grid-cols-3">
                         {moments.data.map((moment) => (
                             <MomentCard key={moment.id} moment={moment} />
                         ))}
@@ -106,10 +107,7 @@ function MomentCard({ moment }: { moment: MomentItem }) {
         moment.comment_count > 0 || (moment.content?.length ?? 0) > 0;
 
     return (
-        <article
-            className="apple-card apple-press hover-glow group p-5"
-            data-expand-source={moment.permalink}
-        >
+        <article className="apple-card apple-press hover-glow group p-5">
             {/* 头部：作者 + 时间 */}
             <div className="flex items-center gap-3">
                 {moment.author_avatar ? (
@@ -140,16 +138,6 @@ function MomentCard({ moment }: { moment: MomentItem }) {
                     <Link
                         href={moment.permalink}
                         prefetch
-                        onClick={(e) => {
-                            if (
-                                beginExpandTransition(
-                                    e.currentTarget,
-                                    moment.permalink,
-                                )
-                            ) {
-                                e.preventDefault();
-                            }
-                        }}
                         className="apple-press text-footnote flex shrink-0 items-center gap-0.5 rounded-full px-2 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         aria-label="查看详情"
                     >
@@ -184,16 +172,7 @@ function MomentCard({ moment }: { moment: MomentItem }) {
                 </button>
                 <Link
                     href={moment.permalink}
-                    onClick={(e) => {
-                        if (
-                            beginExpandTransition(
-                                e.currentTarget,
-                                moment.permalink,
-                            )
-                        ) {
-                            e.preventDefault();
-                        }
-                    }}
+                    prefetch
                     className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
                 >
                     <MessageSquare className="h-4 w-4" />
