@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MediaUrlNormalizer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,16 @@ class Article extends Model
 
     /** 说说（短内容动态，无标题）。 */
     public const TYPE_MOMENT = 'moment';
+
+    public static function booted(): void
+    {
+        static::saving(function (self $article): void {
+            // 保存前自动归一化正文中的本地媒体 URL（换域名后保存即自愈）
+            if (is_array($article->content)) {
+                $article->content = app(MediaUrlNormalizer::class)->normalizeContent($article->content);
+            }
+        });
+    }
 
     protected $fillable = [
         'author_id',

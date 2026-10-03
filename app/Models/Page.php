@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MediaUrlNormalizer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Page extends Model
 {
     use HasFactory;
+
+    public static function booted(): void
+    {
+        static::saving(function (self $page): void {
+            // 保存前自动归一化正文中的本地媒体 URL（换域名后保存即自愈）
+            if (is_array($page->content)) {
+                $page->content = app(MediaUrlNormalizer::class)->normalizeContent($page->content);
+            }
+        });
+    }
 
     protected $fillable = [
         'author_id',
