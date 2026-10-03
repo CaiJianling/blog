@@ -1,5 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    ChevronLeft,
+    ChevronRight,
     Eye,
     FileText,
     Link as LinkIcon,
@@ -8,10 +10,46 @@ import {
     Timer,
     User,
     Heart,
+    MoreHorizontal,
 } from 'lucide-react';
+import CategorySphere from '@/components/category-sphere';
 import PageSearch, { type SearchScope } from '@/components/page-search';
 import { buildSeoMeta } from '@/lib/seo';
 import blog from '@/routes/blog';
+
+/** 分页按钮基础样式：flex 居中保证页码在按钮内不偏移。 */
+const PAGE_BUTTON =
+    'apple-press flex h-9 min-w-9 items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors';
+
+/**
+ * 分页页码序列：总页数不多时全量展开，否则首尾页常显、中间围绕当前页展开，
+ * 缺口用一个省略号占位（省略号不是按钮，避免出现点了没反应的死链）。
+ */
+function buildPageItems(current: number, last: number): Array<number | 'gap'> {
+    if (last <= 7) {
+        return Array.from({ length: last }, (_, i) => i + 1);
+    }
+
+    const start = Math.max(2, current - 1);
+    const end = Math.min(last - 1, current + 1);
+    const items: Array<number | 'gap'> = [1];
+
+    if (start > 2) {
+        items.push('gap');
+    }
+
+    for (let page = start; page <= end; page++) {
+        items.push(page);
+    }
+
+    if (end < last - 1) {
+        items.push('gap');
+    }
+
+    items.push(last);
+
+    return items;
+}
 
 const SEARCH_SCOPES: SearchScope[] = [
     { value: 'title', label: '标题', placeholder: '搜索文章标题' },
@@ -64,7 +102,6 @@ type Sidebar = {
 type Props = {
     articles: {
         data: Article[];
-        links: { url: string | null; label: string; active: boolean }[];
         current_page: number;
         last_page: number;
     };
@@ -86,6 +123,18 @@ export default function Index({
     sidebar,
 }: Props) {
     const seo = usePage().props.seo;
+
+    /** 页码链接：切页时带上当前的分类、标签与搜索条件，避免翻页后筛选丢失。 */
+    const pageUrl = (page: number) =>
+        blog.index.url({
+            query: {
+                page,
+                category: currentCategory,
+                tag: currentTag,
+                q: currentQuery,
+                scope: currentQuery ? currentScope : undefined,
+            },
+        });
 
     const doSearch = (value: string, scope?: string) => {
         router.get(
@@ -129,39 +178,7 @@ export default function Index({
                     </p>
                 )}
 
-                {/* Category filter */}
-                {categories.length > 0 && (
-                    <div className="mb-8 flex flex-wrap gap-2">
-                        <Link
-                            href={blog.index()}
-                            className={`apple-press rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                                !currentCategory
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted text-foreground/80 hover:bg-accent'
-                            }`}
-                        >
-                            全部
-                        </Link>
-                        {categories.map((cat) => (
-                            <Link
-                                key={cat.slug}
-                                href={blog.index({
-                                    query: { category: cat.slug },
-                                })}
-                                className={`apple-press rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                                    currentCategory === cat.slug
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted text-foreground/80 hover:bg-accent'
-                                }`}
-                            >
-                                {cat.name}
-                                <span className="ml-1.5 opacity-60">
-                                    {cat.count}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                )}
+                {/* 分类筛选统一放在侧边栏，顶部不再重复一排 chips */}
 
                 <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
                     {/* 右侧侧边栏 */}
@@ -261,51 +278,40 @@ export default function Index({
                             </div>
                         )}
 
-                        {/* 分类 */}
+                        {/* 分类：球形标签云，可拖动旋转，避开长列表把侧边栏拉得比正文还高 */}
                         {categories.length > 0 && (
                             <div className="apple-card p-4">
-                                <h3 className="text-callout mb-3 flex items-center gap-1.5 px-1 font-medium">
-                                    <FileText className="h-3.5 w-3.5 text-primary" />
-                                    分类
+                                <h3 className="text-callout mb-1 flex items-center justify-between gap-2 px-1 font-medium">
+                                    <span className="flex items-center gap-1.5">
+                                        <FileText className="h-3.5 w-3.5 text-primary" />
+                                        分类
+                                    </span>
+                                    <span className="text-[10px] font-normal text-muted-foreground">
+                                        拖动旋转
+                                    </span>
                                 </h3>
-                                <ul className="space-y-0.5">
-                                    <li>
-                                        <Link
-                                            href={blog.index()}
-                                            className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
-                                        >
-                                            <span>全部文章</span>
-                                            <span className="text-footnote text-muted-foreground">
-                                                {categories.reduce(
-                                                    (sum, cat) =>
-                                                        sum + cat.count,
-                                                    0,
-                                                )}
-                                            </span>
-                                        </Link>
-                                    </li>
-                                    {categories.map((cat) => (
-                                        <li key={cat.slug}>
-                                            <Link
-                                                href={blog.index({
-                                                    query: {
-                                                        category: cat.slug,
-                                                    },
-                                                })}
-                                                className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted ${
-                                                    currentCategory === cat.slug
-                                                        ? 'bg-primary/10 text-primary'
-                                                        : ''
-                                                }`}
-                                            >
-                                                <span>{cat.name}</span>
-                                                <span className="text-footnote text-muted-foreground">
-                                                    {cat.count}
-                                                </span>
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <CategorySphere
+                                    items={[
+                                        {
+                                            key: 'all',
+                                            label: '全部文章',
+                                            // 侧边栏统计已给出已发布文章数；分类计数相加会重复计入多分类文章
+                                            count: sidebar.stats.articles,
+                                            href: blog.index().url,
+                                            active: !currentCategory,
+                                        },
+                                        ...categories.map((cat) => ({
+                                            key: cat.slug,
+                                            label: cat.name,
+                                            count: cat.count,
+                                            href: blog.index({
+                                                query: { category: cat.slug },
+                                            }).url,
+                                            active:
+                                                currentCategory === cat.slug,
+                                        })),
+                                    ]}
+                                />
                             </div>
                         )}
                     </aside>
@@ -406,24 +412,76 @@ export default function Index({
                             </div>
                         )}
 
-                        {/* Pagination */}
+                        {/* 分页 */}
                         {articles.last_page > 1 && (
-                            <div className="mt-2 flex flex-wrap justify-center gap-1">
-                                {articles.links.map((link, i) => (
-                                    <Link
-                                        key={i}
-                                        href={link.url ?? '#'}
-                                        className={`apple-press h-9 min-w-[2.25rem] rounded-lg px-3 text-sm font-medium transition-colors ${
-                                            link.active
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-muted text-foreground/80 hover:bg-accent'
-                                        } ${!link.url ? 'pointer-events-none opacity-40' : ''}`}
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                ))}
-                            </div>
+                            <nav
+                                aria-label="文章分页"
+                                className="mt-10 flex flex-wrap items-center justify-center gap-1.5"
+                            >
+                                <Link
+                                    href={pageUrl(
+                                        Math.max(1, articles.current_page - 1),
+                                    )}
+                                    aria-label="上一页"
+                                    className={`${PAGE_BUTTON} bg-muted text-foreground/80 hover:bg-accent ${
+                                        articles.current_page === 1
+                                            ? 'pointer-events-none opacity-40'
+                                            : ''
+                                    }`}
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Link>
+
+                                {buildPageItems(
+                                    articles.current_page,
+                                    articles.last_page,
+                                ).map((item, index) =>
+                                    item === 'gap' ? (
+                                        <span
+                                            key={`gap-${index}`}
+                                            aria-hidden
+                                            className="flex h-9 w-9 items-center justify-center text-muted-foreground"
+                                        >
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </span>
+                                    ) : (
+                                        <Link
+                                            key={item}
+                                            href={pageUrl(item)}
+                                            aria-current={
+                                                item === articles.current_page
+                                                    ? 'page'
+                                                    : undefined
+                                            }
+                                            className={`${PAGE_BUTTON} ${
+                                                item === articles.current_page
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted text-foreground/80 hover:bg-accent'
+                                            }`}
+                                        >
+                                            {item}
+                                        </Link>
+                                    ),
+                                )}
+
+                                <Link
+                                    href={pageUrl(
+                                        Math.min(
+                                            articles.last_page,
+                                            articles.current_page + 1,
+                                        ),
+                                    )}
+                                    aria-label="下一页"
+                                    className={`${PAGE_BUTTON} bg-muted text-foreground/80 hover:bg-accent ${
+                                        articles.current_page ===
+                                        articles.last_page
+                                            ? 'pointer-events-none opacity-40'
+                                            : ''
+                                    }`}
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </Link>
+                            </nav>
                         )}
                     </div>
                 </div>
